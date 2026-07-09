@@ -106,7 +106,6 @@
         }
         textarea { resize: vertical; }
 
-        /* 좌우 버튼 스핀 컨트롤 */
         .num-ctrl {
             display: flex; align-items: center; border: 1px solid var(--line);
             border-radius: var(--radius-sm); background: var(--paper); overflow: hidden;
@@ -433,7 +432,7 @@
             <div class="controls">
 
                 <div class="ctrl-section" style="padding-top: 10px; border-bottom: none; padding-bottom: 0;">
-                    <textarea id="input-text" placeholder="대화 내용을 입력하세요..."></textarea>
+                    <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..."></textarea>
                 </div>
 
                 <div class="ctrl-section">
@@ -499,9 +498,9 @@
                         <div class="control-group" style="margin:0;">
                             <label>문단 간격 (px)</label>
                             <div class="num-ctrl">
-                                <button type="button" onclick="adjustNum('input-para-gap', -1, 1)">-</button>
-                                <input type="number" id="input-para-gap" value="5" step="1">
-                                <button type="button" onclick="adjustNum('input-para-gap', 1, 1)">+</button>
+                                <button type="button" onclick="adjustNum('input-para-gap', -1, 5)">-</button>
+                                <input type="number" id="input-para-gap" value="5" step="5">
+                                <button type="button" onclick="adjustNum('input-para-gap', 1, 5)">+</button>
                             </div>
                         </div>
                     </div>
@@ -510,9 +509,9 @@
                         <div class="control-group" style="margin:0;">
                             <label>내부 여백 (px)</label>
                             <div class="num-ctrl">
-                                <button type="button" onclick="adjustNum('input-padding', -1, 1)">-</button>
+                                <button type="button" onclick="adjustNum('input-padding', -1, 5)">-</button>
                                 <input type="number" id="input-padding" value="15">
-                                <button type="button" onclick="adjustNum('input-padding', 1, 1)">+</button>
+                                <button type="button" onclick="adjustNum('input-padding', 1, 5)">+</button>
                             </div>
                         </div>
                         <div class="control-group" style="margin:0;">
@@ -728,18 +727,18 @@
             const contentWrapper = document.querySelector('.card-content');
             
             if (isHtmlMode) {
-                // HTML 뷰어 모드: 발췌기 인라인 스타일 간섭 완전 제거
+                // HTML 뷰어 모드: 발췌기 스타일 간섭 완전 제거
                 contentWrapper.style.fontFamily = '';
                 contentWrapper.style.color = '';
                 DOM.pText.style.fontSize = '';
-                DOM.preview.style.padding = '0px'; 
+                DOM.preview.style.padding = '0px'; // 캔버스 가장자리까지 꽉 차게
                 DOM.pText.style.lineHeight = '';
                 DOM.pText.style.textAlign = '';
                 
-                // 줄바꿈 치환 없이 원문 그대로 렌더링
-                DOM.pText.innerHTML = DOM.text.value;
+                // 줄바꿈 치환: HTML 코드 작성 편의를 위해 줄바꿈은 <br>로 치환 (완전 쌩 코드를 원하면 제외 가능)
+                DOM.pText.innerHTML = DOM.text.value.replace(/\n/g, '<br>');
             } else {
-                // 텍스트 모드: 좌측 패널 스타일 복구 및 적용
+                // 텍스트 모드: 좌측 패널 스타일 적용
                 contentWrapper.style.fontFamily = currentFontVal;
                 contentWrapper.style.color = DOM.color.value;
                 DOM.pText.style.fontSize = DOM.size.value + 'px';
@@ -767,10 +766,11 @@
             updateUI();
         });
 
-        // 전체 설정 초기화 (Reset All) - 기본값으로 재설정됨
+        // 전체 설정 초기화 (Reset All)
         function resetAllSettings() {
             if (!confirm('모든 설정을 기본값으로 초기화하시겠습니까?\n(입력한 대화 내용은 지워지지 않습니다)')) return;
             
+            // 유저 요청 기본값 세팅 적용
             DOM.width.value = 700;
             DOM.height.value = 700;
             DOM.bgColor.value = '#ffffff';
@@ -1029,7 +1029,7 @@
                 text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
                 bgImg: currentBgImageDataUrl, bgScale: bgScale, bgOffsetX: bgOffsetX, bgOffsetY: bgOffsetY,
                 bgColor: DOM.bgColor.value, dim: DOM.dim.value, paraGap: DOM.paraGap.value,
-                isHtmlMode: DOM.htmlToggle.checked,
+                isHtmlMode: DOM.htmlToggle.checked, 
                 font: currentFontVal, color: DOM.color.value, size: DOM.size.value,
                 pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value
             };
@@ -1064,10 +1064,10 @@
             
             DOM.bgColor.value = config.bgColor || '#ffffff';
             DOM.dim.value = config.dim || 0;
-            DOM.paraGap.value = config.paraGap !== undefined ? config.paraGap : 5; 
+            DOM.paraGap.value = config.paraGap || 5; 
             DOM.color.value = config.color || '#222222';
             DOM.size.value = config.size || 24;
-            DOM.pad.value = config.pad !== undefined ? config.pad : 15;
+            DOM.pad.value = config.pad || 15;
             DOM.lh.value = config.lh || 1.2;
             DOM.align.value = config.align || 'center';
             DOM.htmlToggle.checked = !!config.isHtmlMode;
