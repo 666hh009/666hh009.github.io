@@ -8,7 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        /* 미니멀리즘 화이트 테마 & 원스크린 레이아웃 */
         :root {
             --bg-main: #ffffff;
             --bg-sub: #fafafa;
@@ -27,10 +26,9 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* 전체 페이지 스크롤 방지 */
+            overflow: hidden; 
         }
 
-        /* 상단 네비게이션 탭 */
         header {
             display: flex;
             justify-content: space-between;
@@ -51,11 +49,7 @@
             border-bottom: 2px solid var(--accent);
         }
 
-        /* 메인 컨텐츠 영역 */
-        main {
-            flex: 1;
-            position: relative;
-        }
+        main { flex: 1; position: relative; }
         .page-section {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             display: none; padding: 20px 40px;
@@ -64,16 +58,16 @@
 
         /* [발췌기] 컨트롤 패널 */
         .controls {
-            width: 350px;
+            width: 380px;
             background: var(--bg-sub);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 20px;
             overflow-y: auto;
-            display: flex; flex-direction: column; gap: 15px;
+            display: flex; flex-direction: column; gap: 18px;
         }
-        .control-group label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-sub); }
-        .flex-group { display: flex; gap: 10px; }
+        .control-group label { display: block; font-size: 0.8rem; margin-bottom: 6px; color: var(--text-sub); }
+        .flex-group { display: flex; gap: 10px; align-items: center; }
         .flex-group > div { flex: 1; }
         
         input[type="text"], input[type="number"], textarea, select {
@@ -81,31 +75,56 @@
             border-radius: 4px; font-family: inherit; font-size: 0.9rem;
             background: var(--bg-main);
         }
-        textarea { resize: vertical; min-height: 80px; }
+        
+        /* 텍스트 영역 높이 1/3 수준으로 확장 */
+        textarea { resize: vertical; height: 220px; }
+        
         input[type="color"] { width: 100%; height: 36px; padding: 0; border: none; cursor: pointer; }
         
         .btn {
             background: var(--bg-main); border: 1px solid var(--border-color);
-            padding: 10px; border-radius: 4px; cursor: pointer;
+            padding: 8px 12px; border-radius: 4px; cursor: pointer;
             font-size: 0.9rem; transition: background 0.2s;
         }
-        .btn:hover { background: var(--bg-sub); }
+        .btn:hover { background: var(--border-color); }
         .btn-primary { background: var(--accent); color: white; border: none; }
         .btn-primary:hover { background: #333; }
 
-        /* [발췌기] 미리보기 패널 */
-        .preview-area {
-            flex: 1; background: var(--bg-sub);
-            border: 1px solid var(--border-color); border-radius: 8px;
-            display: flex; justify-content: center; align-items: center;
-            overflow: auto; /* 카드 크기가 커지면 스크롤 생성 */
+        /* 프리셋 UI */
+        .preset-area {
+            background: var(--bg-main); padding: 12px; border-radius: 6px;
+            border: 1px solid var(--border-color);
+            display: flex; gap: 8px; align-items: center;
         }
+
+        /* [발췌기] 미리보기 패널 (줌 기능 포함) */
+        .preview-container {
+            flex: 1; display: flex; flex-direction: column; gap: 10px;
+        }
+        .preview-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-sub); padding: 10px 20px; border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .preview-area {
+            flex: 1; background: #ebedf0; /* 작업 영역과 구분되도록 약간 회색 */
+            border: 1px solid var(--border-color); border-radius: 8px;
+            overflow: auto; /* 스크롤바 */
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
+        }
+        
+        /* 배율이 적용될 래퍼 */
+        #card-preview-wrapper {
+            transition: width 0.1s, height 0.1s;
+        }
+        
         #card-preview {
-            background-color: #ffffff; /* 기본 단색 배경 */
+            background-color: #ffffff;
             background-size: cover; background-position: center;
             display: flex; flex-direction: column; justify-content: center;
-            position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            transition: width 0.3s, height 0.3s; /* 크기 변경 애니메이션 */
+            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transform-origin: top left; /* 배율 축소/확대 기준점 */
         }
         #card-overlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
@@ -117,9 +136,7 @@
         #archive-page { flex-direction: column; overflow-y: auto; }
         .archive-header { display: flex; gap: 10px; margin-bottom: 20px; }
         #gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;
         }
         .gallery-item {
             border: 1px solid var(--border-color); border-radius: 8px;
@@ -133,17 +150,15 @@
             cursor: pointer; padding: 0; font-size: 0.8rem; margin-top: 8px;
         }
 
-        /* 앨범 저장 모달 */
+        /* 모달 & 토스트 */
         #save-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.2); z-index: 1000; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center;
         }
         .modal-content {
             background: var(--bg-main); padding: 30px; border-radius: 8px;
             width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-
-        /* 빠른 토스트 팝업 (답답함 해소) */
         #toast {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: var(--accent); color: white; padding: 12px 24px;
@@ -167,6 +182,18 @@
     <main>
         <div id="extractor-page" class="page-section active">
             <div class="controls">
+                
+                <div class="preset-area">
+                    <label style="margin:0; width: 60px;">프리셋</label>
+                    <select id="preset-slot" style="flex: 1;">
+                        <option value="1">슬롯 1</option>
+                        <option value="2">슬롯 2</option>
+                        <option value="3">슬롯 3</option>
+                    </select>
+                    <button class="btn" onclick="savePreset()">저장</button>
+                    <button class="btn btn-primary" onclick="loadPreset()">적용</button>
+                </div>
+
                 <div class="control-group">
                     <label>대화 내용 (HTML 허용)</label>
                     <textarea id="input-text">금목서 향기가 짙게 배어나는 골목이었다.</textarea>
@@ -175,21 +202,19 @@
                 <div class="control-group flex-group">
                     <div>
                         <label>가로 크기 (px)</label>
-                        <input type="number" id="card-width" value="500">
+                        <input type="number" id="card-width" value="1000">
                     </div>
                     <div>
                         <label>세로 크기 (px)</label>
-                        <input type="number" id="card-height" value="500">
+                        <input type="number" id="card-height" value="1000">
                     </div>
                 </div>
 
-                <div class="control-group flex-group" style="align-items: flex-end;">
-                    <div style="flex: 2;">
-                        <label>배경 이미지</label>
-                        <input type="file" id="input-bg" accept="image/*" style="padding: 5px;">
-                    </div>
-                    <div style="flex: 1;">
-                        <button class="btn" onclick="removeBgImage()" style="width:100%;">이미지 삭제</button>
+                <div class="control-group">
+                    <label>배경 이미지</label>
+                    <div class="flex-group">
+                        <input type="file" id="input-bg" accept="image/*" style="padding: 4px;">
+                        <button class="btn" onclick="removeBgImage()" style="white-space: nowrap;">이미지 삭제</button>
                     </div>
                 </div>
                 
@@ -204,58 +229,73 @@
                     </div>
                 </div>
 
-                <div class="control-group flex-group">
-                    <div>
-                        <label>폰트</label>
-                        <select id="input-font">
-                            <option value="'Noto Serif KR', serif">명조체</option>
-                            <option value="'Noto Sans KR', sans-serif">고딕체</option>
-                            <option value="'Gowun Dodum', sans-serif">고운돋움</option>
-                        </select>
+                <div class="control-group">
+                    <label>폰트 설정</label>
+                    <select id="input-font" style="margin-bottom: 8px;">
+                        <option value="'Noto Serif KR', serif">명조체</option>
+                        <option value="'Noto Sans KR', sans-serif">고딕체</option>
+                        <option value="'Gowun Dodum', sans-serif">고운돋움</option>
+                    </select>
+                    <div class="flex-group">
+                        <input type="file" id="input-custom-font" accept=".ttf,.otf,.woff,.woff2" style="padding: 4px;">
+                        <div style="font-size: 0.75rem; color: #777; white-space: nowrap;">내 폰트 업로드</div>
                     </div>
+                </div>
+
+                <div class="control-group flex-group">
                     <div>
                         <label>글자 색상</label>
                         <input type="color" id="input-color" value="#222222">
                     </div>
-                </div>
-
-                <div class="control-group flex-group">
                     <div>
                         <label>글자 크기 (px)</label>
-                        <input type="number" id="input-size" value="20">
-                    </div>
-                    <div>
-                        <label>내부 여백 (px)</label>
-                        <input type="number" id="input-padding" value="40">
+                        <input type="number" id="input-size" value="40">
                     </div>
                 </div>
 
                 <div class="control-group flex-group">
+                    <div>
+                        <label>내부 여백 (px)</label>
+                        <input type="number" id="input-padding" value="60">
+                    </div>
                     <div>
                         <label>줄 간격</label>
                         <input type="number" id="input-lineheight" value="1.6" step="0.1">
                     </div>
-                    <div>
-                        <label>정렬</label>
-                        <select id="input-align">
-                            <option value="center">가운데</option>
-                            <option value="left">왼쪽</option>
-                            <option value="right">오른쪽</option>
-                        </select>
-                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>정렬</label>
+                    <select id="input-align">
+                        <option value="center">가운데</option>
+                        <option value="left">왼쪽</option>
+                        <option value="right">오른쪽</option>
+                    </select>
                 </div>
 
                 <div style="margin-top: auto; display: flex; gap: 10px;">
-                    <button class="btn" onclick="downloadCard()" style="flex: 1;">다운로드</button>
-                    <button class="btn btn-primary" onclick="openModal()" style="flex: 1;">아카이브 저장</button>
+                    <button class="btn" onclick="downloadCard()" style="flex: 1; padding: 12px;">다운로드</button>
+                    <button class="btn btn-primary" onclick="openModal()" style="flex: 1; padding: 12px;">아카이브 저장</button>
                 </div>
             </div>
 
-            <div class="preview-area">
-                <div id="card-preview">
-                    <div id="card-overlay"></div>
-                    <div class="card-content">
-                        <div id="preview-text">금목서 향기가 짙게 배어나는 골목이었다.</div>
+            <div class="preview-container">
+                <div class="preview-header">
+                    <span style="font-weight: bold; font-size: 0.9rem;">미리보기 창</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-size: 0.8rem;">배율 <span id="scale-value">50%</span></label>
+                        <input type="range" id="preview-scale" min="0.1" max="2.0" step="0.05" value="0.5" style="width: 150px;">
+                    </div>
+                </div>
+                
+                <div class="preview-area" id="preview-scroll-area">
+                    <div id="card-preview-wrapper">
+                        <div id="card-preview">
+                            <div id="card-overlay"></div>
+                            <div class="card-content">
+                                <div id="preview-text">금목서 향기가 짙게 배어나는 골목이었다.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -282,7 +322,7 @@
             </div>
             <div class="control-group">
                 <label>메모</label>
-                <textarea id="modal-memo"></textarea>
+                <textarea id="modal-memo" style="height: 100px;"></textarea>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveToIndexedDB()" style="flex:1;">저장</button>
@@ -291,11 +331,11 @@
         </div>
     </div>
 
-    <div id="toast" onclick="hideToast()">저장되었습니다!</div>
+    <div id="toast" onclick="hideToast()">알림 메시지</div>
 
     <script>
         /* -------------------------------------------------------------
-           1. UI 및 프리뷰 컨트롤 로직
+           1. DOM 요소 및 초기 설정
         ------------------------------------------------------------- */
         const DOM = {
             text: document.getElementById('input-text'),
@@ -305,36 +345,99 @@
             bgColor: document.getElementById('bg-color'),
             dim: document.getElementById('input-dim'),
             font: document.getElementById('input-font'),
+            customFont: document.getElementById('input-custom-font'),
             color: document.getElementById('input-color'),
             size: document.getElementById('input-size'),
             pad: document.getElementById('input-padding'),
             lh: document.getElementById('input-lineheight'),
             align: document.getElementById('input-align'),
+            
             preview: document.getElementById('card-preview'),
+            previewWrapper: document.getElementById('card-preview-wrapper'),
             overlay: document.getElementById('card-overlay'),
-            pText: document.getElementById('preview-text')
+            pText: document.getElementById('preview-text'),
+            scale: document.getElementById('preview-scale'),
+            scaleVal: document.getElementById('scale-value'),
+            scrollArea: document.getElementById('preview-scroll-area')
         };
 
-        // 초기화 세팅
-        DOM.preview.style.width = DOM.width.value + 'px';
-        DOM.preview.style.height = DOM.height.value + 'px';
-        DOM.preview.style.backgroundColor = DOM.bgColor.value;
-        document.querySelector('.card-content').style.fontFamily = DOM.font.value;
+        // UI 갱신 통합 함수
+        function updateUI() {
+            DOM.preview.style.width = DOM.width.value + 'px';
+            DOM.preview.style.height = DOM.height.value + 'px';
+            DOM.preview.style.backgroundColor = DOM.bgColor.value;
+            DOM.overlay.style.background = `rgba(0, 0, 0, ${DOM.dim.value})`;
+            document.querySelector('.card-content').style.fontFamily = DOM.font.value;
+            document.querySelector('.card-content').style.color = DOM.color.value;
+            DOM.pText.style.fontSize = DOM.size.value + 'px';
+            DOM.preview.style.padding = DOM.pad.value + 'px';
+            DOM.pText.style.lineHeight = DOM.lh.value;
+            DOM.pText.style.textAlign = DOM.align.value;
+            DOM.pText.innerHTML = DOM.text.value;
+            
+            updateScale(); // 줌 배율 적용
+        }
 
         // 이벤트 리스너 연결
-        DOM.text.addEventListener('input', () => DOM.pText.innerHTML = DOM.text.value);
-        DOM.width.addEventListener('input', () => DOM.preview.style.width = DOM.width.value + 'px');
-        DOM.height.addEventListener('input', () => DOM.preview.style.height = DOM.height.value + 'px');
-        DOM.bgColor.addEventListener('input', () => DOM.preview.style.backgroundColor = DOM.bgColor.value);
-        DOM.dim.addEventListener('input', () => DOM.overlay.style.background = `rgba(0, 0, 0, ${DOM.dim.value})`);
-        DOM.font.addEventListener('change', () => document.querySelector('.card-content').style.fontFamily = DOM.font.value);
-        DOM.color.addEventListener('input', () => document.querySelector('.card-content').style.color = DOM.color.value);
-        DOM.size.addEventListener('input', () => DOM.pText.style.fontSize = DOM.size.value + 'px');
-        DOM.pad.addEventListener('input', () => DOM.preview.style.padding = DOM.pad.value + 'px');
-        DOM.lh.addEventListener('input', () => DOM.pText.style.lineHeight = DOM.lh.value);
-        DOM.align.addEventListener('change', () => DOM.pText.style.textAlign = DOM.align.value);
+        const inputs = [DOM.text, DOM.width, DOM.height, DOM.bgColor, DOM.dim, DOM.color, DOM.size, DOM.pad, DOM.lh];
+        inputs.forEach(el => el.addEventListener('input', updateUI));
+        DOM.font.addEventListener('change', updateUI);
+        DOM.align.addEventListener('change', updateUI);
 
-        // 배경 이미지 업로드 및 삭제
+        // 첫 로드 시 UI 렌더링
+        updateUI();
+
+        /* -------------------------------------------------------------
+           2. 기능: 미리보기 줌(배율) 컨트롤
+        ------------------------------------------------------------- */
+        DOM.scale.addEventListener('input', updateScale);
+
+        function updateScale() {
+            const ratio = parseFloat(DOM.scale.value);
+            DOM.scaleVal.textContent = Math.round(ratio * 100) + '%';
+            
+            DOM.preview.style.transform = `scale(${ratio})`;
+            
+            // scale을 적용하면 원본 요소의 물리적 크기는 그대로라 스크롤이 꼬입니다.
+            // 래퍼의 크기를 배율에 맞게 강제로 줄여서 스크롤바가 예쁘게 생기도록 처리합니다.
+            DOM.previewWrapper.style.width = (DOM.width.value * ratio) + 'px';
+            DOM.previewWrapper.style.height = (DOM.height.value * ratio) + 'px';
+            
+            // 중앙 정렬 보정
+            DOM.scrollArea.style.alignItems = (DOM.height.value * ratio) < DOM.scrollArea.clientHeight ? 'center' : 'flex-start';
+        }
+
+        /* -------------------------------------------------------------
+           3. 기능: 커스텀 폰트 & 배경 이미지
+        ------------------------------------------------------------- */
+        // 내 폰트 업로드 적용
+        DOM.customFont.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const fontName = 'Custom_' + Date.now();
+            const fontUrl = URL.createObjectURL(file);
+            const font = new FontFace(fontName, `url(${fontUrl})`);
+            
+            try {
+                await font.load();
+                document.fonts.add(font);
+                
+                // 셀렉트 박스에 추가 및 선택
+                const option = document.createElement('option');
+                option.value = fontName;
+                option.text = `업로드 폰트 (${file.name})`;
+                DOM.font.appendChild(option);
+                DOM.font.value = fontName;
+                
+                updateUI();
+                showToast('폰트가 성공적으로 적용되었습니다.');
+            } catch (err) {
+                showToast('폰트 파일을 읽을 수 없습니다.');
+            }
+        });
+
+        // 배경 이미지 업로드
         DOM.bgImg.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -343,33 +446,69 @@
                 reader.readAsDataURL(file);
             }
         });
+
         function removeBgImage() {
             DOM.preview.style.backgroundImage = 'none';
             DOM.bgImg.value = '';
         }
 
-        // 탭 전환 로직
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+        /* -------------------------------------------------------------
+           4. 기능: 프리셋 저장 및 불러오기 (로컬 스토리지)
+        ------------------------------------------------------------- */
+        function savePreset() {
+            const slot = document.getElementById('preset-slot').value;
+            const presetData = {
+                text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
+                bgColor: DOM.bgColor.value, dim: DOM.dim.value, font: DOM.font.value,
+                color: DOM.color.value, size: DOM.size.value, pad: DOM.pad.value,
+                lh: DOM.lh.value, align: DOM.align.value
+            };
             
-            event.target.classList.add('active');
-            document.getElementById(tabName + '-page').classList.add('active');
+            let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
+            presets[slot] = presetData;
+            localStorage.setItem('archive_presets', JSON.stringify(presets));
+            showToast(`슬롯 ${slot}번에 설정이 저장되었습니다.`);
+        }
 
-            if(tabName === 'archive') loadGallery();
+        function loadPreset() {
+            const slot = document.getElementById('preset-slot').value;
+            let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
+            
+            if (!presets[slot]) {
+                showToast('이 슬롯에 저장된 프리셋이 없습니다.');
+                return;
+            }
+            
+            const p = presets[slot];
+            DOM.text.value = p.text; DOM.width.value = p.width; DOM.height.value = p.height;
+            DOM.bgColor.value = p.bgColor; DOM.dim.value = p.dim; DOM.color.value = p.color;
+            DOM.size.value = p.size; DOM.pad.value = p.pad; DOM.lh.value = p.lh; DOM.align.value = p.align;
+            
+            // 폰트가 드롭다운에 존재하는지 확인 후 적용 (커스텀 폰트 날아간 경우 대비)
+            const fontExists = Array.from(DOM.font.options).some(opt => opt.value === p.font);
+            if (fontExists) DOM.font.value = p.font;
+            
+            updateUI();
+            showToast(`슬롯 ${slot}번 설정을 불러왔습니다.`);
         }
 
         /* -------------------------------------------------------------
-           2. 모달 및 토스트(Toast) 팝업 로직
+           5. 모달, 토스트 및 탭 컨트롤
         ------------------------------------------------------------- */
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-page').classList.add('active');
+            if(tabName === 'archive') loadGallery();
+        }
+
         function openModal() {
             document.getElementById('modal-tags').value = '';
             document.getElementById('modal-memo').value = '';
             document.getElementById('save-modal').style.display = 'flex';
         }
-        function closeModal() {
-            document.getElementById('save-modal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('save-modal').style.display = 'none'; }
         
         let toastTimeout;
         function showToast(msg) {
@@ -377,61 +516,57 @@
             toast.textContent = msg;
             toast.classList.add('show');
             clearTimeout(toastTimeout);
-            // 2초 후 자동 숨김
             toastTimeout = setTimeout(() => hideToast(), 2000);
         }
-        function hideToast() {
-            document.getElementById('toast').classList.remove('show');
-        }
+        function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
-        // 다운로드
+        /* -------------------------------------------------------------
+           6. 이미지 추출 (html2canvas) - 원본 비율 유지 트릭
+        ------------------------------------------------------------- */
         function downloadCard() {
+            // 다운로드 시 해상도가 깨지지 않도록 배율을 잠시 1(100%)로 원복합니다.
+            const currentScale = DOM.scale.value;
+            DOM.preview.style.transform = 'scale(1)';
+            
             html2canvas(DOM.preview, { scale: 2, useCORS: true }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `archive_${Date.now()}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+                
+                // 저장 완료 후 배율 복구
+                DOM.preview.style.transform = `scale(${currentScale})`;
             });
         }
 
         /* -------------------------------------------------------------
-           3. IndexedDB 대용량 로컬 스토리지 로직
+           7. IndexedDB 로직 (아카이브 저장 및 불러오기)
         ------------------------------------------------------------- */
         let db;
-        const dbName = "AIArchiveDB";
-        const request = indexedDB.open(dbName, 1);
-
-        request.onupgradeneeded = function(e) {
+        const request = indexedDB.open("AIArchiveDB", 1);
+        request.onupgradeneeded = e => {
             db = e.target.result;
-            // 데이터를 담을 'cards' 스토어 생성
-            if (!db.objectStoreNames.contains('cards')) {
-                db.createObjectStore('cards', { keyPath: 'id' });
-            }
+            if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' });
         };
-
-        request.onsuccess = function(e) {
-            db = e.target.result;
-        };
+        request.onsuccess = e => db = e.target.result;
 
         function saveToIndexedDB() {
             const tags = document.getElementById('modal-tags').value;
             const memo = document.getElementById('modal-memo').value;
 
-            html2canvas(DOM.preview, { scale: 1, useCORS: true }).then(canvas => {
-                const imageData = canvas.toDataURL('image/jpeg', 0.8);
-                
-                const newItem = {
-                    id: Date.now(),
-                    image: imageData,
-                    tags: tags,
-                    memo: memo
-                };
+            // 저장 시에도 화질 유지를 위해 배율 원복 트릭 사용
+            const currentScale = DOM.scale.value;
+            DOM.preview.style.transform = 'scale(1)';
+
+            html2canvas(DOM.preview, { scale: 1.5, useCORS: true }).then(canvas => {
+                const imageData = canvas.toDataURL('image/jpeg', 0.85);
+                const newItem = { id: Date.now(), image: imageData, tags: tags, memo: memo };
 
                 const transaction = db.transaction(['cards'], 'readwrite');
-                const store = transaction.objectStore('cards');
-                store.add(newItem);
+                transaction.objectStore('cards').add(newItem);
 
                 transaction.oncomplete = function() {
+                    DOM.preview.style.transform = `scale(${currentScale})`; // 배율 복구
                     closeModal();
                     showToast('아카이브에 저장되었습니다!');
                 };
@@ -441,39 +576,25 @@
         function loadGallery() {
             if(!db) return;
             const grid = document.getElementById('gallery-grid');
-            const searchKeyword = document.getElementById('search-input').value.toLowerCase();
+            const keyword = document.getElementById('search-input').value.toLowerCase();
             const sortOrder = document.getElementById('sort-select').value;
             grid.innerHTML = ''; 
 
-            const transaction = db.transaction(['cards'], 'readonly');
-            const store = transaction.objectStore('cards');
-            const request = store.getAll();
-
-            request.onsuccess = function(e) {
+            const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
+            req.onsuccess = function(e) {
                 let album = e.target.result;
-
-                // 검색 필터링
-                if (searchKeyword) {
-                    album = album.filter(item => 
-                        (item.tags && item.tags.toLowerCase().includes(searchKeyword)) || 
-                        (item.memo && item.memo.toLowerCase().includes(searchKeyword))
-                    );
-                }
-
-                // 정렬
+                if (keyword) album = album.filter(item => (item.tags||'').toLowerCase().includes(keyword) || (item.memo||'').toLowerCase().includes(keyword));
                 album.sort((a, b) => sortOrder === 'asc' ? a.id - b.id : b.id - a.id);
 
                 if(album.length === 0) {
                     grid.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-sub);">저장된 기록이 없습니다.</p>';
                     return;
                 }
-
                 album.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'gallery-item';
-                    
                     div.innerHTML = `
-                        <img src="${item.image}" alt="Archive Card">
+                        <img src="${item.image}">
                         <div class="item-info">
                             <div class="item-tags">${item.tags}</div>
                             <div class="item-memo">${item.memo}</div>
@@ -487,10 +608,9 @@
 
         function deleteFromIndexedDB(id) {
             if(confirm('이 기록을 삭제하시겠습니까?')) {
-                const transaction = db.transaction(['cards'], 'readwrite');
-                const store = transaction.objectStore('cards');
-                store.delete(id);
-                transaction.oncomplete = () => loadGallery();
+                const tx = db.transaction(['cards'], 'readwrite');
+                tx.objectStore('cards').delete(id);
+                tx.oncomplete = () => loadGallery();
             }
         }
     </script>
