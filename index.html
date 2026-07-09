@@ -433,10 +433,7 @@
             <div class="controls">
 
                 <div class="ctrl-section" style="padding-top: 10px; border-bottom: none; padding-bottom: 0;">
-                    <textarea id="input-text" placeholder="대화 내용을 입력하세요...">비에르고스는 자리에서 일어났다. 몸이 가벼웠다.
-관절의 통증도, 심장의 무거움도 없었다.
-그는 걸었다. 그녀를 향해.
-그의 뒤로, 늙은 육신이 고요히 고개를 떨구었다.</textarea>
+                    <textarea id="input-text" placeholder="대화 내용을 입력하세요..."></textarea>
                 </div>
 
                 <div class="ctrl-section">
@@ -484,7 +481,7 @@
                             <label>글자 크기 (px)</label>
                             <div class="num-ctrl">
                                 <button type="button" onclick="adjustNum('input-size', -1, 1)">-</button>
-                                <input type="number" id="input-size" value="40">
+                                <input type="number" id="input-size" value="24">
                                 <button type="button" onclick="adjustNum('input-size', 1, 1)">+</button>
                             </div>
                         </div>
@@ -495,16 +492,16 @@
                             <label>줄 간격</label>
                             <div class="num-ctrl">
                                 <button type="button" onclick="adjustNum('input-lineheight', -1, 0.1)">-</button>
-                                <input type="number" id="input-lineheight" value="1.6" step="0.1">
+                                <input type="number" id="input-lineheight" value="1.2" step="0.1">
                                 <button type="button" onclick="adjustNum('input-lineheight', 1, 0.1)">+</button>
                             </div>
                         </div>
                         <div class="control-group" style="margin:0;">
                             <label>문단 간격 (px)</label>
                             <div class="num-ctrl">
-                                <button type="button" onclick="adjustNum('input-para-gap', -1, 5)">-</button>
-                                <input type="number" id="input-para-gap" value="30" step="5">
-                                <button type="button" onclick="adjustNum('input-para-gap', 1, 5)">+</button>
+                                <button type="button" onclick="adjustNum('input-para-gap', -1, 1)">-</button>
+                                <input type="number" id="input-para-gap" value="5" step="1">
+                                <button type="button" onclick="adjustNum('input-para-gap', 1, 1)">+</button>
                             </div>
                         </div>
                     </div>
@@ -513,9 +510,9 @@
                         <div class="control-group" style="margin:0;">
                             <label>내부 여백 (px)</label>
                             <div class="num-ctrl">
-                                <button type="button" onclick="adjustNum('input-padding', -1, 5)">-</button>
-                                <input type="number" id="input-padding" value="60">
-                                <button type="button" onclick="adjustNum('input-padding', 1, 5)">+</button>
+                                <button type="button" onclick="adjustNum('input-padding', -1, 1)">-</button>
+                                <input type="number" id="input-padding" value="15">
+                                <button type="button" onclick="adjustNum('input-padding', 1, 1)">+</button>
                             </div>
                         </div>
                         <div class="control-group" style="margin:0;">
@@ -579,7 +576,7 @@
                             <label>가로 (px)</label>
                             <div class="num-ctrl" style="height: 26px;">
                                 <button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">-</button>
-                                <input type="number" id="card-width" value="1000" style="width: 45px;">
+                                <input type="number" id="card-width" value="700" style="width: 45px;">
                                 <button type="button" onclick="adjustNum('card-width', 1, 50)" style="padding:0 6px;">+</button>
                             </div>
                         </div>
@@ -587,7 +584,7 @@
                             <label>세로 (px)</label>
                             <div class="num-ctrl" style="height: 26px;">
                                 <button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">-</button>
-                                <input type="number" id="card-height" value="1000" style="width: 45px;">
+                                <input type="number" id="card-height" value="700" style="width: 45px;">
                                 <button type="button" onclick="adjustNum('card-height', 1, 50)" style="padding:0 6px;">+</button>
                             </div>
                         </div>
@@ -650,7 +647,7 @@
                                 <div id="card-bg-layer"></div>
                                 <div id="card-overlay"></div>
                                 <div class="card-content">
-                                    <div id="preview-text">금목서 향기가 짙게 배어나는 골목이었다.</div>
+                                    <div id="preview-text"></div>
                                 </div>
                             </div>
                         </div>
@@ -735,7 +732,7 @@
                 contentWrapper.style.fontFamily = '';
                 contentWrapper.style.color = '';
                 DOM.pText.style.fontSize = '';
-                DOM.preview.style.padding = '0px'; // 캔버스 가장자리까지 꽉 차게
+                DOM.preview.style.padding = '0px'; 
                 DOM.pText.style.lineHeight = '';
                 DOM.pText.style.textAlign = '';
                 
@@ -770,18 +767,18 @@
             updateUI();
         });
 
-        // 전체 설정 초기화 (Reset All)
+        // 전체 설정 초기화 (Reset All) - 기본값으로 재설정됨
         function resetAllSettings() {
             if (!confirm('모든 설정을 기본값으로 초기화하시겠습니까?\n(입력한 대화 내용은 지워지지 않습니다)')) return;
             
-            DOM.width.value = 1000;
-            DOM.height.value = 1000;
+            DOM.width.value = 700;
+            DOM.height.value = 700;
             DOM.bgColor.value = '#ffffff';
             DOM.dim.value = 0;
-            DOM.size.value = 40;
-            DOM.pad.value = 60;
-            DOM.lh.value = 1.6;
-            DOM.paraGap.value = 30;
+            DOM.size.value = 24;
+            DOM.pad.value = 15;
+            DOM.lh.value = 1.2;
+            DOM.paraGap.value = 5;
             DOM.color.value = '#222222';
             DOM.align.value = 'center';
             DOM.htmlToggle.checked = false;
@@ -1058,8 +1055,8 @@
         function applyConfig(config, isFromArchive = false) {
             if (isFromArchive && config.text !== undefined) DOM.text.value = config.text;
             
-            DOM.width.value = config.width || 1000;
-            DOM.height.value = config.height || 1000;
+            DOM.width.value = config.width || 700;
+            DOM.height.value = config.height || 700;
             currentBgImageDataUrl = config.bgImg || '';
             bgScale = config.bgScale || 1.0;
             bgOffsetX = config.bgOffsetX || 0;
@@ -1067,11 +1064,11 @@
             
             DOM.bgColor.value = config.bgColor || '#ffffff';
             DOM.dim.value = config.dim || 0;
-            DOM.paraGap.value = config.paraGap || 30; 
+            DOM.paraGap.value = config.paraGap !== undefined ? config.paraGap : 5; 
             DOM.color.value = config.color || '#222222';
-            DOM.size.value = config.size || 40;
-            DOM.pad.value = config.pad || 60;
-            DOM.lh.value = config.lh || 1.6;
+            DOM.size.value = config.size || 24;
+            DOM.pad.value = config.pad !== undefined ? config.pad : 15;
+            DOM.lh.value = config.lh || 1.2;
             DOM.align.value = config.align || 'center';
             DOM.htmlToggle.checked = !!config.isHtmlMode;
             
