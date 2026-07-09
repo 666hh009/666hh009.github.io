@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 대화 아카이브</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+KR:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        /* 미니멀리즘 화이트 테마 & 원스크린 레이아웃 */
+        :root {
+            --bg-main: #ffffff;
+            --bg-sub: #fafafa;
+            --border-color: #eaeaea;
+            --text-main: #222222;
+            --text-sub: #777777;
+            --accent: #000000;
+        }
+        
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* 전체 페이지 스크롤 방지 */
+        }
+
+        /* 상단 네비게이션 탭 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            height: 60px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo { font-weight: bold; font-size: 1.2rem; }
+        .nav-tabs { display: flex; gap: 20px; }
+        .tab-btn {
+            background: none; border: none; font-size: 1rem;
+            color: var(--text-sub); cursor: pointer; padding: 10px 5px;
+            font-family: inherit; transition: color 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--accent); font-weight: bold;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        /* 메인 컨텐츠 영역 */
+        main {
+            flex: 1;
+            position: relative;
+        }
+        .page-section {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: none; padding: 20px 40px;
+        }
+        .page-section.active { display: flex; gap: 40px; }
+
+        /* [발췌기] 컨트롤 패널 */
+        .controls {
+            width: 350px;
+            background: var(--bg-sub);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .control-group label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-sub); }
+        .flex-group { display: flex; gap: 10px; }
+        .flex-group > div { flex: 1; }
+        
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%; padding: 8px; border: 1px solid var(--border-color);
+            border-radius: 4px; font-family: inherit; font-size: 0.9rem;
+            background: var(--bg-main);
+        }
+        textarea { resize: vertical; min-height: 80px; }
+        input[type="color"] { width: 100%; height: 36px; padding: 0; border: none; cursor: pointer; }
+        
+        .btn {
+            background: var(--bg-main); border: 1px solid var(--border-color);
+            padding: 10px; border-radius: 4px; cursor: pointer;
+            font-size: 0.9rem; transition: background 0.2s;
+        }
+        .btn:hover { background: var(--bg-sub); }
+        .btn-primary { background: var(--accent); color: white; border: none; }
+        .btn-primary:hover { background: #333; }
+
+        /* [발췌기] 미리보기 패널 */
+        .preview-area {
+            flex: 1; background: var(--bg-sub);
+            border: 1px solid var(--border-color); border-radius: 8px;
+            display: flex; justify-content: center; align-items: center;
+            overflow: auto; /* 카드 크기가 커지면 스크롤 생성 */
+        }
+        #card-preview {
+            background-color: #ffffff; /* 기본 단색 배경 */
+            background-size: cover; background-position: center;
+            display: flex; flex-direction: column; justify-content: center;
+            position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: width 0.3s, height 0.3s; /* 크기 변경 애니메이션 */
+        }
+        #card-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
+        }
+        .card-content { position: relative; z-index: 2; width: 100%; }
+        #preview-text { text-align: center; word-break: keep-all; width: 100%; }
+
+        /* [아카이브] 레이아웃 */
+        #archive-page { flex-direction: column; overflow-y: auto; }
+        .archive-header { display: flex; gap: 10px; margin-bottom: 20px; }
+        #gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .gallery-item {
+            border: 1px solid var(--border-color); border-radius: 8px;
+            overflow: hidden; background: var(--bg-main);
+        }
+        .gallery-item img { width: 100%; display: block; object-fit: contain; background: #f0f0f0; }
+        .item-info { padding: 12px; font-size: 0.85rem; }
+        .item-tags { font-weight: bold; margin-bottom: 4px; }
+        .delete-btn {
+            background: none; border: none; color: #ff4d4d;
+            cursor: pointer; padding: 0; font-size: 0.8rem; margin-top: 8px;
+        }
+
+        /* 앨범 저장 모달 */
+        #save-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.2); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: var(--bg-main); padding: 30px; border-radius: 8px;
+            width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        /* 빠른 토스트 팝업 (답답함 해소) */
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--accent); color: white; padding: 12px 24px;
+            border-radius: 30px; font-size: 0.9rem;
+            opacity: 0; visibility: hidden; transition: opacity 0.2s;
+            z-index: 2000; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        #toast.show { opacity: 1; visibility: visible; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Archive.app</div>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('extractor')">발췌기</button>
+            <button class="tab-btn" onclick="switchTab('archive')">아카이브</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="extractor-page" class="page-section active">
+            <div class="controls">
+                <div class="control-group">
+                    <label>대화 내용 (HTML 허용)</label>
+                    <textarea id="input-text">금목서 향기가 짙게 배어나는 골목이었다.</textarea>
+                </div>
+                
+                <div class="control-group flex-group">
+                    <div>
+                        <label>가로 크기 (px)</label>
+                        <input type="number" id="card-width" value="500">
+                    </div>
+                    <div>
+                        <label>세로 크기 (px)</label>
+                        <input type="number" id="card-height" value="500">
+                    </div>
+                </div>
+
+                <div class="control-group flex-group" style="align-items: flex-end;">
+                    <div style="flex: 2;">
+                        <label>배경 이미지</label>
+                        <input type="file" id="input-bg" accept="image/*" style="padding: 5px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <button class="btn" onclick="removeBgImage()" style="width:100%;">이미지 삭제</button>
+                    </div>
+                </div>
+                
+                <div class="control-group flex-group">
+                    <div>
+                        <label>단색 배경 색상</label>
+                        <input type="color" id="bg-color" value="#ffffff">
+                    </div>
+                    <div>
+                        <label>이미지 어둡기 (Dim)</label>
+                        <input type="range" id="input-dim" min="0" max="0.9" step="0.1" value="0">
+                    </div>
+                </div>
+
+                <div class="control-group flex-group">
+                    <div>
+                        <label>폰트</label>
+                        <select id="input-font">
+                            <option value="'Noto Serif KR', serif">명조체</option>
+                            <option value="'Noto Sans KR', sans-serif">고딕체</option>
+                            <option value="'Gowun Dodum', sans-serif">고운돋움</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>글자 색상</label>
+                        <input type="color" id="input-color" value="#222222">
+                    </div>
+                </div>
+
+                <div class="control-group flex-group">
+                    <div>
+                        <label>글자 크기 (px)</label>
+                        <input type="number" id="input-size" value="20">
+                    </div>
+                    <div>
+                        <label>내부 여백 (px)</label>
+                        <input type="number" id="input-padding" value="40">
+                    </div>
+                </div>
+
+                <div class="control-group flex-group">
+                    <div>
+                        <label>줄 간격</label>
+                        <input type="number" id="input-lineheight" value="1.6" step="0.1">
+                    </div>
+                    <div>
+                        <label>정렬</label>
+                        <select id="input-align">
+                            <option value="center">가운데</option>
+                            <option value="left">왼쪽</option>
+                            <option value="right">오른쪽</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-top: auto; display: flex; gap: 10px;">
+                    <button class="btn" onclick="downloadCard()" style="flex: 1;">다운로드</button>
+                    <button class="btn btn-primary" onclick="openModal()" style="flex: 1;">아카이브 저장</button>
+                </div>
+            </div>
+
+            <div class="preview-area">
+                <div id="card-preview">
+                    <div id="card-overlay"></div>
+                    <div class="card-content">
+                        <div id="preview-text">금목서 향기가 짙게 배어나는 골목이었다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="archive-page" class="page-section">
+            <div class="archive-header">
+                <input type="text" id="search-input" placeholder="태그/메모 검색..." oninput="loadGallery()" style="max-width: 300px;">
+                <select id="sort-select" onchange="loadGallery()" style="max-width: 150px;">
+                    <option value="desc">최신순</option>
+                    <option value="asc">오래된순</option>
+                </select>
+            </div>
+            <div id="gallery-grid"></div>
+        </div>
+    </main>
+
+    <div id="save-modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">아카이브에 저장</h3>
+            <div class="control-group">
+                <label>태그 (쉼표 구분)</label>
+                <input type="text" id="modal-tags" placeholder="#태그입력">
+            </div>
+            <div class="control-group">
+                <label>메모</label>
+                <textarea id="modal-memo"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveToIndexedDB()" style="flex:1;">저장</button>
+                <button class="btn" onclick="closeModal()" style="flex:1;">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" onclick="hideToast()">저장되었습니다!</div>
+
+    <script>
+        /* -------------------------------------------------------------
+           1. UI 및 프리뷰 컨트롤 로직
+        ------------------------------------------------------------- */
+        const DOM = {
+            text: document.getElementById('input-text'),
+            width: document.getElementById('card-width'),
+            height: document.getElementById('card-height'),
+            bgImg: document.getElementById('input-bg'),
+            bgColor: document.getElementById('bg-color'),
+            dim: document.getElementById('input-dim'),
+            font: document.getElementById('input-font'),
+            color: document.getElementById('input-color'),
+            size: document.getElementById('input-size'),
+            pad: document.getElementById('input-padding'),
+            lh: document.getElementById('input-lineheight'),
+            align: document.getElementById('input-align'),
+            preview: document.getElementById('card-preview'),
+            overlay: document.getElementById('card-overlay'),
+            pText: document.getElementById('preview-text')
+        };
+
+        // 초기화 세팅
+        DOM.preview.style.width = DOM.width.value + 'px';
+        DOM.preview.style.height = DOM.height.value + 'px';
+        DOM.preview.style.backgroundColor = DOM.bgColor.value;
+        document.querySelector('.card-content').style.fontFamily = DOM.font.value;
+
+        // 이벤트 리스너 연결
+        DOM.text.addEventListener('input', () => DOM.pText.innerHTML = DOM.text.value);
+        DOM.width.addEventListener('input', () => DOM.preview.style.width = DOM.width.value + 'px');
+        DOM.height.addEventListener('input', () => DOM.preview.style.height = DOM.height.value + 'px');
+        DOM.bgColor.addEventListener('input', () => DOM.preview.style.backgroundColor = DOM.bgColor.value);
+        DOM.dim.addEventListener('input', () => DOM.overlay.style.background = `rgba(0, 0, 0, ${DOM.dim.value})`);
+        DOM.font.addEventListener('change', () => document.querySelector('.card-content').style.fontFamily = DOM.font.value);
+        DOM.color.addEventListener('input', () => document.querySelector('.card-content').style.color = DOM.color.value);
+        DOM.size.addEventListener('input', () => DOM.pText.style.fontSize = DOM.size.value + 'px');
+        DOM.pad.addEventListener('input', () => DOM.preview.style.padding = DOM.pad.value + 'px');
+        DOM.lh.addEventListener('input', () => DOM.pText.style.lineHeight = DOM.lh.value);
+        DOM.align.addEventListener('change', () => DOM.pText.style.textAlign = DOM.align.value);
+
+        // 배경 이미지 업로드 및 삭제
+        DOM.bgImg.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => DOM.preview.style.backgroundImage = `url('${e.target.result}')`;
+                reader.readAsDataURL(file);
+            }
+        });
+        function removeBgImage() {
+            DOM.preview.style.backgroundImage = 'none';
+            DOM.bgImg.value = '';
+        }
+
+        // 탭 전환 로직
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-page').classList.add('active');
+
+            if(tabName === 'archive') loadGallery();
+        }
+
+        /* -------------------------------------------------------------
+           2. 모달 및 토스트(Toast) 팝업 로직
+        ------------------------------------------------------------- */
+        function openModal() {
+            document.getElementById('modal-tags').value = '';
+            document.getElementById('modal-memo').value = '';
+            document.getElementById('save-modal').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('save-modal').style.display = 'none';
+        }
+        
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            // 2초 후 자동 숨김
+            toastTimeout = setTimeout(() => hideToast(), 2000);
+        }
+        function hideToast() {
+            document.getElementById('toast').classList.remove('show');
+        }
+
+        // 다운로드
+        function downloadCard() {
+            html2canvas(DOM.preview, { scale: 2, useCORS: true }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `archive_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        /* -------------------------------------------------------------
+           3. IndexedDB 대용량 로컬 스토리지 로직
+        ------------------------------------------------------------- */
+        let db;
+        const dbName = "AIArchiveDB";
+        const request = indexedDB.open(dbName, 1);
+
+        request.onupgradeneeded = function(e) {
+            db = e.target.result;
+            // 데이터를 담을 'cards' 스토어 생성
+            if (!db.objectStoreNames.contains('cards')) {
+                db.createObjectStore('cards', { keyPath: 'id' });
+            }
+        };
+
+        request.onsuccess = function(e) {
+            db = e.target.result;
+        };
+
+        function saveToIndexedDB() {
+            const tags = document.getElementById('modal-tags').value;
+            const memo = document.getElementById('modal-memo').value;
+
+            html2canvas(DOM.preview, { scale: 1, useCORS: true }).then(canvas => {
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                const newItem = {
+                    id: Date.now(),
+                    image: imageData,
+                    tags: tags,
+                    memo: memo
+                };
+
+                const transaction = db.transaction(['cards'], 'readwrite');
+                const store = transaction.objectStore('cards');
+                store.add(newItem);
+
+                transaction.oncomplete = function() {
+                    closeModal();
+                    showToast('아카이브에 저장되었습니다!');
+                };
+            });
+        }
+
+        function loadGallery() {
+            if(!db) return;
+            const grid = document.getElementById('gallery-grid');
+            const searchKeyword = document.getElementById('search-input').value.toLowerCase();
+            const sortOrder = document.getElementById('sort-select').value;
+            grid.innerHTML = ''; 
+
+            const transaction = db.transaction(['cards'], 'readonly');
+            const store = transaction.objectStore('cards');
+            const request = store.getAll();
+
+            request.onsuccess = function(e) {
+                let album = e.target.result;
+
+                // 검색 필터링
+                if (searchKeyword) {
+                    album = album.filter(item => 
+                        (item.tags && item.tags.toLowerCase().includes(searchKeyword)) || 
+                        (item.memo && item.memo.toLowerCase().includes(searchKeyword))
+                    );
+                }
+
+                // 정렬
+                album.sort((a, b) => sortOrder === 'asc' ? a.id - b.id : b.id - a.id);
+
+                if(album.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-sub);">저장된 기록이 없습니다.</p>';
+                    return;
+                }
+
+                album.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'gallery-item';
+                    
+                    div.innerHTML = `
+                        <img src="${item.image}" alt="Archive Card">
+                        <div class="item-info">
+                            <div class="item-tags">${item.tags}</div>
+                            <div class="item-memo">${item.memo}</div>
+                            <button class="delete-btn" onclick="deleteFromIndexedDB(${item.id})">삭제</button>
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                });
+            };
+        }
+
+        function deleteFromIndexedDB(id) {
+            if(confirm('이 기록을 삭제하시겠습니까?')) {
+                const transaction = db.transaction(['cards'], 'readwrite');
+                const store = transaction.objectStore('cards');
+                store.delete(id);
+                transaction.oncomplete = () => loadGallery();
+            }
+        }
+    </script>
+</body>
+</html>
