@@ -731,12 +731,14 @@
                 contentWrapper.style.fontFamily = '';
                 contentWrapper.style.color = '';
                 DOM.pText.style.fontSize = '';
-                DOM.preview.style.padding = '0px'; // 캔버스 가장자리까지 꽉 차게
-                DOM.pText.style.lineHeight = '';
-                DOM.pText.style.textAlign = '';
+                DOM.preview.style.padding = '0px';
+                DOM.pText.style.lineHeight = 'normal'; // 기본 줄간격으로 초기화
+                DOM.pText.style.textAlign = 'initial'; // CSS에 강제된 가운데 정렬 해제
+                DOM.pText.style.all = 'initial'; // 기타 모든 발췌기 스타일 방어
+                DOM.pText.style.display = 'block'; // 초기화 후 블록 요소 속성 복구
                 
-                // 줄바꿈 치환: HTML 코드 작성 편의를 위해 줄바꿈은 <br>로 치환 (완전 쌩 코드를 원하면 제외 가능)
-                DOM.pText.innerHTML = DOM.text.value.replace(/\n/g, '<br>');
+                // 💡 핵심 수정: HTML 모드일 때는 줄바꿈 치환(<br>)을 절대 하지 않고 원본 그대로 렌더링합니다!
+                DOM.pText.innerHTML = DOM.text.value;
             } else {
                 // 텍스트 모드: 좌측 패널 스타일 적용
                 contentWrapper.style.fontFamily = currentFontVal;
