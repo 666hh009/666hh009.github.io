@@ -4,175 +4,424 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 대화 아카이브</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+KR:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+
     <style>
         :root {
-            --bg-main: #ffffff;
-            --bg-sub: #fafafa;
-            --border-color: #eaeaea;
-            --text-main: #222222;
-            --text-sub: #777777;
-            --accent: #000000;
+            --paper: #ffffff;
+            --paper-soft: #faf9f6;
+            --paper-muted: #f2f0ea;
+            --ink: #1c1b1a;
+            --ink-soft: #86807a;
+            --ink-faint: #c9c3b8;
+            --line: #e6e2d8;
+            --line-soft: #efece4;
+            --danger: #b1484a;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --shadow-soft: 0 1px 2px rgba(28,27,26,0.04), 0 10px 28px rgba(28,27,26,0.07);
+            --shadow-float: 0 4px 16px rgba(28,27,26,0.12), 0 1px 3px rgba(28,27,26,0.05);
         }
-        
+
         * { box-sizing: border-box; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-main);
+            background-color: var(--paper-soft); 
+            color: var(--ink);
             margin: 0;
             height: 100vh;
             display: flex;
-            flex-direction: column;
-            overflow: hidden; 
+            justify-content: center; 
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
         }
 
-        header {
+        .app-container {
+            width: 100%;
+            max-width: 1350px; 
+            height: 100vh;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 40px;
-            height: 60px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .logo { font-weight: bold; font-size: 1.2rem; }
-        .nav-tabs { display: flex; gap: 20px; }
-        .tab-btn {
-            background: none; border: none; font-size: 1rem;
-            color: var(--text-sub); cursor: pointer; padding: 10px 5px;
-            font-family: inherit; transition: color 0.2s;
-        }
-        .tab-btn.active {
-            color: var(--accent); font-weight: bold;
-            border-bottom: 2px solid var(--accent);
+            flex-direction: column;
+            background: var(--paper);
+            box-shadow: 0 0 40px rgba(0,0,0,0.03);
+            overflow: hidden;
         }
 
-        main { flex: 1; position: relative; }
+        /* =========================================
+           헤더 
+        ========================================= */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 32px; height: 64px; border-bottom: 1px solid var(--line);
+            flex-shrink: 0; background: var(--paper);
+        }
+        .brand { display: flex; align-items: center; }
+        .brand-mark { color: var(--ink); flex-shrink: 0; }
+
+        .nav-tabs { display: flex; gap: 30px; height: 100%; }
+        .tab-btn {
+            background: none; border: none; font-size: 0.88rem; color: var(--ink-soft);
+            cursor: pointer; padding: 0; font-family: inherit; font-weight: 500;
+            position: relative; height: 100%; display: flex; align-items: center;
+            transition: color 0.15s;
+        }
+        .tab-btn::after {
+            content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+            background: var(--ink); transform: scaleX(0); transition: transform 0.2s ease;
+        }
+        .tab-btn:hover { color: var(--ink); }
+        .tab-btn.active { color: var(--ink); font-weight: 700; }
+        .tab-btn.active::after { transform: scaleX(1); }
+
+        main { flex: 1; position: relative; min-height: 0; }
         .page-section {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            display: none; padding: 20px 40px;
+            display: none; padding: 22px 32px;
         }
-        .page-section.active { display: flex; gap: 40px; }
+        .page-section.active { display: flex; gap: 24px; } 
 
-        /* [발췌기] 컨트롤 패널 */
-        .controls {
-            width: 380px;
-            background: var(--bg-sub);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex; flex-direction: column; gap: 18px;
+        /* =========================================
+           공통 폼 요소 및 레이아웃
+        ========================================= */
+        .control-group label {
+            display: block; font-size: 0.74rem; margin-bottom: 6px; color: var(--ink-soft); font-weight: 500;
         }
-        .control-group label { display: block; font-size: 0.8rem; margin-bottom: 6px; color: var(--text-sub); }
-        .flex-group { display: flex; gap: 10px; align-items: center; }
-        .flex-group > div { flex: 1; }
-        
-        input[type="text"], input[type="number"], textarea, select {
-            width: 100%; padding: 8px; border: 1px solid var(--border-color);
-            border-radius: 4px; font-family: inherit; font-size: 0.9rem;
-            background: var(--bg-main);
+        .flex-group { display: flex; gap: 12px; align-items: flex-start; width: 100%; }
+        .flex-group > div { flex: 1; min-width: 0; }
+
+        input[type="text"], textarea, select {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--line);
+            border-radius: var(--radius-sm); font-family: inherit; font-size: 0.85rem;
+            background: var(--paper); color: var(--ink); transition: border-color 0.15s;
         }
-        
-        /* 텍스트 영역 높이 1/3 수준으로 확장 */
-        textarea { resize: vertical; height: 220px; }
-        
-        input[type="color"] { width: 100%; height: 36px; padding: 0; border: none; cursor: pointer; }
-        
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none; border-color: var(--ink);
+        }
+        textarea { resize: vertical; }
+
+        /* 좌우 버튼 스핀 컨트롤 */
+        .num-ctrl {
+            display: flex; align-items: center; border: 1px solid var(--line);
+            border-radius: var(--radius-sm); background: var(--paper); overflow: hidden;
+            height: 34px; transition: border-color 0.15s;
+        }
+        .num-ctrl:focus-within { border-color: var(--ink); }
+        .num-ctrl button {
+            background: var(--paper-soft); border: none; padding: 0 10px; cursor: pointer;
+            color: var(--ink-soft); font-size: 1.1rem; height: 100%;
+            display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+        }
+        .num-ctrl button:hover { background: var(--line-soft); color: var(--ink); }
+        .num-ctrl input {
+            border: none; text-align: center; border-radius: 0; flex: 1; min-width: 0;
+            padding: 0; height: 100%; font-family: inherit; font-size: 0.85rem; color: var(--ink);
+        }
+        .num-ctrl input:focus { outline: none; }
+        .num-ctrl input::-webkit-outer-spin-button, .num-ctrl input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        select {
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2386807a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 11px;
+            padding-right: 28px; cursor: pointer; height: 34px;
+        }
+
+        .custom-font-picker {
+            position: relative; width: 100%; font-size: 0.85rem; outline: none;
+        }
+        .picker-trigger {
+            border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 7px 10px;
+            background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2386807a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+            background-size: 11px; cursor: pointer; height: 34px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            padding-right: 28px;
+        }
+        .picker-options {
+            position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px;
+            background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-float); z-index: 50; display: none; max-height: 250px; overflow-y: auto;
+        }
+        .picker-options.open { display: block; }
+        .picker-opt { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--line-soft); font-size: 0.95rem; }
+        .picker-opt:last-child { border-bottom: none; }
+        .picker-opt:hover { background: var(--paper-muted); }
+
+        input[type="color"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 34px; padding: 3px; border: 1px solid var(--line);
+            border-radius: var(--radius-sm); cursor: pointer; background: var(--paper);
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+        input[type="range"] { accent-color: var(--ink); cursor: pointer; height: 4px; }
+
+        input[type="file"] { font-size: 0.76rem; color: var(--ink-soft); width: 100%; }
+        input[type="file"]::file-selector-button {
+            background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-sm);
+            padding: 6px 11px; margin-right: 8px; font-family: inherit; font-size: 0.76rem;
+            color: var(--ink); cursor: pointer; transition: all 0.15s; height: 26px;
+        }
+        input[type="file"]::file-selector-button:hover { background: var(--paper-muted); border-color: var(--ink); }
+
         .btn {
-            background: var(--bg-main); border: 1px solid var(--border-color);
-            padding: 8px 12px; border-radius: 4px; cursor: pointer;
-            font-size: 0.9rem; transition: background 0.2s;
+            background: var(--paper); border: 1px solid var(--line);
+            padding: 8px 14px; border-radius: var(--radius-sm); cursor: pointer;
+            font-size: 0.83rem; color: var(--ink); font-family: inherit; font-weight: 500;
+            transition: background 0.15s, border-color 0.15s, color 0.1s, box-shadow 0.15s;
         }
-        .btn:hover { background: var(--border-color); }
-        .btn-primary { background: var(--accent); color: white; border: none; }
-        .btn-primary:hover { background: #333; }
+        .btn:hover { background: var(--paper-muted); border-color: var(--ink-faint); }
+        .btn-primary { background: var(--ink); color: var(--paper); border: 1px solid var(--ink); }
+        .btn-primary:hover { background: #333230; border-color: #333230; }
+        .btn-danger { color: var(--danger); border-color: #e2b4b5; background: #fcf3f3; }
+        .btn-danger:hover { background: #f8ebea; border-color: var(--danger); }
 
-        /* 프리셋 UI */
-        .preset-area {
-            background: var(--bg-main); padding: 12px; border-radius: 6px;
-            border: 1px solid var(--border-color);
-            display: flex; gap: 8px; align-items: center;
+        /* 토글 스위치 디자인 */
+        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--line); transition: .3s; border-radius: 22px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+            background-color: white; transition: .3s; border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        input:checked + .toggle-slider { background-color: var(--ink); }
+        input:checked + .toggle-slider:before { transform: translateX(18px); }
+
+        /* =========================================
+           [발췌기] 컨트롤 패널
+        ========================================= */
+        .controls {
+            flex: 3; min-width: 360px; max-width: 420px; 
+            background: var(--paper-soft); border: 1px solid var(--line);
+            border-radius: var(--radius-md); padding: 4px 26px;
+            display: flex; flex-direction: column;
+            height: 100%; overflow-y: auto;
+        }
+        .ctrl-section { padding: 18px 0; border-bottom: 1px solid var(--line-soft); }
+        .ctrl-section:last-of-type { border-bottom: none; }
+        .ctrl-eyebrow {
+            font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase;
+            color: var(--ink-soft); font-weight: 700; margin-bottom: 12px;
         }
 
-        /* [발췌기] 미리보기 패널 (줌 기능 포함) */
-        .preview-container {
-            flex: 1; display: flex; flex-direction: column; gap: 10px;
+        #input-text { 
+            height: 240px; font-family: 'Noto Serif KR', serif; 
+            font-size: 0.95rem; line-height: 1.6; 
         }
-        .preview-header {
+
+        .preset-row { display: flex; gap: 8px; align-items: stretch; }
+        .preset-slots { display: flex; gap: 6px; flex: 1.5; }
+        .preset-btn {
+            flex: 1; background: transparent; border: 1px solid var(--line);
+            border-radius: var(--radius-sm); color: var(--ink-faint);
+            cursor: pointer; padding: 6px 0; font-size: 0.8rem; font-weight: 700;
+            transition: all 0.2s;
+        }
+        .preset-btn.has-data { border-color: var(--ink-soft); color: var(--ink); background: var(--paper); }
+        .preset-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+        .preset-actions { display: flex; gap: 6px; flex: 1; }
+        .preset-actions .btn { flex: 1; padding: 6px 0; font-size: 0.75rem; }
+
+        /* 접기/펴기 가능한 섹션 */
+        .collapsible-header {
             display: flex; justify-content: space-between; align-items: center;
-            background: var(--bg-sub); padding: 10px 20px; border-radius: 8px;
-            border: 1px solid var(--border-color);
+            cursor: pointer; user-select: none;
         }
-        .preview-area {
-            flex: 1; background: #ebedf0; /* 작업 영역과 구분되도록 약간 회색 */
-            border: 1px solid var(--border-color); border-radius: 8px;
-            overflow: auto; /* 스크롤바 */
-            display: flex; justify-content: center; align-items: center;
-            position: relative;
+        .collapsible-header:hover .ctrl-eyebrow { color: var(--ink); }
+        .collapsible-icon { transition: transform 0.2s ease; color: var(--ink-soft); }
+        .collapsible-content { display: none; margin-top: 10px; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* =========================================
+           [발췌기] 헤더 툴바 & 캔버스 래퍼
+        ========================================= */
+        .preview-container { flex: 7; display: flex; flex-direction: column; min-width: 0; }
+        
+        .preview-toolbar { 
+            display: flex; justify-content: space-between; align-items: flex-end; 
+            padding: 12px 20px; margin-bottom: 16px;
+            background: var(--paper); border: 1px solid var(--line); 
+            border-radius: var(--radius-md); box-shadow: var(--shadow-soft);
+            flex-wrap: wrap; gap: 15px;
         }
         
-        /* 배율이 적용될 래퍼 */
-        #card-preview-wrapper {
-            transition: width 0.1s, height 0.1s;
+        .toolbar-group { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .toolbar-divider { width: 1px; height: 26px; background: var(--line); margin: 0 4px; }
+        .toolbar-item { display: flex; flex-direction: column; gap: 5px; }
+        .toolbar-item label { font-size: 0.68rem; color: var(--ink-soft); font-weight: 700; margin: 0; }
+        .toolbar-item input[type="color"] { width: 44px; height: 26px; padding: 0; }
+        .toolbar-item input[type="file"] { width: 160px; font-size: 0.7rem; padding: 2px; }
+        .toolbar-item input[type="range"] { width: 80px; margin-top: 6px; }
+        .toolbar-item .btn-sm { padding: 4px 10px; font-size: 0.75rem; height: 26px; }
+
+        .bg-drag-active { background: var(--ink) !important; color: var(--paper) !important; border-color: var(--ink) !important; }
+
+        .preview-canvas-wrapper {
+            position: relative; flex: 1; display: flex; flex-direction: column;
+            border: 1px solid var(--line); border-radius: var(--radius-md);
+            overflow: hidden; background-color: var(--paper-muted);
         }
+
+        .floating-zoom {
+            position: absolute; top: 16px; right: 16px; z-index: 100;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px);
+            padding: 8px 14px; border-radius: var(--radius-md); 
+            border: 1px solid var(--line); box-shadow: var(--shadow-float);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .floating-zoom label { font-size: 0.76rem; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; font-weight: 600; margin: 0;}
+        .floating-zoom input[type="range"] { width: 100px; }
+        .zoom-value {
+            font-size: 0.72rem; color: var(--ink); background: var(--paper-muted);
+            padding: 2px 7px; border-radius: 20px; min-width: 42px; text-align: center; font-weight: 600;
+        }
+
+        .floating-actions {
+            position: absolute; bottom: 20px; right: 20px; z-index: 100; display: flex; gap: 12px;
+        }
+        .floating-actions .btn {
+            box-shadow: var(--shadow-float); padding: 12px 18px; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 6px; border-radius: var(--radius-md);
+        }
+        .floating-actions .btn svg { vertical-align: middle; }
+
+        .preview-area {
+            flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center; 
+            background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 20px 20px;
+        }
+        
+        #card-preview-wrapper { transition: width 0.1s, height 0.1s; }
         
         #card-preview {
             background-color: #ffffff;
-            background-size: cover; background-position: center;
-            display: flex; flex-direction: column; justify-content: center;
-            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transform-origin: top left; /* 배율 축소/확대 기준점 */
+            display: flex; flex-direction: column; justify-content: center; position: relative;
+            box-shadow: 0 22px 44px rgba(28,27,26,0.16), 0 3px 10px rgba(28,27,26,0.08);
+            transform-origin: top left; overflow: hidden; 
         }
-        #card-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
+        
+        #card-bg-layer {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0;
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            transform-origin: center center;
         }
-        .card-content { position: relative; z-index: 2; width: 100%; }
-        #preview-text { text-align: center; word-break: keep-all; width: 100%; }
 
-        /* [아카이브] 레이아웃 */
+        #card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none;}
+        .card-content { position: relative; z-index: 2; width: 100%; pointer-events: none; }
+        #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
+
+        /* =========================================
+           [아카이브] 앨범형 UI
+        ========================================= */
         #archive-page { flex-direction: column; overflow-y: auto; }
-        .archive-header { display: flex; gap: 10px; margin-bottom: 20px; }
+        .archive-header { display: flex; gap: 12px; margin-bottom: 22px; align-items: center; }
+        .search-wrap { position: relative; max-width: 320px; flex: 1; min-width: 200px; }
+        .search-wrap svg {
+            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            color: var(--ink-soft); pointer-events: none;
+        }
+        .search-wrap input { padding-left: 34px; }
+
         #gallery-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;
-        }
-        .gallery-item {
-            border: 1px solid var(--border-color); border-radius: 8px;
-            overflow: hidden; background: var(--bg-main);
-        }
-        .gallery-item img { width: 100%; display: block; object-fit: contain; background: #f0f0f0; }
-        .item-info { padding: 12px; font-size: 0.85rem; }
-        .item-tags { font-weight: bold; margin-bottom: 4px; }
-        .delete-btn {
-            background: none; border: none; color: #ff4d4d;
-            cursor: pointer; padding: 0; font-size: 0.8rem; margin-top: 8px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px; padding-bottom: 40px;
         }
 
-        /* 모달 & 토스트 */
+        .gallery-item {
+            position: relative; border-radius: var(--radius-md); overflow: hidden;
+            background: var(--paper); border: 1px solid var(--line);
+            aspect-ratio: 1 / 1; box-shadow: var(--shadow-soft);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .gallery-item:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(28,27,26,0.14); }
+        .gallery-item > img {
+            width: 100%; height: 100%; object-fit: contain; background: var(--paper-muted);
+            padding: 10px; box-sizing: border-box; display: block;
+        }
+
+        .item-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(20, 19, 18, 0.92); color: var(--paper);
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 18px; opacity: 0; visibility: hidden; transition: opacity 0.2s ease; z-index: 10;
+        }
+        .gallery-item:hover .item-overlay { opacity: 1; visibility: visible; }
+
+        .overlay-info { overflow-y: auto; }
+        .overlay-tags { display: flex; flex-wrap: wrap; margin-bottom: 10px; }
+        .tag-chip {
+            display: inline-block; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
+            color: #e6e1d6; font-size: 0.68rem; padding: 3px 9px; border-radius: 20px; margin: 0 5px 5px 0;
+        }
+        .tag-chip-empty { opacity: 0.5; border-style: dashed; }
+        .overlay-memo {
+            font-family: 'Noto Serif KR', serif; font-size: 0.86rem; line-height: 1.55; color: #f1ede4; white-space: pre-wrap;
+        }
+
+        .overlay-actions { display: flex; gap: 6px; margin-top: 14px; }
+        .overlay-actions button {
+            flex: 1; padding: 8px 0; font-size: 0.78rem; font-weight: 600;
+            border-radius: var(--radius-sm); cursor: pointer; border: none; transition: background 0.15s; font-family: inherit;
+        }
+        .btn-overlay-save { background: rgba(255,255,255,0.14); color: var(--paper); }
+        .btn-overlay-save:hover { background: rgba(255,255,255,0.26); }
+        .btn-overlay-edit { background: var(--paper); color: var(--ink); }
+        .btn-overlay-edit:hover { background: #e9e5da; }
+        .btn-overlay-delete { background: var(--danger); color: var(--paper); }
+        .btn-overlay-delete:hover { background: #98393b; }
+
+        .empty-state {
+            grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 90px 20px; gap: 6px; color: var(--ink-soft); text-align: center;
+        }
+        .empty-state svg { color: var(--ink-faint); margin-bottom: 6px; }
+        .empty-state p { margin: 0; font-size: 0.95rem; color: var(--ink); font-weight: 600; }
+
+        /* =========================================
+           모달 & 토스트
+        ========================================= */
         #save-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center;
+            background: rgba(28,27,26,0.35); backdrop-filter: blur(2px); z-index: 1000; justify-content: center; align-items: center;
         }
         .modal-content {
-            background: var(--bg-main); padding: 30px; border-radius: 8px;
-            width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: var(--paper); padding: 28px 26px; border-radius: var(--radius-md);
+            width: 380px; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(28,27,26,0.2);
         }
+        .modal-content h3 { margin: 0 0 4px; font-family: 'Noto Serif KR', serif; font-size: 1.1rem; font-weight: 700; }
+        .modal-content .modal-hint { font-size: 0.78rem; color: var(--ink-soft); margin: 0 0 18px; }
+        .modal-content .control-group { margin-bottom: 14px; }
+        .modal-content #modal-memo { height: 84px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+        .modal-actions .btn { flex: 1; padding: 10px; }
+
         #toast {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: var(--accent); color: white; padding: 12px 24px;
-            border-radius: 30px; font-size: 0.9rem;
-            opacity: 0; visibility: hidden; transition: opacity 0.2s;
-            z-index: 2000; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: var(--ink); color: var(--paper); padding: 12px 24px; border-radius: 30px;
+            font-size: 0.85rem; box-shadow: 0 10px 28px rgba(28,27,26,0.25);
+            opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 2000; cursor: pointer;
         }
         #toast.show { opacity: 1; visibility: visible; }
     </style>
 </head>
 <body>
 
+<div class="app-container">
     <header>
-        <div class="logo">Archive.app</div>
+        <div class="brand">
+            <svg class="brand-mark" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 8c0-2.2-1.8-4-4-4S2 5.8 2 8c0 2.1 1.2 3.8 3.1 4.6l-1.3 3.4h2.9l1.4-3.6C9.3 11.5 10 9.8 10 8zm12 0c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 2.1 1.2 3.8 3.1 4.6l-1.3 3.4h2.9l1.4-3.6c1.2-0.9 1.9-2.6 1.9-4.4z"/>
+            </svg>
+        </div>
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('extractor')">발췌기</button>
             <button class="tab-btn" onclick="switchTab('archive')">아카이브</button>
@@ -182,151 +431,272 @@
     <main>
         <div id="extractor-page" class="page-section active">
             <div class="controls">
-                
-                <div class="preset-area">
-                    <label style="margin:0; width: 60px;">프리셋</label>
-                    <select id="preset-slot" style="flex: 1;">
-                        <option value="1">슬롯 1</option>
-                        <option value="2">슬롯 2</option>
-                        <option value="3">슬롯 3</option>
-                    </select>
-                    <button class="btn" onclick="savePreset()">저장</button>
-                    <button class="btn btn-primary" onclick="loadPreset()">적용</button>
+
+                <div class="ctrl-section" style="padding-top: 10px; border-bottom: none; padding-bottom: 0;">
+                    <textarea id="input-text" placeholder="대화 내용을 입력하세요...">어느 따스한 봄날 오후였다.
+비에르고스는 밭에 앉아 졸고 있었다. 햇살이 그의 주름진 얼굴을 비췄다.
+
+그는 꿈을 꾸었다.
+잿빛 평야가 아닌, 황금빛 밀밭을 걷는 꿈을.
+저 멀리서 보랏빛 머리카락을 가진 여자가 손을 흔들고 있었다. 그녀는 젊고, 건강하고, 웃고 있었다.
+
+비에르고스는 자리에서 일어났다. 몸이 가벼웠다.
+관절의 통증도, 심장의 무거움도 없었다.
+그는 걸었다. 그녀를 향해.
+그의 뒤로, 늙은 육신이 고요히 고개를 떨구었다.</textarea>
                 </div>
 
-                <div class="control-group">
-                    <label>대화 내용 (HTML 허용)</label>
-                    <textarea id="input-text">금목서 향기가 짙게 배어나는 골목이었다.</textarea>
-                </div>
-                
-                <div class="control-group flex-group">
-                    <div>
-                        <label>가로 크기 (px)</label>
-                        <input type="number" id="card-width" value="1000">
-                    </div>
-                    <div>
-                        <label>세로 크기 (px)</label>
-                        <input type="number" id="card-height" value="1000">
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>배경 이미지</label>
-                    <div class="flex-group">
-                        <input type="file" id="input-bg" accept="image/*" style="padding: 4px;">
-                        <button class="btn" onclick="removeBgImage()" style="white-space: nowrap;">이미지 삭제</button>
-                    </div>
-                </div>
-                
-                <div class="control-group flex-group">
-                    <div>
-                        <label>단색 배경 색상</label>
-                        <input type="color" id="bg-color" value="#ffffff">
-                    </div>
-                    <div>
-                        <label>이미지 어둡기 (Dim)</label>
-                        <input type="range" id="input-dim" min="0" max="0.9" step="0.1" value="0">
+                <div class="ctrl-section">
+                    <div class="ctrl-eyebrow" style="margin-bottom: 8px;">프리셋 슬롯</div>
+                    <div class="preset-row">
+                        <div class="preset-slots">
+                            <button class="preset-btn active" data-slot="1" onclick="selectPresetSlot('1')">1</button>
+                            <button class="preset-btn" data-slot="2" onclick="selectPresetSlot('2')">2</button>
+                            <button class="preset-btn" data-slot="3" onclick="selectPresetSlot('3')">3</button>
+                        </div>
+                        <div class="preset-actions">
+                            <button class="btn" onclick="savePreset()">저장</button>
+                            <button class="btn btn-primary" onclick="loadPreset()">적용</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label>폰트 설정</label>
-                    <select id="input-font" style="margin-bottom: 8px;">
-                        <option value="'Noto Serif KR', serif">명조체</option>
-                        <option value="'Noto Sans KR', sans-serif">고딕체</option>
-                        <option value="'Gowun Dodum', sans-serif">고운돋움</option>
-                    </select>
-                    <div class="flex-group">
-                        <input type="file" id="input-custom-font" accept=".ttf,.otf,.woff,.woff2" style="padding: 4px;">
-                        <div style="font-size: 0.75rem; color: #777; white-space: nowrap;">내 폰트 업로드</div>
+                <div class="ctrl-section">
+                    <div class="ctrl-eyebrow">타이포그래피</div>
+                    
+                    <div class="flex-group" style="margin-bottom: 12px;">
+                        <div class="control-group" style="margin:0; flex: 1.4;">
+                            <label>폰트 설정</label>
+                            <div class="custom-font-picker" id="font-picker-wrapper">
+                                <div class="picker-trigger" id="font-picker-trigger" style="font-family: 'Noto Serif KR', serif;">명조체</div>
+                                <div class="picker-options" id="font-picker-options">
+                                    <div class="picker-opt" data-val="'Noto Serif KR', serif" style="font-family: 'Noto Serif KR', serif">명조체</div>
+                                    <div class="picker-opt" data-val="'Noto Sans KR', sans-serif" style="font-family: 'Noto Sans KR', sans-serif">고딕체</div>
+                                    <div class="picker-opt" data-val="'Gowun Dodum', sans-serif" style="font-family: 'Gowun Dodum', sans-serif">고운돋움</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin:0; flex: 1;">
+                            <label>내 폰트</label>
+                            <input type="file" id="input-custom-font" accept=".ttf,.otf,.woff">
+                        </div>
                     </div>
-                </div>
 
-                <div class="control-group flex-group">
-                    <div>
-                        <label>글자 색상</label>
-                        <input type="color" id="input-color" value="#222222">
-                    </div>
-                    <div>
-                        <label>글자 크기 (px)</label>
-                        <input type="number" id="input-size" value="40">
-                    </div>
-                </div>
-
-                <div class="control-group flex-group">
-                    <div>
-                        <label>내부 여백 (px)</label>
-                        <input type="number" id="input-padding" value="60">
-                    </div>
-                    <div>
-                        <label>줄 간격</label>
-                        <input type="number" id="input-lineheight" value="1.6" step="0.1">
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>정렬</label>
-                    <select id="input-align">
-                        <option value="center">가운데</option>
-                        <option value="left">왼쪽</option>
-                        <option value="right">오른쪽</option>
-                    </select>
-                </div>
-
-                <div style="margin-top: auto; display: flex; gap: 10px;">
-                    <button class="btn" onclick="downloadCard()" style="flex: 1; padding: 12px;">다운로드</button>
-                    <button class="btn btn-primary" onclick="openModal()" style="flex: 1; padding: 12px;">아카이브 저장</button>
-                </div>
-            </div>
-
-            <div class="preview-container">
-                <div class="preview-header">
-                    <span style="font-weight: bold; font-size: 0.9rem;">미리보기 창</span>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <label style="font-size: 0.8rem;">배율 <span id="scale-value">50%</span></label>
-                        <input type="range" id="preview-scale" min="0.1" max="2.0" step="0.05" value="0.5" style="width: 150px;">
-                    </div>
-                </div>
-                
-                <div class="preview-area" id="preview-scroll-area">
-                    <div id="card-preview-wrapper">
-                        <div id="card-preview">
-                            <div id="card-overlay"></div>
-                            <div class="card-content">
-                                <div id="preview-text">금목서 향기가 짙게 배어나는 골목이었다.</div>
+                    <div class="flex-group" style="margin-bottom: 12px;">
+                        <div class="control-group" style="margin:0;">
+                            <label>글자 색상</label>
+                            <input type="color" id="input-color" value="#222222">
+                        </div>
+                        <div class="control-group" style="margin:0;">
+                            <label>글자 크기 (px)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('input-size', -1, 1)">-</button>
+                                <input type="number" id="input-size" value="40">
+                                <button type="button" onclick="adjustNum('input-size', 1, 1)">+</button>
                             </div>
                         </div>
                     </div>
+
+                    <div class="flex-group" style="margin-bottom: 12px;">
+                        <div class="control-group" style="margin:0;">
+                            <label>줄 간격</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('input-lineheight', -1, 0.1)">-</button>
+                                <input type="number" id="input-lineheight" value="1.6" step="0.1">
+                                <button type="button" onclick="adjustNum('input-lineheight', 1, 0.1)">+</button>
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin:0;">
+                            <label>문단 간격 (px)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('input-para-gap', -1, 5)">-</button>
+                                <input type="number" id="input-para-gap" value="30" step="5">
+                                <button type="button" onclick="adjustNum('input-para-gap', 1, 5)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-group">
+                        <div class="control-group" style="margin:0;">
+                            <label>내부 여백 (px)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('input-padding', -1, 5)">-</button>
+                                <input type="number" id="input-padding" value="60">
+                                <button type="button" onclick="adjustNum('input-padding', 1, 5)">+</button>
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin:0;">
+                            <label>정렬</label>
+                            <select id="input-align">
+                                <option value="center">가운데</option><option value="left">왼쪽</option><option value="right">오른쪽</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ctrl-section">
+                    <div class="collapsible-header" onclick="toggleSection(this)">
+                        <div class="ctrl-eyebrow" style="margin:0;">추가 기능</div>
+                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                    <div class="collapsible-content">
+                        
+                        <div class="control-group" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <label style="margin-bottom: 2px; font-size: 0.78rem; color: var(--ink);">HTML 뷰어 모드</label>
+                                    <span style="font-size: 0.7rem; color: var(--ink-soft);">스타일 간섭을 끄고 태그를 렌더링합니다.</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="html-mode-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group" style="margin:0;">
+                            <label style="margin-bottom: 8px;">텍스트 입력창에서 글자를 드래그한 후 칠하기를 누르세요.</label>
+                            <div class="flex-group" style="align-items: center; gap: 8px;">
+                                <input type="color" id="hl-color" value="#a3e635" style="width: 40px; padding: 0; flex: none;">
+                                <input type="range" id="hl-opacity" min="0.1" max="1.0" step="0.1" value="0.5" style="flex: 1; min-width: 60px;">
+                                <button class="btn btn-sm" onclick="applyHighlight()" style="white-space: nowrap;">칠하기</button>
+                                <button class="btn btn-sm btn-danger" onclick="clearHighlights()" style="white-space: nowrap;">형광펜 삭제</button>
+                            </div>
+                        </div>
+                        
+                        <div class="control-group" style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line);">
+                            <button class="btn btn-danger" onclick="resetAllSettings()" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                전체 설정 초기화
+                            </button>
+                            <p style="font-size: 0.7rem; color: var(--ink-soft); text-align: center; margin-top: 8px; margin-bottom: 0;">작성한 대화 내용은 지워지지 않습니다.</p>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="preview-container">
+                
+                <div class="preview-toolbar">
+                    <div class="toolbar-group" style="flex:1;">
+                        
+                        <div class="toolbar-item">
+                            <label>가로 (px)</label>
+                            <div class="num-ctrl" style="height: 26px;">
+                                <button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">-</button>
+                                <input type="number" id="card-width" value="1000" style="width: 45px;">
+                                <button type="button" onclick="adjustNum('card-width', 1, 50)" style="padding:0 6px;">+</button>
+                            </div>
+                        </div>
+                        <div class="toolbar-item">
+                            <label>세로 (px)</label>
+                            <div class="num-ctrl" style="height: 26px;">
+                                <button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">-</button>
+                                <input type="number" id="card-height" value="1000" style="width: 45px;">
+                                <button type="button" onclick="adjustNum('card-height', 1, 50)" style="padding:0 6px;">+</button>
+                            </div>
+                        </div>
+                        <div class="toolbar-item">
+                            <label>단색 배경</label>
+                            <input type="color" id="bg-color" value="#ffffff">
+                        </div>
+                        
+                        <div class="toolbar-divider"></div>
+                        
+                        <div class="toolbar-item">
+                            <label>배경 이미지</label>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <input type="file" id="input-bg" accept="image/*">
+                                <button class="btn btn-sm" onclick="removeBgImage()">삭제</button>
+                            </div>
+                        </div>
+                        
+                        <div class="toolbar-divider"></div>
+                        
+                        <div class="toolbar-item">
+                            <label>어둡기 (Dim)</label>
+                            <input type="range" id="input-dim" min="0" max="0.9" step="0.1" value="0" style="width: 80px;">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-left: auto; align-self: flex-end;">
+                        <button class="btn btn-sm" id="btn-bg-drag" onclick="toggleBgDrag()" style="height: 26px; display: flex; align-items: center; gap: 4px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                            이동 토글
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preview-canvas-wrapper">
+                    
+                    <div class="floating-zoom">
+                        <label>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            배율
+                        </label>
+                        <input type="range" id="preview-scale" min="0.1" max="2.0" step="0.05" value="0.5">
+                        <span class="zoom-value" id="scale-value">50%</span>
+                    </div>
+
+                    <div class="floating-actions">
+                        <button class="btn" onclick="downloadCard()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            다운로드
+                        </button>
+                        <button class="btn btn-primary" onclick="openModal()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                            아카이브 저장
+                        </button>
+                    </div>
+
+                    <div class="preview-area" id="preview-scroll-area">
+                        <div id="card-preview-wrapper">
+                            <div id="card-preview">
+                                <div id="card-bg-layer"></div>
+                                <div id="card-overlay"></div>
+                                <div class="card-content">
+                                    <div id="preview-text">금목서 향기가 짙게 배어나는 골목이었다.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
 
         <div id="archive-page" class="page-section">
             <div class="archive-header">
-                <input type="text" id="search-input" placeholder="태그/메모 검색..." oninput="loadGallery()" style="max-width: 300px;">
-                <select id="sort-select" onchange="loadGallery()" style="max-width: 150px;">
-                    <option value="desc">최신순</option>
-                    <option value="asc">오래된순</option>
+                <div class="search-wrap">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="search-input" placeholder="태그 · 메모 검색" oninput="loadGallery()">
+                </div>
+                <select id="sort-select" onchange="loadGallery()">
+                    <option value="desc">최신순</option><option value="asc">오래된순</option>
                 </select>
             </div>
             <div id="gallery-grid"></div>
         </div>
     </main>
+</div> 
 
     <div id="save-modal">
         <div class="modal-content">
-            <h3 style="margin-top:0;">아카이브에 저장</h3>
+            <h3>아카이브에 저장</h3>
+            <p class="modal-hint">텍스트, 배경, 폰트 등 현재 설정값이 함께 저장됩니다.</p>
             <div class="control-group">
-                <label>태그 (쉼표 구분)</label>
+                <label>태그 (쉼표로 구분)</label>
                 <input type="text" id="modal-tags" placeholder="#태그입력">
             </div>
             <div class="control-group">
                 <label>메모</label>
-                <textarea id="modal-memo" style="height: 100px;"></textarea>
+                <textarea id="modal-memo"></textarea>
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="saveToIndexedDB()" style="flex:1;">저장</button>
-                <button class="btn" onclick="closeModal()" style="flex:1;">취소</button>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="saveToIndexedDB()">저장</button>
+                <button class="btn" onclick="closeModal()">취소</button>
             </div>
         </div>
     </div>
@@ -334,178 +704,403 @@
     <div id="toast" onclick="hideToast()">알림 메시지</div>
 
     <script>
-        /* -------------------------------------------------------------
-           1. DOM 요소 및 초기 설정
-        ------------------------------------------------------------- */
+        let currentFontVal = "'Noto Serif KR', serif";
+        let currentBgImageDataUrl = '';
+        let currentActiveSlot = '1'; 
+        
+        let isBgDragMode = false;
+        let isDraggingBg = false;
+        let bgScale = 1.0;
+        let bgOffsetX = 0;
+        let bgOffsetY = 0;
+        let startMouseX = 0;
+        let startMouseY = 0;
+
         const DOM = {
-            text: document.getElementById('input-text'),
-            width: document.getElementById('card-width'),
-            height: document.getElementById('card-height'),
-            bgImg: document.getElementById('input-bg'),
-            bgColor: document.getElementById('bg-color'),
-            dim: document.getElementById('input-dim'),
-            font: document.getElementById('input-font'),
-            customFont: document.getElementById('input-custom-font'),
-            color: document.getElementById('input-color'),
-            size: document.getElementById('input-size'),
-            pad: document.getElementById('input-padding'),
-            lh: document.getElementById('input-lineheight'),
-            align: document.getElementById('input-align'),
-            
-            preview: document.getElementById('card-preview'),
-            previewWrapper: document.getElementById('card-preview-wrapper'),
-            overlay: document.getElementById('card-overlay'),
-            pText: document.getElementById('preview-text'),
-            scale: document.getElementById('preview-scale'),
-            scaleVal: document.getElementById('scale-value'),
-            scrollArea: document.getElementById('preview-scroll-area')
+            text: document.getElementById('input-text'), width: document.getElementById('card-width'), height: document.getElementById('card-height'),
+            bgImg: document.getElementById('input-bg'), bgColor: document.getElementById('bg-color'), dim: document.getElementById('input-dim'),
+            customFont: document.getElementById('input-custom-font'), color: document.getElementById('input-color'),
+            size: document.getElementById('input-size'), pad: document.getElementById('input-padding'), lh: document.getElementById('input-lineheight'), align: document.getElementById('input-align'),
+            paraGap: document.getElementById('input-para-gap'), htmlToggle: document.getElementById('html-mode-toggle'),
+            preview: document.getElementById('card-preview'), bgLayer: document.getElementById('card-bg-layer'),
+            previewWrapper: document.getElementById('card-preview-wrapper'), overlay: document.getElementById('card-overlay'),
+            pText: document.getElementById('preview-text'), scale: document.getElementById('preview-scale'), scaleVal: document.getElementById('scale-value'), scrollArea: document.getElementById('preview-scroll-area')
         };
 
-        // UI 갱신 통합 함수
+        // UI 렌더링 (HTML 뷰어 모드 분기 처리 포함)
         function updateUI() {
             DOM.preview.style.width = DOM.width.value + 'px';
             DOM.preview.style.height = DOM.height.value + 'px';
             DOM.preview.style.backgroundColor = DOM.bgColor.value;
             DOM.overlay.style.background = `rgba(0, 0, 0, ${DOM.dim.value})`;
-            document.querySelector('.card-content').style.fontFamily = DOM.font.value;
-            document.querySelector('.card-content').style.color = DOM.color.value;
-            DOM.pText.style.fontSize = DOM.size.value + 'px';
-            DOM.preview.style.padding = DOM.pad.value + 'px';
-            DOM.pText.style.lineHeight = DOM.lh.value;
-            DOM.pText.style.textAlign = DOM.align.value;
-            DOM.pText.innerHTML = DOM.text.value;
             
-            updateScale(); // 줌 배율 적용
+            const isHtmlMode = DOM.htmlToggle.checked;
+            const contentWrapper = document.querySelector('.card-content');
+            
+            if (isHtmlMode) {
+                // HTML 뷰어 모드: 발췌기 인라인 스타일 간섭 완전 제거
+                contentWrapper.style.fontFamily = '';
+                contentWrapper.style.color = '';
+                DOM.pText.style.fontSize = '';
+                DOM.preview.style.padding = '0px'; // 캔버스 가장자리까지 꽉 차게
+                DOM.pText.style.lineHeight = '';
+                DOM.pText.style.textAlign = '';
+                
+                // 줄바꿈 치환 없이 원문 그대로 렌더링
+                DOM.pText.innerHTML = DOM.text.value;
+            } else {
+                // 텍스트 모드: 좌측 패널 스타일 복구 및 적용
+                contentWrapper.style.fontFamily = currentFontVal;
+                contentWrapper.style.color = DOM.color.value;
+                DOM.pText.style.fontSize = DOM.size.value + 'px';
+                DOM.preview.style.padding = DOM.pad.value + 'px';
+                DOM.pText.style.lineHeight = DOM.lh.value;
+                DOM.pText.style.textAlign = DOM.align.value;
+                
+                // 문단 간격 강제 적용
+                const gap = DOM.paraGap.value;
+                const lines = DOM.text.value.split('\n');
+                DOM.pText.innerHTML = lines.map(line => `<div style="margin-bottom: ${gap}px">${line || '<br>'}</div>`).join('');
+            }
+            
+            updateBgLayer();
+            updateScale(); 
         }
 
-        // 이벤트 리스너 연결
-        const inputs = [DOM.text, DOM.width, DOM.height, DOM.bgColor, DOM.dim, DOM.color, DOM.size, DOM.pad, DOM.lh];
+        // HTML 태그 스마트 감지 자동 전환 (mark 태그는 예외 처리)
+        DOM.text.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (!DOM.htmlToggle.checked && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
+                DOM.htmlToggle.checked = true;
+                showToast('HTML 태그가 감지되어 뷰어 모드로 자동 전환되었습니다.');
+            }
+            updateUI();
+        });
+
+        // 전체 설정 초기화 (Reset All)
+        function resetAllSettings() {
+            if (!confirm('모든 설정을 기본값으로 초기화하시겠습니까?\n(입력한 대화 내용은 지워지지 않습니다)')) return;
+            
+            DOM.width.value = 1000;
+            DOM.height.value = 1000;
+            DOM.bgColor.value = '#ffffff';
+            DOM.dim.value = 0;
+            DOM.size.value = 40;
+            DOM.pad.value = 60;
+            DOM.lh.value = 1.6;
+            DOM.paraGap.value = 30;
+            DOM.color.value = '#222222';
+            DOM.align.value = 'center';
+            DOM.htmlToggle.checked = false;
+            
+            removeBgImage(); 
+            
+            currentFontVal = "'Noto Serif KR', serif";
+            const fontTrigger = document.getElementById('font-picker-trigger');
+            fontTrigger.textContent = '명조체';
+            fontTrigger.style.fontFamily = currentFontVal;
+            
+            updateUI();
+            showToast('모든 설정이 초기화되었습니다.');
+        }
+
+        function updateBgLayer() {
+            if (currentBgImageDataUrl) {
+                DOM.bgLayer.style.backgroundImage = `url('${currentBgImageDataUrl}')`;
+                DOM.bgLayer.style.transform = `translate(${bgOffsetX}px, ${bgOffsetY}px) scale(${bgScale})`;
+            } else {
+                DOM.bgLayer.style.backgroundImage = 'none';
+            }
+        }
+
+        function adjustNum(id, delta, step = 1) {
+            const input = document.getElementById(id);
+            let val = parseFloat(input.value) || 0;
+            val += delta * step;
+            if (step < 1) val = parseFloat(val.toFixed(1)); 
+            input.value = val;
+            updateUI(); 
+        }
+
+        const inputs = [DOM.width, DOM.height, DOM.bgColor, DOM.dim, DOM.color, DOM.size, DOM.pad, DOM.lh, DOM.paraGap];
         inputs.forEach(el => el.addEventListener('input', updateUI));
-        DOM.font.addEventListener('change', updateUI);
         DOM.align.addEventListener('change', updateUI);
+        DOM.htmlToggle.addEventListener('change', updateUI); 
+        
+        window.onload = () => {
+            updateUI();
+            initPresetButtons();
+            setupFontPicker();
+        };
 
-        // 첫 로드 시 UI 렌더링
-        updateUI();
-
-        /* -------------------------------------------------------------
-           2. 기능: 미리보기 줌(배율) 컨트롤
-        ------------------------------------------------------------- */
         DOM.scale.addEventListener('input', updateScale);
-
         function updateScale() {
             const ratio = parseFloat(DOM.scale.value);
             DOM.scaleVal.textContent = Math.round(ratio * 100) + '%';
-            
             DOM.preview.style.transform = `scale(${ratio})`;
-            
-            // scale을 적용하면 원본 요소의 물리적 크기는 그대로라 스크롤이 꼬입니다.
-            // 래퍼의 크기를 배율에 맞게 강제로 줄여서 스크롤바가 예쁘게 생기도록 처리합니다.
             DOM.previewWrapper.style.width = (DOM.width.value * ratio) + 'px';
             DOM.previewWrapper.style.height = (DOM.height.value * ratio) + 'px';
-            
-            // 중앙 정렬 보정
             DOM.scrollArea.style.alignItems = (DOM.height.value * ratio) < DOM.scrollArea.clientHeight ? 'center' : 'flex-start';
         }
 
         /* -------------------------------------------------------------
-           3. 기능: 커스텀 폰트 & 배경 이미지
+           배경 이미지 / 패닝 / 줌(휠) 기능
         ------------------------------------------------------------- */
-        // 내 폰트 업로드 적용
-        DOM.customFont.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const fontName = 'Custom_' + Date.now();
-            const fontUrl = URL.createObjectURL(file);
-            const font = new FontFace(fontName, `url(${fontUrl})`);
-            
-            try {
-                await font.load();
-                document.fonts.add(font);
-                
-                // 셀렉트 박스에 추가 및 선택
-                const option = document.createElement('option');
-                option.value = fontName;
-                option.text = `업로드 폰트 (${file.name})`;
-                DOM.font.appendChild(option);
-                DOM.font.value = fontName;
-                
-                updateUI();
-                showToast('폰트가 성공적으로 적용되었습니다.');
-            } catch (err) {
-                showToast('폰트 파일을 읽을 수 없습니다.');
-            }
-        });
-
-        // 배경 이미지 업로드
         DOM.bgImg.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = e => DOM.preview.style.backgroundImage = `url('${e.target.result}')`;
+                reader.onload = e => { 
+                    currentBgImageDataUrl = e.target.result; 
+                    bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0; 
+                    updateUI(); 
+                };
                 reader.readAsDataURL(file);
             }
         });
 
-        function removeBgImage() {
-            DOM.preview.style.backgroundImage = 'none';
-            DOM.bgImg.value = '';
+        function removeBgImage() { 
+            currentBgImageDataUrl = ''; DOM.bgImg.value = ''; 
+            bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0;
+            updateUI(); 
         }
 
-        /* -------------------------------------------------------------
-           4. 기능: 프리셋 저장 및 불러오기 (로컬 스토리지)
-        ------------------------------------------------------------- */
-        function savePreset() {
-            const slot = document.getElementById('preset-slot').value;
-            const presetData = {
-                text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
-                bgColor: DOM.bgColor.value, dim: DOM.dim.value, font: DOM.font.value,
-                color: DOM.color.value, size: DOM.size.value, pad: DOM.pad.value,
-                lh: DOM.lh.value, align: DOM.align.value
-            };
+        function toggleBgDrag() {
+            isBgDragMode = !isBgDragMode;
+            const btn = document.getElementById('btn-bg-drag');
+            if (isBgDragMode) {
+                btn.classList.add('bg-drag-active');
+                DOM.preview.style.cursor = 'move';
+                showToast('마우스 드래그로 위치를, 휠로 크기를 조절하세요.');
+            } else {
+                btn.classList.remove('bg-drag-active');
+                DOM.preview.style.cursor = 'default';
+            }
+        }
+
+        DOM.preview.addEventListener('mousedown', (e) => {
+            if (!isBgDragMode || !currentBgImageDataUrl) return;
+            isDraggingBg = true;
+            startMouseX = e.clientX;
+            startMouseY = e.clientY;
+            e.preventDefault(); 
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingBg) return;
+            const previewScale = parseFloat(DOM.scale.value); 
+            const dx = (e.clientX - startMouseX) / previewScale;
+            const dy = (e.clientY - startMouseY) / previewScale;
             
+            bgOffsetX += dx;
+            bgOffsetY += dy;
+            startMouseX = e.clientX;
+            startMouseY = e.clientY;
+            updateBgLayer();
+        });
+
+        window.addEventListener('mouseup', () => { isDraggingBg = false; });
+
+        DOM.preview.addEventListener('wheel', (e) => {
+            if (!isBgDragMode || !currentBgImageDataUrl) return;
+            e.preventDefault();
+            const zoomSpeed = 0.002;
+            bgScale -= e.deltaY * zoomSpeed;
+            bgScale = Math.max(0.1, Math.min(bgScale, 10)); 
+            updateBgLayer();
+        }, { passive: false });
+
+
+        /* -------------------------------------------------------------
+           아코디언 및 형광펜 기능
+        ------------------------------------------------------------- */
+        function toggleSection(headerEl) {
+            const content = headerEl.nextElementSibling;
+            const icon = headerEl.querySelector('.collapsible-icon');
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function hexToRgba(hex, alpha) {
+            let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function applyHighlight() {
+            const textarea = DOM.text;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            
+            if (start === end) {
+                showToast('입력창에서 칠할 글자를 먼저 드래그하세요.');
+                return;
+            }
+
+            const selectedText = textarea.value.substring(start, end);
+            const rgba = hexToRgba(document.getElementById('hl-color').value, document.getElementById('hl-opacity').value);
+
+            const markedText = selectedText.split('\n').map(line => {
+                if (line.trim() === '') return line; 
+                return `<mark style="background-color: ${rgba}; border-radius: 4px; padding: 2px 4px; color: inherit; box-decoration-break: clone; -webkit-box-decoration-break: clone;">${line}</mark>`;
+            }).join('\n');
+
+            textarea.setRangeText(markedText, start, end, 'end');
+            updateUI(); 
+        }
+
+        function clearHighlights() {
+            DOM.text.value = DOM.text.value.replace(/<mark[^>]*>/g, '').replace(/<\/mark>/g, '');
+            updateUI();
+            showToast('형광펜이 모두 지워졌습니다.');
+        }
+
+
+        /* -------------------------------------------------------------
+           커스텀 폰트 드롭다운 로직 
+        ------------------------------------------------------------- */
+        const fontPicker = document.getElementById('font-picker-wrapper');
+        const fontTrigger = document.getElementById('font-picker-trigger');
+        const fontOptions = document.getElementById('font-picker-options');
+
+        fontTrigger.addEventListener('click', () => fontOptions.classList.toggle('open'));
+
+        document.addEventListener('click', (e) => {
+            if (!fontPicker.contains(e.target)) fontOptions.classList.remove('open');
+        });
+
+        function setupFontPicker() {
+            document.querySelectorAll('.picker-opt').forEach(opt => {
+                const newOpt = opt.cloneNode(true);
+                opt.parentNode.replaceChild(newOpt, opt);
+                
+                newOpt.addEventListener('mouseenter', () => { DOM.pText.style.fontFamily = newOpt.dataset.val; });
+                newOpt.addEventListener('mouseleave', () => { DOM.pText.style.fontFamily = currentFontVal; });
+                newOpt.addEventListener('click', () => {
+                    currentFontVal = newOpt.dataset.val;
+                    fontTrigger.textContent = newOpt.textContent;
+                    fontTrigger.style.fontFamily = currentFontVal;
+                    fontOptions.classList.remove('open');
+                    updateUI();
+                });
+            });
+        }
+
+        DOM.customFont.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const fontName = 'Custom_' + Date.now();
+            const fontUrl = URL.createObjectURL(file);
+            const font = new FontFace(fontName, `url(${fontUrl})`);
+            try {
+                await font.load(); document.fonts.add(font);
+                
+                const opt = document.createElement('div');
+                opt.className = 'picker-opt';
+                opt.dataset.val = fontName;
+                opt.style.fontFamily = fontName;
+                opt.textContent = `내 폰트 (${file.name})`;
+                fontOptions.appendChild(opt);
+
+                currentFontVal = fontName;
+                fontTrigger.textContent = opt.textContent;
+                fontTrigger.style.fontFamily = fontName;
+                fontOptions.classList.remove('open');
+                
+                setupFontPicker();
+                updateUI(); showToast('폰트가 적용되었습니다.');
+            } catch (err) { showToast('폰트를 불러올 수 없습니다.'); }
+        });
+
+
+        /* -------------------------------------------------------------
+           프리셋 로직
+        ------------------------------------------------------------- */
+        function initPresetButtons() {
             let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
-            presets[slot] = presetData;
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                const slot = btn.getAttribute('data-slot');
+                if (presets[slot]) btn.classList.add('has-data');
+                else btn.classList.remove('has-data');
+                
+                if (slot === currentActiveSlot) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+
+        function selectPresetSlot(slot) { currentActiveSlot = slot; initPresetButtons(); }
+
+        function getCurrentConfig() {
+            return {
+                text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
+                bgImg: currentBgImageDataUrl, bgScale: bgScale, bgOffsetX: bgOffsetX, bgOffsetY: bgOffsetY,
+                bgColor: DOM.bgColor.value, dim: DOM.dim.value, paraGap: DOM.paraGap.value,
+                isHtmlMode: DOM.htmlToggle.checked,
+                font: currentFontVal, color: DOM.color.value, size: DOM.size.value,
+                pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value
+            };
+        }
+
+        function savePreset() {
+            let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
+            let config = getCurrentConfig();
+            delete config.text; 
+            presets[currentActiveSlot] = config;
             localStorage.setItem('archive_presets', JSON.stringify(presets));
-            showToast(`슬롯 ${slot}번에 설정이 저장되었습니다.`);
+            initPresetButtons(); 
+            showToast(`슬롯 ${currentActiveSlot}에 저장되었습니다.`);
         }
 
         function loadPreset() {
-            const slot = document.getElementById('preset-slot').value;
             let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
-            
-            if (!presets[slot]) {
-                showToast('이 슬롯에 저장된 프리셋이 없습니다.');
-                return;
-            }
-            
-            const p = presets[slot];
-            DOM.text.value = p.text; DOM.width.value = p.width; DOM.height.value = p.height;
-            DOM.bgColor.value = p.bgColor; DOM.dim.value = p.dim; DOM.color.value = p.color;
-            DOM.size.value = p.size; DOM.pad.value = p.pad; DOM.lh.value = p.lh; DOM.align.value = p.align;
-            
-            // 폰트가 드롭다운에 존재하는지 확인 후 적용 (커스텀 폰트 날아간 경우 대비)
-            const fontExists = Array.from(DOM.font.options).some(opt => opt.value === p.font);
-            if (fontExists) DOM.font.value = p.font;
-            
-            updateUI();
-            showToast(`슬롯 ${slot}번 설정을 불러왔습니다.`);
+            if (!presets[currentActiveSlot]) return showToast('저장된 프리셋이 없습니다.');
+            applyConfig(presets[currentActiveSlot], false); 
+            showToast(`슬롯 ${currentActiveSlot} 프리셋을 불러왔습니다.`);
         }
 
-        /* -------------------------------------------------------------
-           5. 모달, 토스트 및 탭 컨트롤
-        ------------------------------------------------------------- */
+        function applyConfig(config, isFromArchive = false) {
+            if (isFromArchive && config.text !== undefined) DOM.text.value = config.text;
+            
+            DOM.width.value = config.width || 1000;
+            DOM.height.value = config.height || 1000;
+            currentBgImageDataUrl = config.bgImg || '';
+            bgScale = config.bgScale || 1.0;
+            bgOffsetX = config.bgOffsetX || 0;
+            bgOffsetY = config.bgOffsetY || 0;
+            
+            DOM.bgColor.value = config.bgColor || '#ffffff';
+            DOM.dim.value = config.dim || 0;
+            DOM.paraGap.value = config.paraGap || 30; 
+            DOM.color.value = config.color || '#222222';
+            DOM.size.value = config.size || 40;
+            DOM.pad.value = config.pad || 60;
+            DOM.lh.value = config.lh || 1.6;
+            DOM.align.value = config.align || 'center';
+            DOM.htmlToggle.checked = !!config.isHtmlMode;
+            
+            if (config.font) {
+                currentFontVal = config.font;
+                fontTrigger.style.fontFamily = currentFontVal;
+                const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
+                if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
+            }
+            updateUI();
+        }
+
+        // 탭 & 모달 & 알림
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
-            event.target.classList.add('active');
+            document.querySelector(`.tab-btn[onclick="switchTab('${tabName}')"]`).classList.add('active');
             document.getElementById(tabName + '-page').classList.add('active');
             if(tabName === 'archive') loadGallery();
         }
-
         function openModal() {
-            document.getElementById('modal-tags').value = '';
-            document.getElementById('modal-memo').value = '';
+            document.getElementById('modal-tags').value = ''; document.getElementById('modal-memo').value = '';
             document.getElementById('save-modal').style.display = 'flex';
         }
         function closeModal() { document.getElementById('save-modal').style.display = 'none'; }
@@ -513,37 +1108,27 @@
         let toastTimeout;
         function showToast(msg) {
             const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => hideToast(), 2000);
+            toast.textContent = msg; toast.classList.add('show');
+            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => hideToast(), 2000);
         }
         function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
-        /* -------------------------------------------------------------
-           6. 이미지 추출 (html2canvas) - 원본 비율 유지 트릭
-        ------------------------------------------------------------- */
         function downloadCard() {
-            // 다운로드 시 해상도가 깨지지 않도록 배율을 잠시 1(100%)로 원복합니다.
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)';
             
-            html2canvas(DOM.preview, { scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `archive_${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                
-                // 저장 완료 후 배율 복구
+            html2canvas(document.getElementById('card-preview'), { scale: 2, useCORS: true }).then(canvas => {
+                const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png'); link.click();
                 DOM.preview.style.transform = `scale(${currentScale})`;
             });
         }
 
         /* -------------------------------------------------------------
-           7. IndexedDB 로직 (아카이브 저장 및 불러오기)
+           IndexedDB 및 앨범형 아카이브 렌더링
         ------------------------------------------------------------- */
         let db;
-        const request = indexedDB.open("AIArchiveDB", 1);
+        const request = indexedDB.open("AIArchiveDB", 2); 
         request.onupgradeneeded = e => {
             db = e.target.result;
             if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' });
@@ -553,52 +1138,74 @@
         function saveToIndexedDB() {
             const tags = document.getElementById('modal-tags').value;
             const memo = document.getElementById('modal-memo').value;
+            const configData = getCurrentConfig(); 
 
-            // 저장 시에도 화질 유지를 위해 배율 원복 트릭 사용
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)';
+            
+            html2canvas(document.getElementById('card-preview'), { scale: 1.5, useCORS: true }).then(canvas => {
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                const newItem = {
+                    id: Date.now(), date: new Date().toLocaleDateString(),
+                    config: configData, image: imgData, tags: tags, memo: memo
+                };
 
-            html2canvas(DOM.preview, { scale: 1.5, useCORS: true }).then(canvas => {
-                const imageData = canvas.toDataURL('image/jpeg', 0.85);
-                const newItem = { id: Date.now(), image: imageData, tags: tags, memo: memo };
-
-                const transaction = db.transaction(['cards'], 'readwrite');
-                transaction.objectStore('cards').add(newItem);
-
-                transaction.oncomplete = function() {
-                    DOM.preview.style.transform = `scale(${currentScale})`; // 배율 복구
-                    closeModal();
-                    showToast('아카이브에 저장되었습니다!');
+                const tx = db.transaction(['cards'], 'readwrite');
+                tx.objectStore('cards').add(newItem);
+                tx.oncomplete = () => {
+                    DOM.preview.style.transform = `scale(${currentScale})`;
+                    closeModal(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!');
                 };
             });
         }
+
+        let loadedItems = []; 
 
         function loadGallery() {
             if(!db) return;
             const grid = document.getElementById('gallery-grid');
             const keyword = document.getElementById('search-input').value.toLowerCase();
             const sortOrder = document.getElementById('sort-select').value;
-            grid.innerHTML = ''; 
+            grid.innerHTML = ''; loadedItems = [];
 
             const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
             req.onsuccess = function(e) {
                 let album = e.target.result;
                 if (keyword) album = album.filter(item => (item.tags||'').toLowerCase().includes(keyword) || (item.memo||'').toLowerCase().includes(keyword));
                 album.sort((a, b) => sortOrder === 'asc' ? a.id - b.id : b.id - a.id);
+                loadedItems = album;
 
                 if(album.length === 0) {
-                    grid.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-sub);">저장된 기록이 없습니다.</p>';
+                    grid.innerHTML = `<div class="empty-state">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                        <p>저장된 기록이 없습니다</p>
+                        <span>발췌기에서 카드를 만들고 아카이브에 저장해보세요.</span>
+                    </div>`;
                     return;
                 }
+                
                 album.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'gallery-item';
+
+                    const tagList = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+                    const tagsHtml = tagList.length
+                        ? tagList.map(t => `<span class="tag-chip">#${t}</span>`).join('')
+                        : '<span class="tag-chip tag-chip-empty">태그 없음</span>';
+                    
                     div.innerHTML = `
-                        <img src="${item.image}">
-                        <div class="item-info">
-                            <div class="item-tags">${item.tags}</div>
-                            <div class="item-memo">${item.memo}</div>
-                            <button class="delete-btn" onclick="deleteFromIndexedDB(${item.id})">삭제</button>
+                        <img src="${item.image}" alt="Archive Card">
+                        <div class="item-overlay">
+                            <div class="overlay-info">
+                                <div class="overlay-tags">${tagsHtml}</div>
+                                <div class="overlay-memo">${item.memo || '메모 없음'}</div>
+                                <div class="overlay-date">${item.date || ''}</div>
+                            </div>
+                            <div class="overlay-actions">
+                                <button class="btn-overlay-save" onclick="downloadFromArchive(${item.id})">저장</button>
+                                <button class="btn-overlay-edit" onclick="editFromArchive(${item.id})">수정</button>
+                                <button class="btn-overlay-delete" onclick="deleteFromIndexedDB(${item.id})">삭제</button>
+                            </div>
                         </div>
                     `;
                     grid.appendChild(div);
@@ -606,6 +1213,18 @@
             };
         }
 
+        function downloadFromArchive(id) {
+            const item = loadedItems.find(i => i.id === id);
+            if(item) {
+                const link = document.createElement('a'); link.download = `archive_saved_${id}.png`; link.href = item.image; link.click();
+            }
+        }
+        function editFromArchive(id) {
+            const item = loadedItems.find(i => i.id === id);
+            if(item && item.config) {
+                applyConfig(item.config, true); switchTab('extractor'); showToast('저장된 세팅값을 발췌기로 불러왔습니다.');
+            } else { showToast('구버전 데이터라 수정할 수 없습니다.'); }
+        }
         function deleteFromIndexedDB(id) {
             if(confirm('이 기록을 삭제하시겠습니까?')) {
                 const tx = db.transaction(['cards'], 'readwrite');
