@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브v1.1</title>
+    <title>AI 대화 아카이브v1.2</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@cantoo/html2canvas@1.5.9/dist/html2canvas.min.js"></script>
 
     <style>
         :root {
@@ -1398,17 +1398,6 @@
                     setTimeout(async () => {
                         try {
                             const targetEl = idoc.getElementById('card-preview');
-                            
-                            // 💡 해결: 안쪽 그림자(inset)가 깨지는 현상을 캡처 유령창 안에서만 자동 우회 연산 패치
-                            const allNodes = targetEl.querySelectorAll('*');
-                            allNodes.forEach(node => {
-                                const compStyle = idoc.defaultView.getComputedStyle(node);
-                                const boxShadow = compStyle.boxShadow;
-                                if (boxShadow && boxShadow.includes('inset')) {
-                                    // inset 속성을 연한 외곽 아웃셋 그림자로 자동 필터링하여 고체 검은색 테두리 현상을 강제 소멸시킵니다.
-                                    node.style.setProperty('box-shadow', boxShadow.replace(/inset/g, ''), 'important');
-                                }
-                            });
 
                             const canvas = await html2canvas(targetEl, {
                                 scale: scaleRatio, // 💡 설정한 픽셀 크기(1배율) 그대로 캡처 처리
