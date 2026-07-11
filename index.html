@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 v1.0</title>
+    <title>AI 대화 아카이브v1.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
@@ -240,7 +241,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* =========================================
-           [발췌기] 헤더 툴바 & 캔버스 래퍼
+           [발췌기] 미리보기 컨테이너
         ========================================= */
         .preview-container { flex: 7; display: flex; flex-direction: column; min-width: 0; }
         
@@ -306,7 +307,6 @@
             transform-origin: top left; overflow: hidden; 
         }
         
-        /* 마스크 구조 */
         #card-bg-mask {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden;
         }
@@ -316,12 +316,11 @@
 
         #card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none;}
         
-        /* 텍스트 래퍼 */
         .card-content { position: relative; z-index: 2; width: 100%; pointer-events: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
 
         /* =========================================
-           [아카이브] 앨범형 UI
+           [아카이브] UI
         ========================================= */
         #archive-page { flex-direction: column; overflow-y: auto; }
         .archive-header { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; align-items: center; justify-content: space-between; }
@@ -412,7 +411,7 @@
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: var(--ink); color: var(--paper); padding: 12px 24px; border-radius: 30px;
             font-size: 0.85rem; box-shadow: 0 10px 28px rgba(28,27,26,0.25);
-            opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 2000; cursor: pointer;
+            opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 3000; cursor: pointer;
         }
         #toast.show { opacity: 1; visibility: visible; }
     </style>
@@ -630,7 +629,7 @@
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                                 전체 설정 초기화
                             </button>
-                            <p style="font-size: 0.7rem; color: var(--ink-soft); text-align: center; margin-top: 8px; margin-bottom: 0;">작성한 코드는 지워지지 않습니다.</p>
+                            <p style="font-size: 0.7rem; color: var(--ink-soft); text-align: center; margin-top: 8px; margin-bottom: 0;">작성한 대화 내용은 지워지지 않습니다.</p>
                         </div>
 
                     </div>
@@ -678,7 +677,7 @@
                         
                         <div class="toolbar-item">
                             <label>어둡기 (Dim)</label>
-                            <input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 80px;">
+                            <input type="range" id="input-dim" min="0" max="0.9" step="0.1" value="0" style="width: 80px;">
                         </div>
                     </div>
                     
@@ -702,6 +701,10 @@
                     </div>
 
                     <div class="floating-actions">
+                        <button class="btn" onclick="copyToClipboard()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            클립보드 복사
+                        </button>
                         <button class="btn" onclick="downloadCard()">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                             다운로드
@@ -719,7 +722,6 @@
                                     <img id="card-bg-image" style="position: absolute; transform-origin: center; pointer-events: none; display: none;">
                                 </div>
                                 <div id="card-overlay"></div>
-                                
                                 <div class="card-content" id="card-content">
                                     <div id="preview-text"></div>
                                 </div>
@@ -780,18 +782,16 @@
     <script>
         let currentFontVal = "'Noto Serif KR', serif";
         
-        // 배경 관련
         let currentBgImageDataUrl = '';
         let originalBgWidth = 0;
         let originalBgHeight = 0;
         
-        // 드래그 및 스케일 제어 상태
         let isBgDragMode = false;
         let isTextDragMode = false;
         let isDraggingBg = false;
         let isDraggingText = false;
+        let isCapturing = false; 
         
-        // 좌표 및 배율 값
         let bgScale = 1.0;
         let bgOffsetX = 0;
         let bgOffsetY = 0;
@@ -812,7 +812,7 @@
             
             marginTop: document.getElementById('margin-top'), marginBottom: document.getElementById('margin-bottom'),
             marginLeft: document.getElementById('margin-left'), marginRight: document.getElementById('margin-right'),
-            htmlScale: document.getElementById('html-scale'), // HTML 강제 배율 컨트롤
+            htmlScale: document.getElementById('html-scale'), 
             
             textDragBtn: document.getElementById('btn-text-drag'), textDragBtnHtml: document.getElementById('btn-text-drag-html'),
             bgDragBtn: document.getElementById('btn-bg-drag'),
@@ -826,7 +826,6 @@
             scale: document.getElementById('preview-scale'), scaleVal: document.getElementById('scale-value'), scrollArea: document.getElementById('preview-scroll-area')
         };
 
-        // UI 통합 업데이트 
         function updateUI() {
             DOM.preview.style.width = DOM.width.value + 'px';
             DOM.preview.style.height = DOM.height.value + 'px';
@@ -845,14 +844,12 @@
                 const pr = DOM.marginRight.value || 0;
                 DOM.preview.style.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
 
-                // 기존 스타일 간섭만 스마트하게 제거 (all: initial 대신 빈 값 부여)
                 DOM.contentWrapper.style.fontFamily = '';
                 DOM.contentWrapper.style.color = '';
                 DOM.pText.style.fontSize = '';
                 DOM.pText.style.lineHeight = ''; 
                 DOM.pText.style.textAlign = ''; 
                 
-                // HTML 배율 적용 (캡처 에러 방지를 위해 transform scale 사용)
                 const hScale = parseFloat(DOM.htmlScale.value) || 1.0;
                 DOM.pText.style.transform = `scale(${hScale})`;
                 DOM.pText.style.transformOrigin = 'center center';
@@ -864,7 +861,6 @@
 
                 DOM.preview.style.padding = DOM.pad.value + 'px';
                 
-                // 텍스트 모드 스타일 완벽 복구
                 DOM.contentWrapper.style.fontFamily = currentFontVal;
                 DOM.contentWrapper.style.color = DOM.color.value;
                 DOM.pText.style.fontSize = DOM.size.value + 'px';
@@ -878,7 +874,6 @@
                 DOM.pText.innerHTML = lines.map(line => `<div style="margin-bottom: ${gap}px">${line || '<br>'}</div>`).join('');
             }
             
-            // 텍스트 이동 위치 적용
             DOM.contentWrapper.style.transform = `translate(${textOffsetX}px, ${textOffsetY}px)`;
             
             updateBgLayer();
@@ -892,7 +887,6 @@
 
         DOM.text.addEventListener('input', (e) => {
             const val = e.target.value;
-            // HTML 태그가 명확히 감지될 때만 뷰어 모드로 자동 전환 (수동 조작 이력 없을 시)
             if (!DOM.htmlToggle.checked && !userManuallyToggledHtml && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
                 DOM.htmlToggle.checked = true;
                 showToast('HTML 태그가 감지되어 뷰어 모드로 자동 전환되었습니다.');
@@ -920,7 +914,6 @@
             DOM.marginRight.value = 0;
             DOM.htmlScale.value = 1.0; 
             
-            // 좌표들 완전 초기화
             textOffsetX = 0; textOffsetY = 0;
             isTextDragMode = false; isBgDragMode = false;
             DOM.textDragBtn.classList.remove('drag-active');
@@ -942,7 +935,6 @@
             showToast('모든 설정이 초기화되었습니다.');
         }
 
-        // 💡 배경 잘림 방지: 상자는 고정하고 안쪽 이미지를 수치에 맞게 키우고 이동합니다.
         function updateBgLayer() {
             if (!currentBgImageDataUrl || !originalBgWidth || !originalBgHeight) {
                 DOM.bgImage.style.display = 'none';
@@ -967,7 +959,6 @@
 
             DOM.bgImage.style.width = `${baseWidth}px`;
             DOM.bgImage.style.height = `${baseHeight}px`;
-            // 상자 정중앙에 기본 배치 후, transform으로 스케일과 패닝 적용
             DOM.bgImage.style.left = `calc(50% - ${baseWidth/2}px)`;
             DOM.bgImage.style.top = `calc(50% - ${baseHeight/2}px)`;
             
@@ -1004,7 +995,7 @@
         }
 
         /* -------------------------------------------------------------
-           배경 & 텍스트 드래그(Pan) 및 휠 줌 통합 컨트롤러
+           드래그 제어 로직
         ------------------------------------------------------------- */
         DOM.bgImg.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -1034,7 +1025,7 @@
         }
 
         function toggleBgDrag() {
-            if (isTextDragMode) toggleTextDrag(); // 텍스트 이동이 켜져있으면 끄기
+            if (isTextDragMode) toggleTextDrag(); 
             isBgDragMode = !isBgDragMode;
             if (isBgDragMode) {
                 DOM.bgDragBtn.classList.add('drag-active');
@@ -1047,7 +1038,7 @@
         }
         
         function toggleTextDrag() {
-            if (isBgDragMode) toggleBgDrag(); // 배경 이동이 켜져있으면 끄기
+            if (isBgDragMode) toggleBgDrag(); 
             isTextDragMode = !isTextDragMode;
             if (isTextDragMode) {
                 DOM.textDragBtn.classList.add('drag-active');
@@ -1101,7 +1092,7 @@
         DOM.preview.addEventListener('wheel', (e) => {
             if (!isBgDragMode || !currentBgImageDataUrl) return;
             e.preventDefault();
-            const zoomSpeed = 0.0005; // 휠 속도 매우 섬세하게 세팅됨
+            const zoomSpeed = 0.0005; 
             bgScale -= e.deltaY * zoomSpeed;
             bgScale = Math.max(0.1, Math.min(bgScale, 10)); 
             updateBgLayer();
@@ -1109,7 +1100,7 @@
 
 
         /* -------------------------------------------------------------
-           아코디언 및 형광펜 기능
+           아코디언 및 형광펜 기능 (형광펜 스타일 버그 교정 완료)
         ------------------------------------------------------------- */
         function toggleSection(headerEl) {
             const content = headerEl.nextElementSibling;
@@ -1141,9 +1132,10 @@
             const selectedText = textarea.value.substring(start, end);
             const rgba = hexToRgba(document.getElementById('hl-color').value, document.getElementById('hl-opacity').value);
 
+            // 💡 해결: 형광펜 줄 번짐 현상을 방지하도록 인라인 강제화 및 패딩 전면 수정
             const markedText = selectedText.split('\n').map(line => {
                 if (line.trim() === '') return line; 
-                return `<mark style="background-color: ${rgba}; border-radius: 4px; padding: 2px 4px; color: inherit; box-decoration-break: clone; -webkit-box-decoration-break: clone;">${line}</mark>`;
+                return `<mark style="background-color: ${rgba}; border-radius: 4px; padding: 0px 4px; margin: 0; color: inherit; display: inline !important; box-decoration-break: clone; -webkit-box-decoration-break: clone; line-height: inherit;">${line}</mark>`;
             }).join('\n');
 
             textarea.setRangeText(markedText, start, end, 'end');
@@ -1157,7 +1149,7 @@
         }
 
         /* -------------------------------------------------------------
-           커스텀 폰트 드롭다운 로직 
+           폰트 선택 로직
         ------------------------------------------------------------- */
         const fontPicker = document.getElementById('font-picker-wrapper');
         const fontTrigger = document.getElementById('font-picker-trigger');
@@ -1214,7 +1206,7 @@
 
 
         /* -------------------------------------------------------------
-           프리셋 로직 
+           프리셋 로직
         ------------------------------------------------------------- */
         function initPresetButtons() {
             let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
@@ -1275,7 +1267,6 @@
             DOM.width.value = config.width || 700;
             DOM.height.value = config.height || 700;
             
-            // 💡 해결: 아카이브에서 불렀을 때 배경 이미지 복구 로직 (src 지정 추가)
             if (config.bgImg !== undefined) {
                 currentBgImageDataUrl = config.bgImg;
                 
@@ -1284,7 +1275,7 @@
                     tempImg.onload = () => {
                         originalBgWidth = tempImg.width;
                         originalBgHeight = tempImg.height;
-                        DOM.bgImage.src = currentBgImageDataUrl; // 핵심 수정 포인트
+                        DOM.bgImage.src = currentBgImageDataUrl; 
                         updateBgLayer();
                     };
                     tempImg.src = currentBgImageDataUrl;
@@ -1327,7 +1318,6 @@
             updateUI();
         }
 
-        // 탭 & 모달 & 알림
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
@@ -1349,22 +1339,156 @@
         }
         function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
+
+        /* -------------------------------------------------------------
+           💡 샌드박스 캡처 엔진 (안쪽 테두리 버그 자동 패치 교정단)
+        ------------------------------------------------------------- */
+        function captureInSandbox(scaleRatio, isPng) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const sourceEl = document.getElementById('card-preview');
+                    const w = parseFloat(DOM.width.value) || 700;
+                    const h = parseFloat(DOM.height.value) || 700;
+
+                    const iframe = document.createElement('iframe');
+                    iframe.style.position = 'fixed';
+                    iframe.style.top = '-9999px';
+                    iframe.style.left = '-9999px';
+                    iframe.style.width = w + 'px';
+                    iframe.style.height = h + 'px';
+                    iframe.style.border = 'none';
+                    document.body.appendChild(iframe);
+
+                    const idoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                    let styles = '';
+                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
+
+                    const cloneEl = sourceEl.cloneNode(true);
+                    
+                    const details = cloneEl.querySelectorAll('details:not([open])');
+                    details.forEach(d => {
+                        Array.from(d.childNodes).forEach(node => {
+                            if (node.tagName && node.tagName.toLowerCase() === 'summary') return;
+                            d.removeChild(node);
+                        });
+                    });
+
+                    cloneEl.style.transform = 'none';
+                    cloneEl.style.boxShadow = 'none';
+
+                    idoc.open();
+                    idoc.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            ${styles}
+                            <style>
+                                body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+                            </style>
+                        </head>
+                        <body>
+                            ${cloneEl.outerHTML}
+                        </body>
+                        </html>
+                    `);
+                    idoc.close();
+
+                    setTimeout(async () => {
+                        try {
+                            const targetEl = idoc.getElementById('card-preview');
+                            
+                            // 💡 해결: 안쪽 그림자(inset)가 깨지는 현상을 캡처 유령창 안에서만 자동 우회 연산 패치
+                            const allNodes = targetEl.querySelectorAll('*');
+                            allNodes.forEach(node => {
+                                const compStyle = idoc.defaultView.getComputedStyle(node);
+                                const boxShadow = compStyle.boxShadow;
+                                if (boxShadow && boxShadow.includes('inset')) {
+                                    // inset 속성을 연한 외곽 아웃셋 그림자로 자동 필터링하여 고체 검은색 테두리 현상을 강제 소멸시킵니다.
+                                    node.style.setProperty('box-shadow', boxShadow.replace(/inset/g, ''), 'important');
+                                }
+                            });
+
+                            const canvas = await html2canvas(targetEl, {
+                                scale: scaleRatio, // 💡 설정한 픽셀 크기(1배율) 그대로 캡처 처리
+                                useCORS: true,
+                                allowTaint: true,
+                                backgroundColor: DOM.bgColor.value || '#ffffff',
+                                logging: false
+                            });
+                            
+                            document.body.removeChild(iframe); 
+                            resolve(canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85));
+                        } catch (err) {
+                            document.body.removeChild(iframe);
+                            reject(err);
+                        }
+                    }, 600); 
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }
+
         async function downloadCard() {
+            if (isCapturing) return;
+            isCapturing = true;
+            showToast('캡처를 준비 중입니다. 잠시만 기다려주세요...');
+            
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)';
+            DOM.previewWrapper.style.width = DOM.width.value + 'px';
+            DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
-            await new Promise(resolve => setTimeout(resolve, 150)); 
-            
-            html2canvas(document.getElementById('card-preview'), { scale: 2, useCORS: true, backgroundColor: null })
-            .then(canvas => {
-                const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png'); link.click();
-                DOM.preview.style.transform = `scale(${currentScale})`;
-            })
-            .catch(err => {
+            try {
+                const dataUrl = await captureInSandbox(1, true); // 사용자가 설정한 픽셀 크기 1배율 매칭
+                const link = document.createElement('a'); 
+                link.download = `archive_${Date.now()}.png`;
+                link.href = dataUrl; 
+                link.click();
+                showToast('다운로드가 완료되었습니다!');
+            } catch (err) {
                 showToast('캡처 중 오류가 발생했습니다.');
+                console.error(err);
+            } finally {
                 DOM.preview.style.transform = `scale(${currentScale})`;
-            });
+                updateScale();
+                isCapturing = false;
+            }
+        }
+
+        async function copyToClipboard() {
+            if (isCapturing) return;
+            isCapturing = true;
+            showToast('클립보드에 복사 중입니다. 잠시만 기다려주세요...');
+            
+            const currentScale = DOM.scale.value;
+            DOM.preview.style.transform = 'scale(1)';
+            DOM.previewWrapper.style.width = DOM.width.value + 'px';
+            DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            
+            try {
+                const dataUrl = await captureInSandbox(1, true); 
+                const res = await fetch(dataUrl);
+                const blob = await res.blob();
+                
+                if (navigator.clipboard && navigator.clipboard.write) {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    showToast('클립보드에 이미지가 복사되었습니다!');
+                } else {
+                    showToast('이 브라우저에서는 클립보드 복사 기능을 지원하지 않습니다.');
+                }
+            } catch (err) {
+                showToast('클립보드 복사 중 오류가 발생했습니다.');
+                console.error(err);
+            } finally {
+                DOM.preview.style.transform = `scale(${currentScale})`;
+                updateScale();
+                isCapturing = false;
+            }
         }
 
         /* -------------------------------------------------------------
@@ -1379,18 +1503,22 @@
         request.onsuccess = e => db = e.target.result;
 
         async function saveToIndexedDB() {
+            if (isCapturing) return;
+            isCapturing = true;
+            showToast('데이터를 저장 중입니다. 잠시만 기다려주세요...');
+
             const tags = document.getElementById('modal-tags').value;
             const memo = document.getElementById('modal-memo').value;
             const configData = getCurrentConfig(); 
 
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)';
+            DOM.previewWrapper.style.width = DOM.width.value + 'px';
+            DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
-            await new Promise(resolve => setTimeout(resolve, 150)); 
-            
-            html2canvas(document.getElementById('card-preview'), { scale: 1.5, useCORS: true, backgroundColor: null })
-            .then(canvas => {
-                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+            try {
+                const imgData = await captureInSandbox(1, false); 
+                
                 const newItem = {
                     id: Date.now(), date: new Date().toLocaleDateString(),
                     config: configData, image: imgData, tags: tags, memo: memo
@@ -1399,14 +1527,18 @@
                 const tx = db.transaction(['cards'], 'readwrite');
                 tx.objectStore('cards').add(newItem);
                 tx.oncomplete = () => {
-                    DOM.preview.style.transform = `scale(${currentScale})`;
-                    closeModal(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!');
+                    closeModal(); 
+                    showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!');
+                    loadGallery(); 
                 };
-            })
-            .catch(err => {
+            } catch (err) {
                 showToast('이미지 처리 중 오류가 발생해 저장하지 못했습니다.');
+                console.error(err);
+            } finally {
                 DOM.preview.style.transform = `scale(${currentScale})`;
-            });
+                updateScale();
+                isCapturing = false;
+            }
         }
 
         let loadedItems = []; 
@@ -1494,23 +1626,15 @@
         /* -------------------------------------------------------------
            백업 (Export) 및 복구 (Import) 로직 구현
         ------------------------------------------------------------- */
-        
-        // 1. 백업하기 (.json 다운로드)
         async function exportData() {
             try {
-                // 프리셋 슬롯 데이터 가져오기
                 const presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
-                
-                // 아카이브 앨범 데이터 모두 가져오기
                 const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
                 
                 req.onsuccess = function(e) {
                     const archive = e.target.result;
-                    
-                    // 두 데이터를 하나로 합치기
                     const exportObj = { presets: presets, archive: archive };
                     
-                    // JSON 파일로 변환하여 다운로드 트리거
                     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
                     const downloadAnchorNode = document.createElement('a');
                     downloadAnchorNode.setAttribute("href", dataStr);
@@ -1526,7 +1650,6 @@
             }
         }
 
-        // 2. 복구하기 (.json 업로드 후 덮어쓰기/추가)
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1536,25 +1659,23 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     
-                    // 프리셋 데이터 복원
                     if (data.presets) {
                         localStorage.setItem('archive_presets', JSON.stringify(data.presets));
                         initPresetButtons();
                     }
                     
-                    // 아카이브 데이터 복원 (기존 DB에 추가)
                     if (data.archive && Array.isArray(data.archive)) {
                         const tx = db.transaction(['cards'], 'readwrite');
                         const store = tx.objectStore('cards');
                         
                         data.archive.forEach(item => {
-                            store.put(item); // 고유 ID 기준으로 중복은 덮어쓰고, 새 것은 추가
+                            store.put(item); 
                         });
                         
                         tx.oncomplete = () => {
                             loadGallery();
                             showToast('데이터가 성공적으로 복구되었습니다!');
-                            event.target.value = ''; // 같은 파일을 다시 열 수 있도록 input 초기화
+                            event.target.value = ''; 
                         };
                     } else {
                         showToast('유효하지 않은 백업 파일 포맷입니다.');
