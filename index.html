@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브v1.gpt</title>
+    <title>AI 대화 아카이브v1.claude</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
     
-    <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         :root {
@@ -1398,17 +1398,82 @@
                     setTimeout(async () => {
                         try {
                             const targetEl = idoc.getElementById('card-preview');
-                            
-                            // 💡 해결: 안쪽 그림자(inset)가 깨지는 현상을 캡처 유령창 안에서만 자동 우회 연산 패치
-                            const allNodes = targetEl.querySelectorAll('*');
-                            allNodes.forEach(node => {
-                                const compStyle = idoc.defaultView.getComputedStyle(node);
-                                const boxShadow = compStyle.boxShadow;
-                                if (boxShadow && boxShadow.includes('inset')) {
-                                    // inset 속성을 연한 외곽 아웃셋 그림자로 자동 필터링하여 고체 검은색 테두리 현상을 강제 소멸시킵니다.
-                                    node.style.setProperty('box-shadow', boxShadow.replace(/inset/g, ''), 'important');
+
+                            // 💡 자동 보정: inset(안쪽) 그림자 중 블러가 있는 것을,
+                            // html2canvas가 정확히 그릴 수 있는 '경계선 여러 겹'으로
+                            // 캡처용 사본에서만 자동 변환합니다. 사용자가 입력한 원본
+                            // 텍스트/HTML은 전혀 건드리지 않고, 미리보기도 그대로 유지됩니다.
+                            (function autoFixInsetShadows() {
+                                const idocWindow = idoc.defaultView;
+                                const colorProbe = idoc.createElement('div');
+                                colorProbe.style.display = 'none';
+                                idoc.body.appendChild(colorProbe);
+
+                                function toRGBA(colorStr) {
+                                    colorProbe.style.color = colorStr;
+                                    const computed = idocWindow.getComputedStyle(colorProbe).color;
+                                    const m = computed.match(/rgba?\(([^)]+)\)/);
+                                    if (!m) return { r: 0, g: 0, b: 0, a: 1 };
+                                    const parts = m[1].split(',').map(s => parseFloat(s));
+                                    return { r: parts[0] || 0, g: parts[1] || 0, b: parts[2] || 0, a: parts.length > 3 ? parts[3] : 1 };
                                 }
-                            });
+
+                                function splitTopLevel(str) {
+                                    const result = [];
+                                    let depth = 0, last = 0;
+                                    for (let i = 0; i < str.length; i++) {
+                                        const c = str[i];
+                                        if (c === '(') depth++;
+                                        else if (c === ')') depth--;
+                                        else if (c === ',' && depth === 0) {
+                                            result.push(str.slice(last, i));
+                                            last = i + 1;
+                                        }
+                                    }
+                                    result.push(str.slice(last));
+                                    return result.map(s => s.trim()).filter(Boolean);
+                                }
+
+                                function parseShadowPart(part) {
+                                    const inset = /(^|\s)inset(\s|$)/.test(part);
+                                    const withoutInset = part.replace(/inset/g, '').trim();
+                                    const pxVals = withoutInset.match(/-?\d+(\.\d+)?px/g) || [];
+                                    const nums = pxVals.slice(-4).map(v => parseFloat(v));
+                                    while (nums.length < 4) nums.unshift(0);
+                                    const [offsetX, offsetY, blur, spread] = nums;
+                                    const firstPx = pxVals.length ? withoutInset.indexOf(pxVals[0]) : withoutInset.length;
+                                    const color = withoutInset.slice(0, firstPx).trim() || 'rgb(0,0,0)';
+                                    return { color, offsetX, offsetY, blur, spread, inset };
+                                }
+
+                                function approximate(part) {
+                                    const { color, offsetX, offsetY, blur, spread, inset } = parseShadowPart(part);
+                                    if (!inset || blur <= 0) return part; // 아웃셋이거나 블러 없는 그림자는 그대로 둠
+                                    const { r, g, b, a } = toRGBA(color);
+                                    const steps = 6;
+                                    const layers = [];
+                                    for (let i = 1; i <= steps; i++) {
+                                        const t = i / steps;
+                                        const layerSpread = (spread + blur * t).toFixed(2);
+                                        const layerAlpha = (a * (1 - t) * (1 - t)).toFixed(3);
+                                        layers.push(`inset ${offsetX}px ${offsetY}px 0px ${layerSpread}px rgba(${r}, ${g}, ${b}, ${layerAlpha})`);
+                                    }
+                                    return layers.join(', ');
+                                }
+
+                                const allEls = [targetEl, ...targetEl.querySelectorAll('*')];
+                                allEls.forEach(node => {
+                                    const boxShadow = idocWindow.getComputedStyle(node).boxShadow;
+                                    if (boxShadow && boxShadow !== 'none' && boxShadow.includes('inset')) {
+                                        try {
+                                            const parts = splitTopLevel(boxShadow);
+                                            const converted = parts.map(approximate).join(', ');
+                                            node.style.setProperty('box-shadow', converted, 'important');
+                                        } catch (e) { /* 개별 요소 변환 실패 시 그냥 원본 유지 */ }
+                                    }
+                                });
+                                colorProbe.remove();
+                            })();
 
                             const canvas = await html2canvas(targetEl, {
                                 scale: scaleRatio, // 💡 설정한 픽셀 크기(1배율) 그대로 캡처 처리
