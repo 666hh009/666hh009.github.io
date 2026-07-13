@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- inset-shadow-fix: v3 (알파 합성 역산 버전, 7/12 최종) -->
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브_클로드4</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+    <title>AI 대화 아카이브0713</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -45,6 +45,29 @@
             -webkit-font-smoothing: antialiased;
         }
 
+        /* 💡 전체화면 모드 대응 CSS */
+        body.fullscreen-mode header,
+        body.fullscreen-mode .controls,
+        body.fullscreen-mode .preview-toolbar,
+        body.fullscreen-mode .floating-actions,
+        body.fullscreen-mode .floating-zoom {
+            display: none !important;
+        }
+        body.fullscreen-mode .preview-canvas-wrapper {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+            width: 100vw !important; height: 100vh !important;
+            z-index: 10000 !important;
+            background: rgba(0, 0, 0, 0.9) !important;
+            border: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important; padding: 0 !important;
+            cursor: pointer; /* 클릭 시 종료 알림용 포인터 */
+        }
+        body.fullscreen-mode .preview-area {
+            background-image: none !important;
+        }
+
         .app-container {
             width: 100%;
             max-width: 1350px; 
@@ -56,9 +79,6 @@
             overflow: hidden;
         }
 
-        /* =========================================
-           헤더 
-        ========================================= */
         header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 0 32px; height: 64px; border-bottom: 1px solid var(--line);
@@ -89,9 +109,6 @@
         }
         .page-section.active { display: flex; gap: 24px; } 
 
-        /* =========================================
-           공통 폼 요소 및 레이아웃
-        ========================================= */
         .control-group label {
             display: block; font-size: 0.74rem; margin-bottom: 6px; color: var(--ink-soft); font-weight: 500;
         }
@@ -197,9 +214,6 @@
         input:checked + .toggle-slider { background-color: var(--ink); }
         input:checked + .toggle-slider:before { transform: translateX(18px); }
 
-        /* =========================================
-           [발췌기] 컨트롤 패널
-        ========================================= */
         .controls {
             flex: 3; min-width: 360px; max-width: 420px; 
             background: var(--paper-soft); border: 1px solid var(--line);
@@ -241,9 +255,6 @@
         .collapsible-content { display: none; margin-top: 10px; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* =========================================
-           [발췌기] 미리보기 컨테이너
-        ========================================= */
         .preview-container { flex: 7; display: flex; flex-direction: column; min-width: 0; }
         
         .preview-toolbar { 
@@ -307,6 +318,13 @@
             box-shadow: 0 22px 44px rgba(28,27,26,0.16), 0 3px 10px rgba(28,27,26,0.08);
             transform-origin: top left; overflow: hidden; 
         }
+
+        /* 💡 9번 오류 수정: Overflow 강제 숨김 패치 클래스 */
+        #card-preview.force-overflow-hidden * {
+            overflow: hidden !important;
+            overflow-x: hidden !important;
+            overflow-y: hidden !important;
+        }
         
         #card-bg-mask {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden;
@@ -320,9 +338,7 @@
         .card-content { position: relative; z-index: 2; width: 100%; pointer-events: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
 
-        /* =========================================
-           [아카이브] UI
-        ========================================= */
+        /* 아카이브 UI */
         #archive-page { flex-direction: column; overflow-y: auto; }
         .archive-header { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; align-items: center; justify-content: space-between; }
         
@@ -390,9 +406,7 @@
         .empty-state svg { color: var(--ink-faint); margin-bottom: 6px; }
         .empty-state p { margin: 0; font-size: 0.95rem; color: var(--ink); font-weight: 600; }
 
-        /* =========================================
-           모달 & 토스트
-        ========================================= */
+        /* 모달 & 토스트 */
         #save-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(28,27,26,0.35); backdrop-filter: blur(2px); z-index: 1000; justify-content: center; align-items: center;
@@ -437,6 +451,23 @@
             <div class="controls">
 
                 <div class="ctrl-section" style="padding-top: 10px; border-bottom: none; padding-bottom: 0;">
+                    <div style="background: var(--paper-muted); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #dcd8cf;">
+                            <div>
+                                <label style="margin: 0; font-size: 0.78rem; font-weight: 700; color: var(--ink);">HTML 뷰어 모드</label>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="html-mode-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-sm" onclick="wrapText('<b>', '</b>')" style="font-weight: 900; font-family: serif;" title="굵게">B</button>
+                            <button class="btn btn-sm" onclick="wrapText('<i>', '</i>')" style="font-style: italic; font-family: serif;" title="기울임">I</button>
+                            <button class="btn btn-sm" onclick="insertText('—')" title="엠대시(긴 줄)">—</button>
+                            <button class="btn btn-sm" onclick="insertText('\n<hr>\n')" title="가로 구분선 삽입" style="font-size: 0.7rem; padding: 4px 8px;">구분선</button>
+                        </div>
+                    </div>
                     <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..."></textarea>
                 </div>
 
@@ -467,6 +498,8 @@
                                     <div class="picker-opt" data-val="'Noto Serif KR', serif" style="font-family: 'Noto Serif KR', serif">명조체</div>
                                     <div class="picker-opt" data-val="'Noto Sans KR', sans-serif" style="font-family: 'Noto Sans KR', sans-serif">고딕체</div>
                                     <div class="picker-opt" data-val="'Gowun Dodum', sans-serif" style="font-family: 'Gowun Dodum', sans-serif">고운돋움</div>
+                                    <div class="picker-opt" data-val="'Nanum Myeongjo', serif" style="font-family: 'Nanum Myeongjo', serif">나눔명조</div>
+                                    <div class="picker-opt" data-val="'Pretendard', sans-serif" style="font-family: 'Pretendard', sans-serif">프리텐다드</div>
                                 </div>
                             </div>
                         </div>
@@ -597,40 +630,151 @@
 
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
-                        <div class="ctrl-eyebrow" style="margin:0;">추가 기능</div>
+                        <div class="ctrl-eyebrow" style="margin:0;">오버레이 이미지 (삽입)</div>
+                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="control-group" style="margin-bottom: 12px;">
+                            <input type="file" id="ov-upload" accept="image/*">
+                            <button class="btn btn-sm" onclick="removeOvImg()" style="margin-top: 6px; width: 100%;">이미지 삭제</button>
+                        </div>
+                        <div class="flex-group" style="margin-bottom: 12px;">
+                            <div class="control-group" style="margin:0;">
+                                <label>가로 정렬</label>
+                                <select id="ov-justify"><option value="flex-start">좌측</option><option value="center" selected>중앙</option><option value="flex-end">우측</option></select>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>세로 정렬</label>
+                                <select id="ov-align"><option value="flex-start">상단</option><option value="center" selected>중앙</option><option value="flex-end">하단</option></select>
+                            </div>
+                        </div>
+                        <div class="flex-group" style="margin-bottom: 12px;">
+                            <div class="control-group" style="margin:0;">
+                                <label>크기 배율</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('ov-scale', -0.1, 0.1)">-</button>
+                                    <input type="number" id="ov-scale" value="1.0" step="0.1">
+                                    <button type="button" onclick="adjustNum('ov-scale', 0.1, 0.1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-group">
+                            <div class="control-group" style="margin:0;">
+                                <label>X 위치 이동</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('ov-x', -10, 10)">-</button>
+                                    <input type="number" id="ov-x" value="0">
+                                    <button type="button" onclick="adjustNum('ov-x', 10, 10)">+</button>
+                                </div>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>Y 위치 이동</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('ov-y', -10, 10)">-</button>
+                                    <input type="number" id="ov-y" value="0">
+                                    <button type="button" onclick="adjustNum('ov-y', 10, 10)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ctrl-section">
+                    <div class="collapsible-header" onclick="toggleSection(this)">
+                        <div class="ctrl-eyebrow" style="margin:0;">출처 표시 (워터마크)</div>
+                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="flex-group" style="margin-bottom: 12px;">
+                            <div class="control-group" style="margin:0;">
+                                <label>캐릭터 이름</label>
+                                <input type="text" id="wm-char" placeholder="캐릭터명">
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>제작자</label>
+                                <input type="text" id="wm-creator" placeholder="제작자명">
+                            </div>
+                        </div>
+                        <div class="flex-group" style="margin-bottom: 12px;">
+                            <div class="control-group" style="margin:0;">
+                                <label>가로 정렬</label>
+                                <select id="wm-justify"><option value="flex-start">좌측</option><option value="center" selected>중앙</option><option value="flex-end">우측</option></select>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>세로 정렬</label>
+                                <select id="wm-align"><option value="flex-start">상단</option><option value="center">중앙</option><option value="flex-end" selected>하단</option></select>
+                            </div>
+                        </div>
+                        <div class="flex-group" style="margin-bottom: 12px;">
+                            <div class="control-group" style="margin:0;">
+                                <label>글자 크기 (px)</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('wm-size', -1, 1)">-</button>
+                                    <input type="number" id="wm-size" value="14">
+                                    <button type="button" onclick="adjustNum('wm-size', 1, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>글자 색상</label>
+                                <input type="color" id="wm-color" value="#ffffff">
+                            </div>
+                        </div>
+                        <div class="flex-group">
+                            <div class="control-group" style="margin:0;">
+                                <label>X 위치 이동</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('wm-x', -5, 5)">-</button>
+                                    <input type="number" id="wm-x" value="0">
+                                    <button type="button" onclick="adjustNum('wm-x', 5, 5)">+</button>
+                                </div>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>Y 위치 이동</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('wm-y', -5, 5)">-</button>
+                                    <input type="number" id="wm-y" value="0">
+                                    <button type="button" onclick="adjustNum('wm-y', 5, 5)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ctrl-section">
+                    <div class="collapsible-header" onclick="toggleSection(this)">
+                        <div class="ctrl-eyebrow" style="margin:0;">기타 부가 기능</div>
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
                         
                         <div class="control-group" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <label style="margin-bottom: 2px; font-size: 0.78rem; color: var(--ink);">HTML 뷰어 모드</label>
-                                    <span style="font-size: 0.7rem; color: var(--ink-soft);">스타일 간섭을 끄고 태그를 렌더링합니다.</span>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="html-mode-toggle">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="control-group" style="margin:0;">
-                            <label style="margin-bottom: 8px;">텍스트 모드에서 글자를 드래그한 후 칠하기를 누르세요.</label>
+                            <label style="margin-bottom: 8px;">텍스트 모드에서 글자를 드래그한 후 누르세요.</label>
                             <div class="flex-group" style="align-items: center; gap: 8px;">
                                 <input type="color" id="hl-color" value="#a3e635" style="width: 40px; padding: 0; flex: none;">
                                 <input type="range" id="hl-opacity" min="0.1" max="1.0" step="0.1" value="0.5" style="flex: 1; min-width: 60px;">
-                                <button class="btn btn-sm" onclick="applyHighlight()" style="white-space: nowrap;">칠하기</button>
-                                <button class="btn btn-sm btn-danger" onclick="clearHighlights()" style="white-space: nowrap;">형광펜 삭제</button>
+                                <button class="btn btn-sm" onclick="applyHighlight()" style="white-space: nowrap;">형광펜 칠하기</button>
+                                <button class="btn btn-sm btn-danger" onclick="clearHighlights()" style="white-space: nowrap;">삭제</button>
                             </div>
                         </div>
+
+                        <div class="control-group" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line);">
+                            <label class="toggle-switch" style="display: flex; align-items: center; width: 100%; gap: 10px; cursor: pointer;">
+                                <div style="position: relative; width: 40px; height: 22px; flex-shrink: 0;">
+                                    <input type="checkbox" id="force-overflow-toggle" onchange="updateUI()">
+                                    <span class="toggle-slider"></span>
+                                </div>
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">스크롤(Overflow) 강제 숨김</span>
+                            </label>
+                            <p style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 6px; margin-bottom: 0;">체크 시 캡처될 때처럼 모든 스크롤 영역이 강제로 잘립니다.</p>
+                        </div>
                         
-                        <div class="control-group" style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line);">
-                            <button class="btn btn-danger" onclick="resetAllSettings()" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                                전체 설정 초기화
-                            </button>
-                            <p style="font-size: 0.7rem; color: var(--ink-soft); text-align: center; margin-top: 8px; margin-bottom: 0;">작성한 대화 내용은 지워지지 않습니다.</p>
+                        <div class="control-group" style="margin-top: 16px;">
+                            <button class="btn" onclick="saveAsDefault()" style="width: 100%; margin-bottom: 8px;">현재 설정을 기본값으로 저장</button>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-danger" onclick="resetTypography()" style="flex: 1; padding: 6px;">타이포 초기화</button>
+                                <button class="btn btn-danger" onclick="resetBackground()" style="flex: 1; padding: 6px;">배경 초기화</button>
+                            </div>
+                            <p style="font-size: 0.7rem; color: var(--ink-soft); text-align: center; margin-top: 8px; margin-bottom: 0;">작성한 내용과 코드는 지워지지 않습니다.</p>
                         </div>
 
                     </div>
@@ -678,7 +822,7 @@
                         
                         <div class="toolbar-item">
                             <label>어둡기 (Dim)</label>
-                            <input type="range" id="input-dim" min="0" max="0.9" step="0.1" value="0" style="width: 80px;">
+                            <input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 130px;">
                         </div>
                     </div>
                     
@@ -702,6 +846,10 @@
                     </div>
 
                     <div class="floating-actions">
+                        <button class="btn" onclick="openFullscreen()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                            전체화면
+                        </button>
                         <button class="btn" onclick="copyToClipboard()">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                             클립보드 복사
@@ -726,6 +874,19 @@
                                 <div class="card-content" id="card-content">
                                     <div id="preview-text"></div>
                                 </div>
+                                
+                                <div id="overlay-img-wrapper" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; z-index: 3; pointer-events: none; justify-content: center; align-items: center;">
+                                    <div id="overlay-img-transform" style="transform: translate(0px, 0px) scale(1);">
+                                        <img id="overlay-img-content" src="" style="max-width: 100%; max-height: 100%; pointer-events: auto; display: none;">
+                                    </div>
+                                </div>
+
+                                <div id="watermark-wrapper" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; z-index: 4; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end;">
+                                    <div id="watermark-transform" style="transform: translate(0px, 0px);">
+                                        <div id="watermark-content" style="pointer-events: auto; font-family: inherit; font-size: 14px; color: #fff;"></div>
+                                    </div>
+                                </div>
+                                
                             </div>
                         </div>
                     </div>
@@ -784,6 +945,7 @@
         let currentFontVal = "'Noto Serif KR', serif";
         
         let currentBgImageDataUrl = '';
+        let currentOvImageDataUrl = '';
         let originalBgWidth = 0;
         let originalBgHeight = 0;
         
@@ -824,7 +986,19 @@
             preview: document.getElementById('card-preview'), bgImage: document.getElementById('card-bg-image'),
             previewWrapper: document.getElementById('card-preview-wrapper'), overlay: document.getElementById('card-overlay'),
             contentWrapper: document.getElementById('card-content'), pText: document.getElementById('preview-text'), 
-            scale: document.getElementById('preview-scale'), scaleVal: document.getElementById('scale-value'), scrollArea: document.getElementById('preview-scroll-area')
+            scale: document.getElementById('preview-scale'), scaleVal: document.getElementById('scale-value'), scrollArea: document.getElementById('preview-scroll-area'),
+            
+            // 💡 추가된 DOM 요소
+            wmChar: document.getElementById('wm-char'), wmCreator: document.getElementById('wm-creator'),
+            wmSize: document.getElementById('wm-size'), wmColor: document.getElementById('wm-color'),
+            wmJustify: document.getElementById('wm-justify'), wmAlign: document.getElementById('wm-align'),
+            wmX: document.getElementById('wm-x'), wmY: document.getElementById('wm-y'),
+            
+            ovUpload: document.getElementById('ov-upload'), ovScale: document.getElementById('ov-scale'),
+            ovJustify: document.getElementById('ov-justify'), ovAlign: document.getElementById('ov-align'),
+            ovX: document.getElementById('ov-x'), ovY: document.getElementById('ov-y'),
+            
+            forceOverflow: document.getElementById('force-overflow-toggle')
         };
 
         function updateUI() {
@@ -877,6 +1051,39 @@
             
             DOM.contentWrapper.style.transform = `translate(${textOffsetX}px, ${textOffsetY}px)`;
             
+            // 💡 추가: 오버레이 이미지 설정 적용
+            const ovWrapper = document.getElementById('overlay-img-wrapper');
+            const ovTransform = document.getElementById('overlay-img-transform');
+            ovWrapper.style.justifyContent = DOM.ovJustify.value;
+            ovWrapper.style.alignItems = DOM.ovAlign.value;
+            ovTransform.style.transform = `translate(${DOM.ovX.value}px, ${DOM.ovY.value}px) scale(${DOM.ovScale.value})`;
+
+            // 💡 추가: 워터마크 설정 적용
+            const wmWrapper = document.getElementById('watermark-wrapper');
+            const wmTransform = document.getElementById('watermark-transform');
+            const wmContent = document.getElementById('watermark-content');
+            
+            let char = DOM.wmChar.value.trim();
+            let creator = DOM.wmCreator.value.trim();
+            let wmText = '';
+            if(char && creator) wmText = char + ' | ' + creator;
+            else if(char) wmText = char;
+            else if(creator) wmText = creator;
+
+            wmContent.textContent = wmText;
+            wmContent.style.fontSize = DOM.wmSize.value + 'px';
+            wmContent.style.color = DOM.wmColor.value;
+            wmWrapper.style.justifyContent = DOM.wmJustify.value;
+            wmWrapper.style.alignItems = DOM.wmAlign.value;
+            wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${DOM.wmY.value}px)`;
+            
+            // 💡 오류수정: Overflow 강제 숨김 토글 라이브 반영
+            if(DOM.forceOverflow.checked) {
+                DOM.preview.classList.add('force-overflow-hidden');
+            } else {
+                DOM.preview.classList.remove('force-overflow-hidden');
+            }
+
             updateBgLayer();
             updateScale(); 
         }
@@ -890,50 +1097,116 @@
             const val = e.target.value;
             if (!DOM.htmlToggle.checked && !userManuallyToggledHtml && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
                 DOM.htmlToggle.checked = true;
-                showToast('HTML 태그가 감지되어 뷰어 모드로 자동 전환되었습니다.');
+                showToast('HTML 뷰어 모드로 자동 전환되었습니다.');
             }
             updateUI();
         });
 
-        function resetAllSettings() {
-            if (!confirm('모든 설정을 기본값으로 초기화하시겠습니까?\n(입력한 대화/코드는 지워지지 않습니다)')) return;
-            
-            DOM.width.value = 700;
-            DOM.height.value = 700;
-            DOM.bgColor.value = '#ffffff';
-            DOM.dim.value = 0;
-            DOM.size.value = 24;
-            DOM.pad.value = 15;
-            DOM.lh.value = 1.2;
-            DOM.paraGap.value = 5;
-            DOM.color.value = '#222222';
-            DOM.align.value = 'center';
-            
-            DOM.marginTop.value = 0;
-            DOM.marginBottom.value = 0;
-            DOM.marginLeft.value = 0;
-            DOM.marginRight.value = 0;
-            DOM.htmlScale.value = 1.0; 
-            
-            textOffsetX = 0; textOffsetY = 0;
-            isTextDragMode = false; isBgDragMode = false;
-            DOM.textDragBtn.classList.remove('drag-active');
-            DOM.textDragBtnHtml.classList.remove('drag-active');
-            DOM.bgDragBtn.classList.remove('drag-active');
-            DOM.preview.style.cursor = 'default';
+        // 💡 텍스트 서식 툴바 로직
+        function wrapText(startTag, endTag) {
+            const ta = DOM.text;
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            const sel = ta.value.substring(start, end);
+            ta.setRangeText(startTag + sel + endTag, start, end, 'end');
+            updateUI();
+        }
+        function insertText(str) {
+            const ta = DOM.text;
+            ta.setRangeText(str, ta.selectionStart, ta.selectionEnd, 'end');
+            updateUI();
+        }
 
-            DOM.htmlToggle.checked = false;
-            userManuallyToggledHtml = false; 
+        // 💡 최소화 전체화면 기능 로직
+        function openFullscreen() {
+            document.body.classList.add('fullscreen-mode');
+            setTimeout(() => {
+                document.addEventListener('click', closeFullscreen);
+            }, 10);
+            showToast('전체화면 모드입니다. 아무 곳이나 클릭하면 종료됩니다.');
+        }
+        function closeFullscreen(e) {
+            document.body.classList.remove('fullscreen-mode');
+            document.removeEventListener('click', closeFullscreen);
+        }
+
+        // 💡 설정 초기화 및 디폴트 값 관리
+        function saveAsDefault() {
+            let config = getCurrentConfig();
+            delete config.text; delete config.bgImg; delete config.ovImg;
+            localStorage.setItem('archive_defaults', JSON.stringify(config));
+            showToast('현재 설정이 기본값으로 저장되었습니다.');
+        }
+
+        function getDefaults() {
+            const custom = JSON.parse(localStorage.getItem('archive_defaults'));
+            if(custom) return custom;
+            return {
+                width: 700, height: 700, bgColor: '#ffffff', dim: 0,
+                font: "'Noto Serif KR', serif", color: '#222222', size: 24, lh: 1.2, paraGap: 5, pad: 15, align: 'center',
+                marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0, htmlScale: 1.0, textOffsetX: 0, textOffsetY: 0,
+                forceOverflow: false,
+                wmChar: '', wmCreator: '', wmSize: 14, wmColor: '#ffffff', wmJustify: 'center', wmAlign: 'flex-end', wmX: 0, wmY: 0,
+                ovScale: 1.0, ovJustify: 'center', ovAlign: 'center', ovX: 0, ovY: 0
+            };
+        }
+
+        function resetTypography() {
+            if(!confirm('타이포그래피 및 레이아웃을 기본값으로 초기화하시겠습니까?')) return;
+            const defs = getDefaults();
+            DOM.color.value = defs.color || '#222222';
+            DOM.size.value = defs.size || 24;
+            DOM.lh.value = defs.lh || 1.2;
+            DOM.paraGap.value = defs.paraGap || 5;
+            DOM.pad.value = defs.pad || 15;
+            DOM.align.value = defs.align || 'center';
             
-            removeBgImage(); 
-            
-            currentFontVal = "'Noto Serif KR', serif";
+            currentFontVal = defs.font || "'Noto Serif KR', serif";
             const fontTrigger = document.getElementById('font-picker-trigger');
-            fontTrigger.textContent = '명조체';
             fontTrigger.style.fontFamily = currentFontVal;
+            const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
+            if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
+            else fontTrigger.textContent = '명조체';
+
+            DOM.marginTop.value = defs.marginTop || 0;
+            DOM.marginBottom.value = defs.marginBottom || 0;
+            DOM.marginLeft.value = defs.marginLeft || 0;
+            DOM.marginRight.value = defs.marginRight || 0;
+            DOM.htmlScale.value = defs.htmlScale || 1.0;
+            textOffsetX = defs.textOffsetX || 0;
+            textOffsetY = defs.textOffsetY || 0;
             
             updateUI();
-            showToast('모든 설정이 초기화되었습니다.');
+            showToast('타이포그래피 설정이 초기화되었습니다.');
+        }
+
+        function resetBackground() {
+            if(!confirm('배경 및 부가기능 설정을 기본값으로 초기화하시겠습니까?')) return;
+            const defs = getDefaults();
+            DOM.width.value = defs.width || 700;
+            DOM.height.value = defs.height || 700;
+            DOM.bgColor.value = defs.bgColor || '#ffffff';
+            DOM.dim.value = defs.dim || 0;
+            
+            removeBgImage(); removeOvImg();
+            DOM.forceOverflow.checked = defs.forceOverflow || false;
+
+            DOM.wmChar.value = defs.wmChar || ''; DOM.wmCreator.value = defs.wmCreator || '';
+            DOM.wmSize.value = defs.wmSize || 14; DOM.wmColor.value = defs.wmColor || '#ffffff';
+            DOM.wmJustify.value = defs.wmJustify || 'center'; DOM.wmAlign.value = defs.wmAlign || 'flex-end';
+            DOM.wmX.value = defs.wmX || 0; DOM.wmY.value = defs.wmY || 0;
+
+            DOM.ovScale.value = defs.ovScale || 1.0;
+            DOM.ovJustify.value = defs.ovJustify || 'center'; DOM.ovAlign.value = defs.ovAlign || 'center';
+            DOM.ovX.value = defs.ovX || 0; DOM.ovY.value = defs.ovY || 0;
+            
+            updateUI();
+            showToast('배경 및 부가 설정이 초기화되었습니다.');
+        }
+        
+        // 이전 전체 초기화 유지 (옵션)
+        function resetAllSettings() {
+            resetTypography(); resetBackground();
         }
 
         function updateBgLayer() {
@@ -941,28 +1214,20 @@
                 DOM.bgImage.style.display = 'none';
                 return;
             }
-            
             DOM.bgImage.style.display = 'block';
-            
             const maskW = parseFloat(DOM.width.value) || 700;
             const maskH = parseFloat(DOM.height.value) || 700;
             const maskRatio = maskW / maskH;
             const imgRatio = originalBgWidth / originalBgHeight;
 
             let baseWidth, baseHeight;
-            if (imgRatio > maskRatio) {
-                baseHeight = maskH;
-                baseWidth = baseHeight * imgRatio;
-            } else {
-                baseWidth = maskW;
-                baseHeight = baseWidth / imgRatio;
-            }
+            if (imgRatio > maskRatio) { baseHeight = maskH; baseWidth = baseHeight * imgRatio; } 
+            else { baseWidth = maskW; baseHeight = baseWidth / imgRatio; }
 
             DOM.bgImage.style.width = `${baseWidth}px`;
             DOM.bgImage.style.height = `${baseHeight}px`;
             DOM.bgImage.style.left = `calc(50% - ${baseWidth/2}px)`;
             DOM.bgImage.style.top = `calc(50% - ${baseHeight/2}px)`;
-            
             DOM.bgImage.style.transform = `translate(${bgOffsetX}px, ${bgOffsetY}px) scale(${bgScale})`;
         }
 
@@ -975,9 +1240,17 @@
             updateUI(); 
         }
 
-        const inputs = [DOM.width, DOM.height, DOM.bgColor, DOM.dim, DOM.color, DOM.size, DOM.pad, DOM.lh, DOM.paraGap, DOM.marginTop, DOM.marginBottom, DOM.marginLeft, DOM.marginRight, DOM.htmlScale];
+        const inputs = [
+            DOM.width, DOM.height, DOM.bgColor, DOM.dim, DOM.color, DOM.size, DOM.pad, DOM.lh, DOM.paraGap, 
+            DOM.marginTop, DOM.marginBottom, DOM.marginLeft, DOM.marginRight, DOM.htmlScale,
+            DOM.wmChar, DOM.wmCreator, DOM.wmSize, DOM.wmColor, DOM.wmX, DOM.wmY,
+            DOM.ovScale, DOM.ovX, DOM.ovY
+        ];
         inputs.forEach(el => el.addEventListener('input', updateUI));
-        DOM.align.addEventListener('change', updateUI);
+        
+        ['input-align', 'wm-justify', 'wm-align', 'ov-justify', 'ov-align'].forEach(id => {
+            document.getElementById(id).addEventListener('change', updateUI);
+        });
         
         window.onload = () => {
             updateUI();
@@ -996,7 +1269,7 @@
         }
 
         /* -------------------------------------------------------------
-           드래그 제어 로직
+           배경 & 오버레이 & 텍스트 드래그 로직
         ------------------------------------------------------------- */
         DOM.bgImg.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -1006,8 +1279,7 @@
                     currentBgImageDataUrl = ev.target.result;
                     const tempImg = new Image();
                     tempImg.onload = () => {
-                        originalBgWidth = tempImg.width;
-                        originalBgHeight = tempImg.height;
+                        originalBgWidth = tempImg.width; originalBgHeight = tempImg.height;
                         bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0;
                         DOM.bgImage.src = currentBgImageDataUrl;
                         updateUI();
@@ -1022,6 +1294,28 @@
             currentBgImageDataUrl = ''; DOM.bgImg.value = ''; 
             originalBgWidth = 0; originalBgHeight = 0;
             bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0;
+            updateUI(); 
+        }
+
+        // 💡 오버레이 이미지 제어
+        DOM.ovUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = ev => { 
+                    currentOvImageDataUrl = ev.target.result;
+                    document.getElementById('overlay-img-content').src = currentOvImageDataUrl;
+                    document.getElementById('overlay-img-content').style.display = 'block';
+                    updateUI();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function removeOvImg() { 
+            currentOvImageDataUrl = ''; DOM.ovUpload.value = ''; 
+            document.getElementById('overlay-img-content').src = '';
+            document.getElementById('overlay-img-content').style.display = 'none';
             updateUI(); 
         }
 
@@ -1056,14 +1350,10 @@
         DOM.preview.addEventListener('mousedown', (e) => {
             if (isBgDragMode && currentBgImageDataUrl) {
                 isDraggingBg = true;
-                startMouseX = e.clientX;
-                startMouseY = e.clientY;
-                e.preventDefault(); 
+                startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
             } else if (isTextDragMode) {
                 isDraggingText = true;
-                startMouseX = e.clientX;
-                startMouseY = e.clientY;
-                e.preventDefault(); 
+                startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
             }
         });
 
@@ -1072,18 +1362,14 @@
             if (isDraggingBg) {
                 const dx = (e.clientX - startMouseX) / (previewScale * bgScale);
                 const dy = (e.clientY - startMouseY) / (previewScale * bgScale);
-                bgOffsetX += dx;
-                bgOffsetY += dy;
-                startMouseX = e.clientX;
-                startMouseY = e.clientY;
+                bgOffsetX += dx; bgOffsetY += dy;
+                startMouseX = e.clientX; startMouseY = e.clientY;
                 updateBgLayer();
             } else if (isDraggingText) {
                 const dx = (e.clientX - startMouseX) / previewScale;
                 const dy = (e.clientY - startMouseY) / previewScale;
-                textOffsetX += dx;
-                textOffsetY += dy;
-                startMouseX = e.clientX;
-                startMouseY = e.clientY;
+                textOffsetX += dx; textOffsetY += dy;
+                startMouseX = e.clientX; startMouseY = e.clientY;
                 updateUI();
             }
         });
@@ -1093,15 +1379,14 @@
         DOM.preview.addEventListener('wheel', (e) => {
             if (!isBgDragMode || !currentBgImageDataUrl) return;
             e.preventDefault();
-            const zoomSpeed = 0.0005; 
-            bgScale -= e.deltaY * zoomSpeed;
+            bgScale -= e.deltaY * 0.0005; 
             bgScale = Math.max(0.1, Math.min(bgScale, 10)); 
             updateBgLayer();
         }, { passive: false });
 
 
         /* -------------------------------------------------------------
-           아코디언 및 형광펜 기능 (형광펜 스타일 버그 교정 완료)
+           아코디언 및 형광펜 
         ------------------------------------------------------------- */
         function toggleSection(headerEl) {
             const content = headerEl.nextElementSibling;
@@ -1124,16 +1409,10 @@
             const textarea = DOM.text;
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
-            
-            if (start === end) {
-                showToast('입력창에서 칠할 글자를 먼저 드래그하세요.');
-                return;
-            }
+            if (start === end) return showToast('입력창에서 칠할 글자를 먼저 드래그하세요.');
 
             const selectedText = textarea.value.substring(start, end);
             const rgba = hexToRgba(document.getElementById('hl-color').value, document.getElementById('hl-opacity').value);
-
-            // 💡 해결: 형광펜 줄 번짐 현상을 방지하도록 인라인 강제화 및 패딩 전면 수정
             const markedText = selectedText.split('\n').map(line => {
                 if (line.trim() === '') return line; 
                 return `<mark style="background-color: ${rgba}; border-radius: 4px; padding: 0px 4px; margin: 0; color: inherit; display: inline !important; box-decoration-break: clone; -webkit-box-decoration-break: clone; line-height: inherit;">${line}</mark>`;
@@ -1145,8 +1424,7 @@
 
         function clearHighlights() {
             DOM.text.value = DOM.text.value.replace(/<mark[^>]*>/g, '').replace(/<\/mark>/g, '');
-            updateUI();
-            showToast('형광펜이 모두 지워졌습니다.');
+            updateUI(); showToast('형광펜이 모두 지워졌습니다.');
         }
 
         /* -------------------------------------------------------------
@@ -1166,7 +1444,6 @@
             document.querySelectorAll('.picker-opt').forEach(opt => {
                 const newOpt = opt.cloneNode(true);
                 opt.parentNode.replaceChild(newOpt, opt);
-                
                 newOpt.addEventListener('mouseenter', () => { DOM.pText.style.fontFamily = newOpt.dataset.val; });
                 newOpt.addEventListener('mouseleave', () => { DOM.pText.style.fontFamily = currentFontVal; });
                 newOpt.addEventListener('click', () => {
@@ -1187,35 +1464,33 @@
             const font = new FontFace(fontName, `url(${fontUrl})`);
             try {
                 await font.load(); document.fonts.add(font);
-                
                 const opt = document.createElement('div');
-                opt.className = 'picker-opt';
-                opt.dataset.val = fontName;
-                opt.style.fontFamily = fontName;
-                opt.textContent = `내 폰트 (${file.name})`;
+                opt.className = 'picker-opt'; opt.dataset.val = fontName; opt.style.fontFamily = fontName; opt.textContent = `내 폰트 (${file.name})`;
                 fontOptions.appendChild(opt);
 
                 currentFontVal = fontName;
-                fontTrigger.textContent = opt.textContent;
-                fontTrigger.style.fontFamily = fontName;
+                fontTrigger.textContent = opt.textContent; fontTrigger.style.fontFamily = fontName;
                 fontOptions.classList.remove('open');
                 
-                setupFontPicker();
-                updateUI(); showToast('폰트가 적용되었습니다.');
+                setupFontPicker(); updateUI(); showToast('폰트가 적용되었습니다.');
             } catch (err) { showToast('폰트를 불러올 수 없습니다.'); }
         });
 
 
         /* -------------------------------------------------------------
-           프리셋 로직
+           프리셋 로직 (툴팁 설명 포함)
         ------------------------------------------------------------- */
         function initPresetButtons() {
             let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
             document.querySelectorAll('.preset-btn').forEach(btn => {
                 const slot = btn.getAttribute('data-slot');
-                if (presets[slot]) btn.classList.add('has-data');
-                else btn.classList.remove('has-data');
-                
+                if (presets[slot]) {
+                    btn.classList.add('has-data');
+                    btn.setAttribute('title', presets[slot].desc || `저장된 프리셋 ${slot}`);
+                } else {
+                    btn.classList.remove('has-data');
+                    btn.setAttribute('title', '비어있음');
+                }
                 if (slot === currentActiveSlot) btn.classList.add('active');
                 else btn.classList.remove('active');
             });
@@ -1234,7 +1509,12 @@
                 marginLeft: DOM.marginLeft.value, marginRight: DOM.marginRight.value,
                 htmlScale: DOM.htmlScale.value,
                 font: currentFontVal, color: DOM.color.value, size: DOM.size.value,
-                pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value
+                pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value,
+                forceOverflow: DOM.forceOverflow.checked,
+                wmChar: DOM.wmChar.value, wmCreator: DOM.wmCreator.value, wmSize: DOM.wmSize.value, wmColor: DOM.wmColor.value,
+                wmJustify: DOM.wmJustify.value, wmAlign: DOM.wmAlign.value, wmX: DOM.wmX.value, wmY: DOM.wmY.value,
+                ovImg: currentOvImageDataUrl, ovScale: DOM.ovScale.value, ovJustify: DOM.ovJustify.value, 
+                ovAlign: DOM.ovAlign.value, ovX: DOM.ovX.value, ovY: DOM.ovY.value
             };
         }
 
@@ -1243,76 +1523,72 @@
                 let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
                 let config = getCurrentConfig();
                 
-                delete config.text; 
-                delete config.bgImg; 
+                delete config.text; delete config.bgImg; delete config.ovImg; // 무거운 데이터 제외
                 
-                presets[currentActiveSlot] = config;
+                let desc = prompt('이 프리셋의 설명을 입력해주세요 (마우스 오버 시 표시):', presets[currentActiveSlot]?.desc || `프리셋 ${currentActiveSlot}`);
+                if (desc === null) return; 
+                
+                presets[currentActiveSlot] = { config: config, desc: desc };
                 localStorage.setItem('archive_presets', JSON.stringify(presets));
                 initPresetButtons(); 
-                showToast(`슬롯 ${currentActiveSlot}에 저장되었습니다. (배경 이미지는 용량 문제로 제외됨)`);
-            } catch (err) {
-                showToast('저장 공간 용량 초과 오류가 발생했습니다.');
-            }
+                showToast(`슬롯 ${currentActiveSlot}에 저장되었습니다.`);
+            } catch (err) { showToast('저장 공간 용량 초과 오류가 발생했습니다.'); }
         }
 
         function loadPreset() {
             let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
             if (!presets[currentActiveSlot]) return showToast('저장된 프리셋이 없습니다.');
-            applyConfig(presets[currentActiveSlot], false); 
+            let config = presets[currentActiveSlot].config || presets[currentActiveSlot];
+            applyConfig(config, false); 
             showToast(`슬롯 ${currentActiveSlot} 프리셋을 불러왔습니다.`);
         }
 
         function applyConfig(config, isFromArchive = false) {
             if (isFromArchive && config.text !== undefined) DOM.text.value = config.text;
-            
-            DOM.width.value = config.width || 700;
-            DOM.height.value = config.height || 700;
+            DOM.width.value = config.width || 700; DOM.height.value = config.height || 700;
             
             if (config.bgImg !== undefined) {
                 currentBgImageDataUrl = config.bgImg;
-                
                 if (currentBgImageDataUrl) {
                     const tempImg = new Image();
-                    tempImg.onload = () => {
-                        originalBgWidth = tempImg.width;
-                        originalBgHeight = tempImg.height;
-                        DOM.bgImage.src = currentBgImageDataUrl; 
-                        updateBgLayer();
-                    };
+                    tempImg.onload = () => { originalBgWidth = tempImg.width; originalBgHeight = tempImg.height; DOM.bgImage.src = currentBgImageDataUrl; updateBgLayer(); };
                     tempImg.src = currentBgImageDataUrl;
+                } else { DOM.bgImage.src = ''; updateBgLayer(); }
+            }
+
+            if (config.ovImg !== undefined) {
+                currentOvImageDataUrl = config.ovImg;
+                if (currentOvImageDataUrl) {
+                    document.getElementById('overlay-img-content').src = currentOvImageDataUrl;
+                    document.getElementById('overlay-img-content').style.display = 'block';
                 } else {
-                    DOM.bgImage.src = '';
-                    updateBgLayer();
+                    document.getElementById('overlay-img-content').src = '';
+                    document.getElementById('overlay-img-content').style.display = 'none';
                 }
             }
             
-            bgScale = config.bgScale || 1.0;
-            bgOffsetX = config.bgOffsetX || 0;
-            bgOffsetY = config.bgOffsetY || 0;
+            bgScale = config.bgScale || 1.0; bgOffsetX = config.bgOffsetX || 0; bgOffsetY = config.bgOffsetY || 0;
+            textOffsetX = config.textOffsetX || 0; textOffsetY = config.textOffsetY || 0;
             
-            textOffsetX = config.textOffsetX || 0;
-            textOffsetY = config.textOffsetY || 0;
-            
-            DOM.bgColor.value = config.bgColor || '#ffffff';
-            DOM.dim.value = config.dim || 0;
-            DOM.paraGap.value = config.paraGap || 5; 
-            
-            DOM.marginTop.value = config.marginTop || 0;
-            DOM.marginBottom.value = config.marginBottom || 0;
-            DOM.marginLeft.value = config.marginLeft || 0;
-            DOM.marginRight.value = config.marginRight || 0;
+            DOM.bgColor.value = config.bgColor || '#ffffff'; DOM.dim.value = config.dim || 0; DOM.paraGap.value = config.paraGap || 5; 
+            DOM.marginTop.value = config.marginTop || 0; DOM.marginBottom.value = config.marginBottom || 0;
+            DOM.marginLeft.value = config.marginLeft || 0; DOM.marginRight.value = config.marginRight || 0;
             DOM.htmlScale.value = config.htmlScale || 1.0;
-
-            DOM.color.value = config.color || '#222222';
-            DOM.size.value = config.size || 24;
-            DOM.pad.value = config.pad || 15;
-            DOM.lh.value = config.lh || 1.2;
-            DOM.align.value = config.align || 'center';
+            DOM.color.value = config.color || '#222222'; DOM.size.value = config.size || 24;
+            DOM.pad.value = config.pad || 15; DOM.lh.value = config.lh || 1.2; DOM.align.value = config.align || 'center';
             DOM.htmlToggle.checked = !!config.isHtmlMode;
             
+            DOM.forceOverflow.checked = !!config.forceOverflow;
+            DOM.wmChar.value = config.wmChar || ''; DOM.wmCreator.value = config.wmCreator || '';
+            DOM.wmSize.value = config.wmSize || 14; DOM.wmColor.value = config.wmColor || '#ffffff';
+            DOM.wmJustify.value = config.wmJustify || 'center'; DOM.wmAlign.value = config.wmAlign || 'flex-end';
+            DOM.wmX.value = config.wmX || 0; DOM.wmY.value = config.wmY || 0;
+
+            DOM.ovScale.value = config.ovScale || 1.0; DOM.ovJustify.value = config.ovJustify || 'center';
+            DOM.ovAlign.value = config.ovAlign || 'center'; DOM.ovX.value = config.ovX || 0; DOM.ovY.value = config.ovY || 0;
+
             if (config.font) {
-                currentFontVal = config.font;
-                fontTrigger.style.fontFamily = currentFontVal;
+                currentFontVal = config.font; fontTrigger.style.fontFamily = currentFontVal;
                 const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
                 if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
             }
@@ -1340,9 +1616,8 @@
         }
         function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
-
         /* -------------------------------------------------------------
-           💡 샌드박스 캡처 엔진 (안쪽 테두리 버그 자동 패치 교정단)
+           💡 샌드박스 캡처 엔진 (안쪽 테두리 버그 고체형 수학 치환 패치)
         ------------------------------------------------------------- */
         function captureInSandbox(scaleRatio, isPng) {
             return new Promise((resolve, reject) => {
@@ -1352,12 +1627,8 @@
                     const h = parseFloat(DOM.height.value) || 700;
 
                     const iframe = document.createElement('iframe');
-                    iframe.style.position = 'fixed';
-                    iframe.style.top = '-9999px';
-                    iframe.style.left = '-9999px';
-                    iframe.style.width = w + 'px';
-                    iframe.style.height = h + 'px';
-                    iframe.style.border = 'none';
+                    iframe.style.position = 'fixed'; iframe.style.top = '-9999px'; iframe.style.left = '-9999px';
+                    iframe.style.width = w + 'px'; iframe.style.height = h + 'px'; iframe.style.border = 'none';
                     document.body.appendChild(iframe);
 
                     const idoc = iframe.contentDocument || iframe.contentWindow.document;
@@ -1385,13 +1656,9 @@
                         <head>
                             <meta charset="UTF-8">
                             ${styles}
-                            <style>
-                                body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
-                            </style>
+                            <style> body { margin: 0; padding: 0; background: transparent; overflow: hidden; } </style>
                         </head>
-                        <body>
-                            ${cloneEl.outerHTML}
-                        </body>
+                        <body> ${cloneEl.outerHTML} </body>
                         </html>
                     `);
                     idoc.close();
@@ -1399,179 +1666,99 @@
                     setTimeout(async () => {
                         try {
                             const targetEl = idoc.getElementById('card-preview');
+                            const allNodes = targetEl.querySelectorAll('*');
+                            const idocWindow = idoc.defaultView;
 
-                            // 💡 자동 보정: inset(안쪽) 그림자 중 블러가 있는 것을,
-                            // html2canvas가 정확히 그릴 수 있는 '경계선 여러 겹'으로
-                            // 캡처용 사본에서만 자동 변환합니다. 사용자가 입력한 원본
-                            // 텍스트/HTML은 전혀 건드리지 않고, 미리보기도 그대로 유지됩니다.
-                            (function autoFixInsetShadows() {
-                                const idocWindow = idoc.defaultView;
-                                const colorProbe = idoc.createElement('div');
-                                colorProbe.style.display = 'none';
-                                idoc.body.appendChild(colorProbe);
+                            allNodes.forEach(node => {
+                                const compStyle = idocWindow.getComputedStyle(node);
+                                const boxShadow = compStyle.boxShadow;
+                                
+                                if (boxShadow && boxShadow !== 'none' && boxShadow.includes('inset')) {
+                                    try {
+                                        const splitShadows = (str) => {
+                                            const result = []; let depth = 0, last = 0;
+                                            for (let i = 0; i < str.length; i++) {
+                                                if (str[i] === '(') depth++; else if (str[i] === ')') depth--;
+                                                else if (str[i] === ',' && depth === 0) { result.push(str.slice(last, i).trim()); last = i + 1; }
+                                            }
+                                            result.push(str.slice(last).trim()); return result.filter(Boolean);
+                                        };
 
-                                function toRGBA(colorStr) {
-                                    colorProbe.style.color = colorStr;
-                                    const computed = idocWindow.getComputedStyle(colorProbe).color;
-                                    const m = computed.match(/rgba?\(([^)]+)\)/);
-                                    if (!m) return { r: 0, g: 0, b: 0, a: 1 };
-                                    const parts = m[1].split(',').map(s => parseFloat(s));
-                                    return { r: parts[0] || 0, g: parts[1] || 0, b: parts[2] || 0, a: parts.length > 3 ? parts[3] : 1 };
+                                        const parts = splitShadows(boxShadow);
+                                        const convertedParts = parts.map(part => {
+                                            if (!part.includes('inset')) return part;
+                                            const colorMatch = part.match(/rgba?\([^)]+\)/);
+                                            let r = 0, g = 0, b = 0, a = 1;
+                                            if (colorMatch) {
+                                                const rgbaParts = colorMatch[0].match(/[\d.]+/g);
+                                                r = rgbaParts[0] || 0; g = rgbaParts[1] || 0; b = rgbaParts[2] || 0;
+                                                a = rgbaParts.length > 3 ? parseFloat(rgbaParts[3]) : 1;
+                                            }
+                                            const pxMatch = part.match(/-?\d+(\.\d+)?px/g);
+                                            if (pxMatch && pxMatch.length >= 3) {
+                                                const blur = parseFloat(pxMatch[2]);
+                                                const spread = pxMatch.length === 4 ? parseFloat(pxMatch[3]) : 0;
+                                                if (blur > 0) {
+                                                    let thickness = spread + (blur / 2);
+                                                    if (thickness < 1) thickness = 1; 
+                                                    let newAlpha = a * 0.5;
+                                                    if (newAlpha > 0.35) newAlpha = 0.35;
+                                                    return `inset 0px 0px 0px ${thickness.toFixed(1)}px rgba(${r}, ${g}, ${b}, ${newAlpha.toFixed(3)})`;
+                                                }
+                                            }
+                                            return part;
+                                        });
+                                        node.style.setProperty('box-shadow', convertedParts.join(', '), 'important');
+                                    } catch (e) {}
                                 }
-
-                                function splitTopLevel(str) {
-                                    const result = [];
-                                    let depth = 0, last = 0;
-                                    for (let i = 0; i < str.length; i++) {
-                                        const c = str[i];
-                                        if (c === '(') depth++;
-                                        else if (c === ')') depth--;
-                                        else if (c === ',' && depth === 0) {
-                                            result.push(str.slice(last, i));
-                                            last = i + 1;
-                                        }
-                                    }
-                                    result.push(str.slice(last));
-                                    return result.map(s => s.trim()).filter(Boolean);
-                                }
-
-                                function parseShadowPart(part) {
-                                    const inset = /(^|\s)inset(\s|$)/.test(part);
-                                    const withoutInset = part.replace(/inset/g, '').trim();
-                                    const pxVals = withoutInset.match(/-?\d+(\.\d+)?px/g) || [];
-                                    const nums = pxVals.slice(-4).map(v => parseFloat(v));
-                                    while (nums.length < 4) nums.unshift(0);
-                                    const [offsetX, offsetY, blur, spread] = nums;
-                                    const firstPx = pxVals.length ? withoutInset.indexOf(pxVals[0]) : withoutInset.length;
-                                    const color = withoutInset.slice(0, firstPx).trim() || 'rgb(0,0,0)';
-                                    return { color, offsetX, offsetY, blur, spread, inset };
-                                }
-
-                                function approximate(part) {
-                                    const { color, offsetX, offsetY, blur, spread, inset } = parseShadowPart(part);
-                                    if (!inset || blur <= 0) return part; // 아웃셋이거나 블러 없는 그림자는 그대로 둠
-                                    const { r, g, b, a } = toRGBA(color);
-                                    const steps = Math.min(14, Math.max(5, Math.round(blur / 2))); // 블러가 클수록 겹을 늘려 계단현상 방지
-                                    // 겹(레이어)들은 spread가 큰 것이 작은 것을 완전히 감싸며 겹치므로,
-                                    // 각 레이어의 알파를 그대로 쓰면 가장자리에서 곱셈으로 누적되어 과하게 진해진다.
-                                    // 그래서 목표로 하는 최종(합성) 진하기 곡선을 먼저 정하고, 뒤에서부터
-                                    // 역산해서 "이 레이어 하나만의" 알파를 구한다 (알파 합성 역연산).
-                                    // k=0(진짜 가장자리, spread=0)부터 k=steps(블러 끝)까지 포함해야
-                                    // 가장자리에서 원래 진하기(a)에 정확히 도달한다.
-                                    const targetAt = (t) => a * Math.pow(1 - t, 2); // t=0(가장자리)에서 a, t=1(블러 끝)에서 0
-                                    const layerAlphas = new Array(steps + 1);
-                                    let remainingProduct = 1; // 이미 처리한(바깥쪽) 레이어들의 (1-alpha) 곱
-                                    for (let k = steps; k >= 0; k--) {
-                                        const t = k / steps;
-                                        const target = targetAt(t);
-                                        const remaining = Math.min(1, Math.max(0, 1 - target));
-                                        let layerA = 1 - remaining / remainingProduct;
-                                        layerA = Math.min(1, Math.max(0, layerA));
-                                        layerAlphas[k] = layerA;
-                                        remainingProduct = remaining;
-                                    }
-                                    const layers = [];
-                                    for (let i = 0; i <= steps; i++) {
-                                        const t = i / steps;
-                                        const layerSpread = (spread + blur * t).toFixed(2);
-                                        const layerAlpha = layerAlphas[i].toFixed(4);
-                                        layers.push(`inset ${offsetX}px ${offsetY}px 0px ${layerSpread}px rgba(${r}, ${g}, ${b}, ${layerAlpha})`);
-                                    }
-                                    return layers.join(', ');
-                                }
-
-                                const allEls = [targetEl, ...targetEl.querySelectorAll('*')];
-                                allEls.forEach(node => {
-                                    const boxShadow = idocWindow.getComputedStyle(node).boxShadow;
-                                    if (boxShadow && boxShadow !== 'none' && boxShadow.includes('inset')) {
-                                        try {
-                                            const parts = splitTopLevel(boxShadow);
-                                            const converted = parts.map(approximate).join(', ');
-                                            node.style.setProperty('box-shadow', converted, 'important');
-                                        } catch (e) { /* 개별 요소 변환 실패 시 그냥 원본 유지 */ }
-                                    }
-                                });
-                                colorProbe.remove();
-                            })();
+                            });
 
                             const canvas = await html2canvas(targetEl, {
-                                scale: scaleRatio, // 💡 설정한 픽셀 크기(1배율) 그대로 캡처 처리
-                                useCORS: true,
-                                allowTaint: true,
-                                backgroundColor: DOM.bgColor.value || '#ffffff',
-                                logging: false
+                                scale: scaleRatio, useCORS: true, allowTaint: true, backgroundColor: DOM.bgColor.value || '#ffffff', logging: false
                             });
                             
                             document.body.removeChild(iframe); 
                             resolve(canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85));
                         } catch (err) {
-                            document.body.removeChild(iframe);
-                            reject(err);
+                            document.body.removeChild(iframe); reject(err);
                         }
                     }, 600); 
-                } catch (e) {
-                    reject(e);
-                }
+                } catch (e) { reject(e); }
             });
         }
 
         async function downloadCard() {
             if (isCapturing) return;
-            isCapturing = true;
-            showToast('캡처를 준비 중입니다. 잠시만 기다려주세요...');
-            
+            isCapturing = true; showToast('캡처를 준비 중입니다. 잠시만 기다려주세요...');
             const currentScale = DOM.scale.value;
-            DOM.preview.style.transform = 'scale(1)';
-            DOM.previewWrapper.style.width = DOM.width.value + 'px';
-            DOM.previewWrapper.style.height = DOM.height.value + 'px';
-            
+            DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             try {
-                const dataUrl = await captureInSandbox(1, true); // 사용자가 설정한 픽셀 크기 1배율 매칭
-                const link = document.createElement('a'); 
-                link.download = `archive_${Date.now()}.png`;
-                link.href = dataUrl; 
-                link.click();
+                const dataUrl = await captureInSandbox(1, true); 
+                const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`; link.href = dataUrl; link.click();
                 showToast('다운로드가 완료되었습니다!');
             } catch (err) {
-                showToast('캡처 중 오류가 발생했습니다.');
-                console.error(err);
+                showToast('캡처 중 오류가 발생했습니다.'); console.error(err);
             } finally {
-                DOM.preview.style.transform = `scale(${currentScale})`;
-                updateScale();
-                isCapturing = false;
+                DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false;
             }
         }
 
         async function copyToClipboard() {
             if (isCapturing) return;
-            isCapturing = true;
-            showToast('클립보드에 복사 중입니다. 잠시만 기다려주세요...');
-            
+            isCapturing = true; showToast('클립보드에 복사 중입니다. 잠시만 기다려주세요...');
             const currentScale = DOM.scale.value;
-            DOM.preview.style.transform = 'scale(1)';
-            DOM.previewWrapper.style.width = DOM.width.value + 'px';
-            DOM.previewWrapper.style.height = DOM.height.value + 'px';
-            
+            DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             try {
                 const dataUrl = await captureInSandbox(1, true); 
-                const res = await fetch(dataUrl);
-                const blob = await res.blob();
-                
+                const res = await fetch(dataUrl); const blob = await res.blob();
                 if (navigator.clipboard && navigator.clipboard.write) {
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': blob })
-                    ]);
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
                     showToast('클립보드에 이미지가 복사되었습니다!');
-                } else {
-                    showToast('이 브라우저에서는 클립보드 복사 기능을 지원하지 않습니다.');
-                }
+                } else { showToast('이 브라우저에서는 클립보드 복사 기능을 지원하지 않습니다.'); }
             } catch (err) {
-                showToast('클립보드 복사 중 오류가 발생했습니다.');
-                console.error(err);
+                showToast('클립보드 복사 중 오류가 발생했습니다.'); console.error(err);
             } finally {
-                DOM.preview.style.transform = `scale(${currentScale})`;
-                updateScale();
-                isCapturing = false;
+                DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false;
             }
         }
 
@@ -1580,49 +1767,23 @@
         ------------------------------------------------------------- */
         let db;
         const request = indexedDB.open("AIArchiveDB", 2); 
-        request.onupgradeneeded = e => {
-            db = e.target.result;
-            if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' });
-        };
+        request.onupgradeneeded = e => { db = e.target.result; if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' }); };
         request.onsuccess = e => db = e.target.result;
 
         async function saveToIndexedDB() {
             if (isCapturing) return;
-            isCapturing = true;
-            showToast('데이터를 저장 중입니다. 잠시만 기다려주세요...');
-
-            const tags = document.getElementById('modal-tags').value;
-            const memo = document.getElementById('modal-memo').value;
+            isCapturing = true; showToast('데이터를 저장 중입니다. 잠시만 기다려주세요...');
+            const tags = document.getElementById('modal-tags').value; const memo = document.getElementById('modal-memo').value;
             const configData = getCurrentConfig(); 
-
             const currentScale = DOM.scale.value;
-            DOM.preview.style.transform = 'scale(1)';
-            DOM.previewWrapper.style.width = DOM.width.value + 'px';
-            DOM.previewWrapper.style.height = DOM.height.value + 'px';
-            
+            DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             try {
                 const imgData = await captureInSandbox(1, false); 
-                
-                const newItem = {
-                    id: Date.now(), date: new Date().toLocaleDateString(),
-                    config: configData, image: imgData, tags: tags, memo: memo
-                };
-
-                const tx = db.transaction(['cards'], 'readwrite');
-                tx.objectStore('cards').add(newItem);
-                tx.oncomplete = () => {
-                    closeModal(); 
-                    showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!');
-                    loadGallery(); 
-                };
-            } catch (err) {
-                showToast('이미지 처리 중 오류가 발생해 저장하지 못했습니다.');
-                console.error(err);
-            } finally {
-                DOM.preview.style.transform = `scale(${currentScale})`;
-                updateScale();
-                isCapturing = false;
-            }
+                const newItem = { id: Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
+                const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').add(newItem);
+                tx.oncomplete = () => { closeModal(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!'); loadGallery(); };
+            } catch (err) { showToast('이미지 처리 중 오류가 발생해 저장하지 못했습니다.'); console.error(err);
+            } finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
         }
 
         let loadedItems = []; 
@@ -1633,140 +1794,72 @@
             const keyword = document.getElementById('search-input').value.toLowerCase();
             const sortOrder = document.getElementById('sort-select').value;
             grid.innerHTML = ''; loadedItems = [];
-
             const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
             req.onsuccess = function(e) {
                 let album = e.target.result;
                 if (keyword) album = album.filter(item => (item.tags||'').toLowerCase().includes(keyword) || (item.memo||'').toLowerCase().includes(keyword));
                 album.sort((a, b) => sortOrder === 'asc' ? a.id - b.id : b.id - a.id);
                 loadedItems = album;
-
                 if(album.length === 0) {
                     grid.innerHTML = `<div class="empty-state">
                         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-                        <p>저장된 기록이 없습니다</p>
-                        <span>발췌기에서 카드를 만들고 아카이브에 저장해보세요.</span>
-                    </div>`;
+                        <p>저장된 기록이 없습니다</p><span>발췌기에서 카드를 만들고 아카이브에 저장해보세요.</span></div>`;
                     return;
                 }
-                
                 album.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'gallery-item';
-
+                    const div = document.createElement('div'); div.className = 'gallery-item';
                     const tagList = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
-                    const tagsHtml = tagList.length
-                        ? tagList.map(t => `<span class="tag-chip">#${t}</span>`).join('')
-                        : '<span class="tag-chip tag-chip-empty">태그 없음</span>';
-                    
+                    const tagsHtml = tagList.length ? tagList.map(t => `<span class="tag-chip">#${t}</span>`).join('') : '<span class="tag-chip tag-chip-empty">태그 없음</span>';
                     div.innerHTML = `
                         <img src="${item.image}" alt="Archive Card">
                         <div class="item-overlay">
-                            <div class="overlay-info">
-                                <div class="overlay-tags">${tagsHtml}</div>
-                                <div class="overlay-memo">${item.memo || '메모 없음'}</div>
-                                <div class="overlay-date">${item.date || ''}</div>
-                            </div>
+                            <div class="overlay-info"><div class="overlay-tags">${tagsHtml}</div><div class="overlay-memo">${item.memo || '메모 없음'}</div><div class="overlay-date">${item.date || ''}</div></div>
                             <div class="overlay-actions">
                                 <button class="btn-overlay-save" onclick="downloadFromArchive(${item.id})">저장</button>
                                 <button class="btn-overlay-edit" onclick="editFromArchive(${item.id})">수정</button>
                                 <button class="btn-overlay-delete" onclick="deleteFromIndexedDB(${item.id})">삭제</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                     grid.appendChild(div);
                 });
             };
         }
 
-        function downloadFromArchive(id) {
-            const item = loadedItems.find(i => i.id === id);
-            if(item) {
-                const link = document.createElement('a'); link.download = `archive_saved_${id}.png`; link.href = item.image; link.click();
-            }
-        }
-        
-        function editFromArchive(id) {
-            const item = loadedItems.find(i => i.id === id);
-            if(item && item.config) {
-                switchTab('extractor'); 
-                setTimeout(() => {
-                    applyConfig(item.config, true); 
-                    showToast('저장된 세팅값을 발췌기로 불러왔습니다.');
-                }, 10);
-            } else { 
-                showToast('구버전 데이터라 수정할 수 없습니다.'); 
-            }
-        }
-
-        function deleteFromIndexedDB(id) {
-            if(confirm('이 기록을 삭제하시겠습니까?')) {
-                const tx = db.transaction(['cards'], 'readwrite');
-                tx.objectStore('cards').delete(id);
-                tx.oncomplete = () => loadGallery();
-            }
-        }
+        function downloadFromArchive(id) { const item = loadedItems.find(i => i.id === id); if(item) { const link = document.createElement('a'); link.download = `archive_saved_${id}.png`; link.href = item.image; link.click(); } }
+        function editFromArchive(id) { const item = loadedItems.find(i => i.id === id); if(item && item.config) { switchTab('extractor'); setTimeout(() => { applyConfig(item.config, true); showToast('저장된 세팅값을 발췌기로 불러왔습니다.'); }, 10); } else { showToast('구버전 데이터라 수정할 수 없습니다.'); } }
+        function deleteFromIndexedDB(id) { if(confirm('이 기록을 삭제하시겠습니까?')) { const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').delete(id); tx.oncomplete = () => loadGallery(); } }
 
         /* -------------------------------------------------------------
-           백업 (Export) 및 복구 (Import) 로직 구현
+           백업 (Export) 및 복구 (Import) 
         ------------------------------------------------------------- */
         async function exportData() {
             try {
                 const presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
                 const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
-                
                 req.onsuccess = function(e) {
-                    const archive = e.target.result;
-                    const exportObj = { presets: presets, archive: archive };
-                    
+                    const archive = e.target.result; const exportObj = { presets: presets, archive: archive };
                     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
                     const downloadAnchorNode = document.createElement('a');
-                    downloadAnchorNode.setAttribute("href", dataStr);
-                    downloadAnchorNode.setAttribute("download", `archive_backup_${Date.now()}.json`);
-                    document.body.appendChild(downloadAnchorNode);
-                    downloadAnchorNode.click();
-                    downloadAnchorNode.remove();
-                    
+                    downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", `archive_backup_${Date.now()}.json`);
+                    document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
                     showToast('모든 데이터가 안전하게 백업 파일로 저장되었습니다.');
                 };
-            } catch (err) {
-                showToast('데이터 백업 중 오류가 발생했습니다.');
-            }
+            } catch (err) { showToast('데이터 백업 중 오류가 발생했습니다.'); }
         }
 
         function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
+            const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    
-                    if (data.presets) {
-                        localStorage.setItem('archive_presets', JSON.stringify(data.presets));
-                        initPresetButtons();
-                    }
-                    
+                    if (data.presets) { localStorage.setItem('archive_presets', JSON.stringify(data.presets)); initPresetButtons(); }
                     if (data.archive && Array.isArray(data.archive)) {
-                        const tx = db.transaction(['cards'], 'readwrite');
-                        const store = tx.objectStore('cards');
-                        
-                        data.archive.forEach(item => {
-                            store.put(item); 
-                        });
-                        
-                        tx.oncomplete = () => {
-                            loadGallery();
-                            showToast('데이터가 성공적으로 복구되었습니다!');
-                            event.target.value = ''; 
-                        };
-                    } else {
-                        showToast('유효하지 않은 백업 파일 포맷입니다.');
-                    }
-                } catch (err) {
-                    showToast('파일을 읽는 중 오류가 발생했습니다. 올바른 백업 파일인지 확인하세요.');
-                }
+                        const tx = db.transaction(['cards'], 'readwrite'); const store = tx.objectStore('cards');
+                        data.archive.forEach(item => { store.put(item); });
+                        tx.oncomplete = () => { loadGallery(); showToast('데이터가 성공적으로 복구되었습니다!'); event.target.value = ''; };
+                    } else { showToast('유효하지 않은 백업 파일 포맷입니다.'); }
+                } catch (err) { showToast('파일을 읽는 중 오류가 발생했습니다. 올바른 백업 파일인지 확인하세요.'); }
             };
             reader.readAsText(file);
         }
