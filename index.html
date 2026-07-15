@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브0713</title>
+    <title>AI 대화 아카이브 v2</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
 
     <style>
         :root {
@@ -45,7 +45,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* 💡 전체화면 모드 대응 CSS */
+        /* 전체화면 모드 대응 CSS */
         body.fullscreen-mode header,
         body.fullscreen-mode .controls,
         body.fullscreen-mode .preview-toolbar,
@@ -62,7 +62,7 @@
             border: none !important;
             border-radius: 0 !important;
             margin: 0 !important; padding: 0 !important;
-            cursor: pointer; /* 클릭 시 종료 알림용 포인터 */
+            cursor: pointer; 
         }
         body.fullscreen-mode .preview-area {
             background-image: none !important;
@@ -79,6 +79,9 @@
             overflow: hidden;
         }
 
+        /* =========================================
+           헤더 
+        ========================================= */
         header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 0 32px; height: 64px; border-bottom: 1px solid var(--line);
@@ -109,6 +112,9 @@
         }
         .page-section.active { display: flex; gap: 24px; } 
 
+        /* =========================================
+           공통 폼 요소 및 레이아웃
+        ========================================= */
         .control-group label {
             display: block; font-size: 0.74rem; margin-bottom: 6px; color: var(--ink-soft); font-weight: 500;
         }
@@ -214,6 +220,9 @@
         input:checked + .toggle-slider { background-color: var(--ink); }
         input:checked + .toggle-slider:before { transform: translateX(18px); }
 
+        /* =========================================
+           [발췌기] 컨트롤 패널
+        ========================================= */
         .controls {
             flex: 3; min-width: 360px; max-width: 420px; 
             background: var(--paper-soft); border: 1px solid var(--line);
@@ -255,6 +264,9 @@
         .collapsible-content { display: none; margin-top: 10px; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* =========================================
+           [발췌기] 미리보기 컨테이너
+        ========================================= */
         .preview-container { flex: 7; display: flex; flex-direction: column; min-width: 0; }
         
         .preview-toolbar { 
@@ -319,26 +331,25 @@
             transform-origin: top left; overflow: hidden; 
         }
 
-        /* 💡 9번 오류 수정: Overflow 강제 숨김 패치 클래스 */
         #card-preview.force-overflow-hidden * {
             overflow: hidden !important;
             overflow-x: hidden !important;
             overflow-y: hidden !important;
         }
         
-        #card-bg-mask {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden;
-        }
-        #card-bg-image {
-            position: absolute; transform-origin: center; pointer-events: none; display: none;
-        }
-
-        #card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none;}
+        /* 💡 Z-index 레이어 완벽 정렬 적용 */
+        #card-bg-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; }
+        #card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none; }
+        #overlay-img-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; justify-content: center; align-items: center; }
+        #watermark-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end; }
+        .card-content { position: relative; z-index: 4; width: 100%; pointer-events: none; }
         
-        .card-content { position: relative; z-index: 2; width: 100%; pointer-events: none; }
+        #card-bg-image { position: absolute; transform-origin: center; pointer-events: none; display: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
 
-        /* 아카이브 UI */
+        /* =========================================
+           [아카이브] UI
+        ========================================= */
         #archive-page { flex-direction: column; overflow-y: auto; }
         .archive-header { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; align-items: center; justify-content: space-between; }
         
@@ -867,24 +878,27 @@
                     <div class="preview-area" id="preview-scroll-area">
                         <div id="card-preview-wrapper">
                             <div id="card-preview">
+                                
                                 <div id="card-bg-mask" style="position: absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; z-index:0;">
                                     <img id="card-bg-image" style="position: absolute; transform-origin: center; pointer-events: none; display: none;">
                                 </div>
-                                <div id="card-overlay"></div>
-                                <div class="card-content" id="card-content">
-                                    <div id="preview-text"></div>
-                                </div>
                                 
-                                <div id="overlay-img-wrapper" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; z-index: 3; pointer-events: none; justify-content: center; align-items: center;">
+                                <div id="card-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; z-index:1; pointer-events: none;"></div>
+                                
+                                <div id="overlay-img-wrapper" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; z-index: 2; pointer-events: none; justify-content: center; align-items: center;">
                                     <div id="overlay-img-transform" style="transform: translate(0px, 0px) scale(1);">
                                         <img id="overlay-img-content" src="" style="max-width: 100%; max-height: 100%; pointer-events: auto; display: none;">
                                     </div>
                                 </div>
 
-                                <div id="watermark-wrapper" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; z-index: 4; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end;">
+                                <div id="watermark-wrapper" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end;">
                                     <div id="watermark-transform" style="transform: translate(0px, 0px);">
                                         <div id="watermark-content" style="pointer-events: auto; font-family: inherit; font-size: 14px; color: #fff;"></div>
                                     </div>
+                                </div>
+                                
+                                <div class="card-content" id="card-content" style="position: relative; z-index: 4; width: 100%; pointer-events: none;">
+                                    <div id="preview-text" style="text-align: center; word-break: keep-all; width: 100%; pointer-events: auto;"></div>
                                 </div>
                                 
                             </div>
@@ -988,7 +1002,6 @@
             contentWrapper: document.getElementById('card-content'), pText: document.getElementById('preview-text'), 
             scale: document.getElementById('preview-scale'), scaleVal: document.getElementById('scale-value'), scrollArea: document.getElementById('preview-scroll-area'),
             
-            // 💡 추가된 DOM 요소
             wmChar: document.getElementById('wm-char'), wmCreator: document.getElementById('wm-creator'),
             wmSize: document.getElementById('wm-size'), wmColor: document.getElementById('wm-color'),
             wmJustify: document.getElementById('wm-justify'), wmAlign: document.getElementById('wm-align'),
@@ -1051,14 +1064,12 @@
             
             DOM.contentWrapper.style.transform = `translate(${textOffsetX}px, ${textOffsetY}px)`;
             
-            // 💡 추가: 오버레이 이미지 설정 적용
             const ovWrapper = document.getElementById('overlay-img-wrapper');
             const ovTransform = document.getElementById('overlay-img-transform');
             ovWrapper.style.justifyContent = DOM.ovJustify.value;
             ovWrapper.style.alignItems = DOM.ovAlign.value;
             ovTransform.style.transform = `translate(${DOM.ovX.value}px, ${DOM.ovY.value}px) scale(${DOM.ovScale.value})`;
 
-            // 💡 추가: 워터마크 설정 적용
             const wmWrapper = document.getElementById('watermark-wrapper');
             const wmTransform = document.getElementById('watermark-transform');
             const wmContent = document.getElementById('watermark-content');
@@ -1077,7 +1088,6 @@
             wmWrapper.style.alignItems = DOM.wmAlign.value;
             wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${DOM.wmY.value}px)`;
             
-            // 💡 오류수정: Overflow 강제 숨김 토글 라이브 반영
             if(DOM.forceOverflow.checked) {
                 DOM.preview.classList.add('force-overflow-hidden');
             } else {
@@ -1102,7 +1112,6 @@
             updateUI();
         });
 
-        // 💡 텍스트 서식 툴바 로직
         function wrapText(startTag, endTag) {
             const ta = DOM.text;
             const start = ta.selectionStart;
@@ -1117,12 +1126,9 @@
             updateUI();
         }
 
-        // 💡 최소화 전체화면 기능 로직
         function openFullscreen() {
             document.body.classList.add('fullscreen-mode');
-            setTimeout(() => {
-                document.addEventListener('click', closeFullscreen);
-            }, 10);
+            setTimeout(() => { document.addEventListener('click', closeFullscreen); }, 10);
             showToast('전체화면 모드입니다. 아무 곳이나 클릭하면 종료됩니다.');
         }
         function closeFullscreen(e) {
@@ -1130,7 +1136,6 @@
             document.removeEventListener('click', closeFullscreen);
         }
 
-        // 💡 설정 초기화 및 디폴트 값 관리
         function saveAsDefault() {
             let config = getCurrentConfig();
             delete config.text; delete config.bgImg; delete config.ovImg;
@@ -1154,12 +1159,9 @@
         function resetTypography() {
             if(!confirm('타이포그래피 및 레이아웃을 기본값으로 초기화하시겠습니까?')) return;
             const defs = getDefaults();
-            DOM.color.value = defs.color || '#222222';
-            DOM.size.value = defs.size || 24;
-            DOM.lh.value = defs.lh || 1.2;
-            DOM.paraGap.value = defs.paraGap || 5;
-            DOM.pad.value = defs.pad || 15;
-            DOM.align.value = defs.align || 'center';
+            DOM.color.value = defs.color || '#222222'; DOM.size.value = defs.size || 24;
+            DOM.lh.value = defs.lh || 1.2; DOM.paraGap.value = defs.paraGap || 5;
+            DOM.pad.value = defs.pad || 15; DOM.align.value = defs.align || 'center';
             
             currentFontVal = defs.font || "'Noto Serif KR', serif";
             const fontTrigger = document.getElementById('font-picker-trigger');
@@ -1168,25 +1170,19 @@
             if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
             else fontTrigger.textContent = '명조체';
 
-            DOM.marginTop.value = defs.marginTop || 0;
-            DOM.marginBottom.value = defs.marginBottom || 0;
-            DOM.marginLeft.value = defs.marginLeft || 0;
-            DOM.marginRight.value = defs.marginRight || 0;
+            DOM.marginTop.value = defs.marginTop || 0; DOM.marginBottom.value = defs.marginBottom || 0;
+            DOM.marginLeft.value = defs.marginLeft || 0; DOM.marginRight.value = defs.marginRight || 0;
             DOM.htmlScale.value = defs.htmlScale || 1.0;
-            textOffsetX = defs.textOffsetX || 0;
-            textOffsetY = defs.textOffsetY || 0;
+            textOffsetX = defs.textOffsetX || 0; textOffsetY = defs.textOffsetY || 0;
             
-            updateUI();
-            showToast('타이포그래피 설정이 초기화되었습니다.');
+            updateUI(); showToast('타이포그래피 설정이 초기화되었습니다.');
         }
 
         function resetBackground() {
             if(!confirm('배경 및 부가기능 설정을 기본값으로 초기화하시겠습니까?')) return;
             const defs = getDefaults();
-            DOM.width.value = defs.width || 700;
-            DOM.height.value = defs.height || 700;
-            DOM.bgColor.value = defs.bgColor || '#ffffff';
-            DOM.dim.value = defs.dim || 0;
+            DOM.width.value = defs.width || 700; DOM.height.value = defs.height || 700;
+            DOM.bgColor.value = defs.bgColor || '#ffffff'; DOM.dim.value = defs.dim || 0;
             
             removeBgImage(); removeOvImg();
             DOM.forceOverflow.checked = defs.forceOverflow || false;
@@ -1200,19 +1196,14 @@
             DOM.ovJustify.value = defs.ovJustify || 'center'; DOM.ovAlign.value = defs.ovAlign || 'center';
             DOM.ovX.value = defs.ovX || 0; DOM.ovY.value = defs.ovY || 0;
             
-            updateUI();
-            showToast('배경 및 부가 설정이 초기화되었습니다.');
+            updateUI(); showToast('배경 및 부가 설정이 초기화되었습니다.');
         }
         
-        // 이전 전체 초기화 유지 (옵션)
-        function resetAllSettings() {
-            resetTypography(); resetBackground();
-        }
+        function resetAllSettings() { resetTypography(); resetBackground(); }
 
         function updateBgLayer() {
             if (!currentBgImageDataUrl || !originalBgWidth || !originalBgHeight) {
-                DOM.bgImage.style.display = 'none';
-                return;
+                DOM.bgImage.style.display = 'none'; return;
             }
             DOM.bgImage.style.display = 'block';
             const maskW = parseFloat(DOM.width.value) || 700;
@@ -1297,7 +1288,6 @@
             updateUI(); 
         }
 
-        // 💡 오버레이 이미지 제어
         DOM.ovUpload.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -1349,11 +1339,9 @@
 
         DOM.preview.addEventListener('mousedown', (e) => {
             if (isBgDragMode && currentBgImageDataUrl) {
-                isDraggingBg = true;
-                startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
+                isDraggingBg = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
             } else if (isTextDragMode) {
-                isDraggingText = true;
-                startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
+                isDraggingText = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
             }
         });
 
@@ -1459,21 +1447,28 @@
         DOM.customFont.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            const fontName = 'Custom_' + Date.now();
-            const fontUrl = URL.createObjectURL(file);
-            const font = new FontFace(fontName, `url(${fontUrl})`);
-            try {
-                await font.load(); document.fonts.add(font);
-                const opt = document.createElement('div');
-                opt.className = 'picker-opt'; opt.dataset.val = fontName; opt.style.fontFamily = fontName; opt.textContent = `내 폰트 (${file.name})`;
-                fontOptions.appendChild(opt);
-
-                currentFontVal = fontName;
-                fontTrigger.textContent = opt.textContent; fontTrigger.style.fontFamily = fontName;
-                fontOptions.classList.remove('open');
+            
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                window.currentCustomFontBase64 = ev.target.result; // 💡 html-to-image 캡처용 Base64 저장
                 
-                setupFontPicker(); updateUI(); showToast('폰트가 적용되었습니다.');
-            } catch (err) { showToast('폰트를 불러올 수 없습니다.'); }
+                const fontName = 'Custom_' + Date.now();
+                const fontUrl = URL.createObjectURL(file);
+                const font = new FontFace(fontName, `url(${fontUrl})`);
+                try {
+                    await font.load(); document.fonts.add(font);
+                    const opt = document.createElement('div');
+                    opt.className = 'picker-opt'; opt.dataset.val = fontName; opt.style.fontFamily = fontName; opt.textContent = `내 폰트 (${file.name})`;
+                    fontOptions.appendChild(opt);
+
+                    currentFontVal = fontName;
+                    fontTrigger.textContent = opt.textContent; fontTrigger.style.fontFamily = fontName;
+                    fontOptions.classList.remove('open');
+                    
+                    setupFontPicker(); updateUI(); showToast('폰트가 적용되었습니다.');
+                } catch (err) { showToast('폰트를 불러올 수 없습니다.'); }
+            };
+            reader.readAsDataURL(file);
         });
 
 
@@ -1522,8 +1517,7 @@
             try {
                 let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
                 let config = getCurrentConfig();
-                
-                delete config.text; delete config.bgImg; delete config.ovImg; // 무거운 데이터 제외
+                delete config.text; delete config.bgImg; delete config.ovImg;
                 
                 let desc = prompt('이 프리셋의 설명을 입력해주세요 (마우스 오버 시 표시):', presets[currentActiveSlot]?.desc || `프리셋 ${currentActiveSlot}`);
                 if (desc === null) return; 
@@ -1617,114 +1611,81 @@
         function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
         /* -------------------------------------------------------------
-           💡 샌드박스 캡처 엔진 (안쪽 테두리 버그 고체형 수학 치환 패치)
+           💡 html-to-image 전용: 폰트 다운로드 렉 차단 (Pre-Embedding 로직)
         ------------------------------------------------------------- */
-        function captureInSandbox(scaleRatio, isPng) {
-            return new Promise((resolve, reject) => {
-                try {
-                    const sourceEl = document.getElementById('card-preview');
-                    const w = parseFloat(DOM.width.value) || 700;
-                    const h = parseFloat(DOM.height.value) || 700;
+        const preloadedFontsCSS = {};
 
-                    const iframe = document.createElement('iframe');
-                    iframe.style.position = 'fixed'; iframe.style.top = '-9999px'; iframe.style.left = '-9999px';
-                    iframe.style.width = w + 'px'; iframe.style.height = h + 'px'; iframe.style.border = 'none';
-                    document.body.appendChild(iframe);
+        async function ensureFontLoaded(fontFamilyStr) {
+            if (preloadedFontsCSS[fontFamilyStr]) return preloadedFontsCSS[fontFamilyStr];
+            
+            let cssUrl = '';
+            if (fontFamilyStr.includes('Noto Serif KR')) cssUrl = 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&display=swap';
+            else if (fontFamilyStr.includes('Noto Sans KR')) cssUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap';
+            else if (fontFamilyStr.includes('Gowun Dodum')) cssUrl = 'https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap';
+            else if (fontFamilyStr.includes('Nanum Myeongjo')) cssUrl = 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap';
+            else if (fontFamilyStr.includes('Pretendard')) cssUrl = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css';
+            
+            if (!cssUrl) return '';
 
-                    const idoc = iframe.contentDocument || iframe.contentWindow.document;
+            try {
+                const res = await fetch(cssUrl);
+                const cssText = await res.text();
+                
+                // 폰트 파일(.woff2) 주소를 찾아내어 Base64로 즉석 변환 (네트워크 다운로드 렉 차단용)
+                const urlRegex = /url\((?:['"]?)(https:\/\/[^'")]+\.woff2)(?:['"]?)\)/g;
+                let finalCss = cssText;
+                let match;
+                const fetchPromises = [];
+                
+                // 속도 최적화를 위해 상위 10개의 폰트 파일만 변환
+                while ((match = urlRegex.exec(cssText)) !== null && fetchPromises.length < 10) {
+                    const url = match[1];
+                    fetchPromises.push(
+                        fetch(url).then(r => r.blob()).then(blob => new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve({ url, base64: reader.result });
+                            reader.readAsDataURL(blob);
+                        })).catch(() => null)
+                    );
+                }
+                
+                const results = await Promise.all(fetchPromises);
+                for (const item of results) {
+                    if (item) finalCss = finalCss.replace(new RegExp(item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), item.base64);
+                }
+                
+                preloadedFontsCSS[fontFamilyStr] = finalCss;
+                return finalCss;
+            } catch(e) {
+                return '';
+            }
+        }
 
-                    let styles = '';
-                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
+        /* -------------------------------------------------------------
+           💡 html-to-image 기반 초고속, 노-버그 캡처 엔진
+        ------------------------------------------------------------- */
+        async function captureEngine(scaleRatio, isPng) {
+            const sourceEl = document.getElementById('card-preview');
+            
+            // 사용 중인 폰트 캐싱 (렉 방지 핵심 로직)
+            let embeddedFontCss = '';
+            if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) {
+                embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`;
+            } else {
+                embeddedFontCss = await ensureFontLoaded(currentFontVal);
+            }
 
-                    const cloneEl = sourceEl.cloneNode(true);
-                    
-                    const details = cloneEl.querySelectorAll('details:not([open])');
-                    details.forEach(d => {
-                        Array.from(d.childNodes).forEach(node => {
-                            if (node.tagName && node.tagName.toLowerCase() === 'summary') return;
-                            d.removeChild(node);
-                        });
-                    });
+            const options = {
+                pixelRatio: scaleRatio,
+                backgroundColor: DOM.bgColor.value || '#ffffff',
+                fontEmbedCSS: embeddedFontCss,
+                skipFonts: true, // 브라우저가 쓸데없는 폰트 찾으러 다니다가 뻗는 것을 완벽 차단!
+                style: { transform: 'scale(1)', transformOrigin: 'top left' }
+            };
 
-                    cloneEl.style.transform = 'none';
-                    cloneEl.style.boxShadow = 'none';
+            if (!isPng) options.quality = 0.85;
 
-                    idoc.open();
-                    idoc.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <meta charset="UTF-8">
-                            ${styles}
-                            <style> body { margin: 0; padding: 0; background: transparent; overflow: hidden; } </style>
-                        </head>
-                        <body> ${cloneEl.outerHTML} </body>
-                        </html>
-                    `);
-                    idoc.close();
-
-                    setTimeout(async () => {
-                        try {
-                            const targetEl = idoc.getElementById('card-preview');
-                            const allNodes = targetEl.querySelectorAll('*');
-                            const idocWindow = idoc.defaultView;
-
-                            allNodes.forEach(node => {
-                                const compStyle = idocWindow.getComputedStyle(node);
-                                const boxShadow = compStyle.boxShadow;
-                                
-                                if (boxShadow && boxShadow !== 'none' && boxShadow.includes('inset')) {
-                                    try {
-                                        const splitShadows = (str) => {
-                                            const result = []; let depth = 0, last = 0;
-                                            for (let i = 0; i < str.length; i++) {
-                                                if (str[i] === '(') depth++; else if (str[i] === ')') depth--;
-                                                else if (str[i] === ',' && depth === 0) { result.push(str.slice(last, i).trim()); last = i + 1; }
-                                            }
-                                            result.push(str.slice(last).trim()); return result.filter(Boolean);
-                                        };
-
-                                        const parts = splitShadows(boxShadow);
-                                        const convertedParts = parts.map(part => {
-                                            if (!part.includes('inset')) return part;
-                                            const colorMatch = part.match(/rgba?\([^)]+\)/);
-                                            let r = 0, g = 0, b = 0, a = 1;
-                                            if (colorMatch) {
-                                                const rgbaParts = colorMatch[0].match(/[\d.]+/g);
-                                                r = rgbaParts[0] || 0; g = rgbaParts[1] || 0; b = rgbaParts[2] || 0;
-                                                a = rgbaParts.length > 3 ? parseFloat(rgbaParts[3]) : 1;
-                                            }
-                                            const pxMatch = part.match(/-?\d+(\.\d+)?px/g);
-                                            if (pxMatch && pxMatch.length >= 3) {
-                                                const blur = parseFloat(pxMatch[2]);
-                                                const spread = pxMatch.length === 4 ? parseFloat(pxMatch[3]) : 0;
-                                                if (blur > 0) {
-                                                    let thickness = spread + (blur / 2);
-                                                    if (thickness < 1) thickness = 1; 
-                                                    let newAlpha = a * 0.5;
-                                                    if (newAlpha > 0.35) newAlpha = 0.35;
-                                                    return `inset 0px 0px 0px ${thickness.toFixed(1)}px rgba(${r}, ${g}, ${b}, ${newAlpha.toFixed(3)})`;
-                                                }
-                                            }
-                                            return part;
-                                        });
-                                        node.style.setProperty('box-shadow', convertedParts.join(', '), 'important');
-                                    } catch (e) {}
-                                }
-                            });
-
-                            const canvas = await html2canvas(targetEl, {
-                                scale: scaleRatio, useCORS: true, allowTaint: true, backgroundColor: DOM.bgColor.value || '#ffffff', logging: false
-                            });
-                            
-                            document.body.removeChild(iframe); 
-                            resolve(canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85));
-                        } catch (err) {
-                            document.body.removeChild(iframe); reject(err);
-                        }
-                    }, 600); 
-                } catch (e) { reject(e); }
-            });
+            return isPng ? await htmlToImage.toPng(sourceEl, options) : await htmlToImage.toJpeg(sourceEl, options);
         }
 
         async function downloadCard() {
@@ -1732,8 +1693,10 @@
             isCapturing = true; showToast('캡처를 준비 중입니다. 잠시만 기다려주세요...');
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            
             try {
-                const dataUrl = await captureInSandbox(1, true); 
+                // 1배율 고화질 캡처 적용
+                const dataUrl = await captureEngine(1, true); 
                 const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`; link.href = dataUrl; link.click();
                 showToast('다운로드가 완료되었습니다!');
             } catch (err) {
@@ -1748,8 +1711,9 @@
             isCapturing = true; showToast('클립보드에 복사 중입니다. 잠시만 기다려주세요...');
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            
             try {
-                const dataUrl = await captureInSandbox(1, true); 
+                const dataUrl = await captureEngine(1, true); 
                 const res = await fetch(dataUrl); const blob = await res.blob();
                 if (navigator.clipboard && navigator.clipboard.write) {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
@@ -1777,8 +1741,9 @@
             const configData = getCurrentConfig(); 
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            
             try {
-                const imgData = await captureInSandbox(1, false); 
+                const imgData = await captureEngine(1, false); // 1배율 압축형 Jpeg
                 const newItem = { id: Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
                 const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').add(newItem);
                 tx.oncomplete = () => { closeModal(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!'); loadGallery(); };
