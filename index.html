@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브_v.2.1</title>
+    <title>AI 대화 아카이브_v.2.2</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -303,6 +303,7 @@
             padding: 8px 14px; border-radius: var(--radius-md); 
             border: 1px solid var(--line); box-shadow: var(--shadow-float);
             display: flex; align-items: center; gap: 10px;
+            opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
         }
         .floating-zoom label { font-size: 0.76rem; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; font-weight: 600; margin: 0;}
         .floating-zoom input[type="range"] { width: 100px; }
@@ -313,12 +314,25 @@
 
         .floating-actions {
             position: absolute; bottom: 20px; right: 20px; z-index: 100; display: flex; gap: 12px;
+            opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
         }
         .floating-actions .btn {
             box-shadow: var(--shadow-float); padding: 12px 18px; font-size: 0.85rem;
             display: flex; align-items: center; gap: 6px; border-radius: var(--radius-md);
         }
         .floating-actions .btn svg { vertical-align: middle; }
+
+        .hover-zone-tr { position: absolute; top: 0; right: 0; width: 190px; height: 110px; z-index: 90; }
+        .hover-zone-br { position: absolute; bottom: 0; right: 0; width: 320px; height: 130px; z-index: 90; }
+
+        .hover-zone-tr:hover ~ .floating-zoom,
+        .floating-zoom:hover {
+            opacity: 1; pointer-events: auto;
+        }
+        .hover-zone-br:hover ~ .floating-actions,
+        .floating-actions:hover {
+            opacity: 1; pointer-events: auto;
+        }
 
         .preview-area {
             flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center; 
@@ -440,7 +454,7 @@
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: var(--ink); color: var(--paper); padding: 12px 24px; border-radius: 30px;
             font-size: 0.85rem; box-shadow: 0 10px 28px rgba(28,27,26,0.25);
-            opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 3000; cursor: pointer;
+            opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 10500; cursor: pointer;
         }
         #toast.show { opacity: 1; visibility: visible; }
     </style>
@@ -579,6 +593,17 @@
                                 켜기
                             </button>
                         </div>
+                    </div>
+
+                    <div class="control-group" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line);">
+                        <label class="toggle-switch" style="display: flex; align-items: center; width: 100%; gap: 10px; cursor: pointer;">
+                            <div style="position: relative; width: 40px; height: 22px; flex-shrink: 0;">
+                                <input type="checkbox" id="char-wrap-toggle" onchange="updateUI()">
+                                <span class="toggle-slider"></span>
+                            </div>
+                            <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">줄바꿈: 글자 단위</span>
+                        </label>
+                        <p style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 6px; margin-bottom: 0;">끄면 단어 단위(기본), 켜면 글자 단위로 줄바꿈됩니다.</p>
                     </div>
                 </div>
 
@@ -781,6 +806,18 @@
                             </label>
                             <p style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 6px; margin-bottom: 0;">체크 시 캡처될 때처럼 모든 스크롤 영역이 강제로 잘립니다.</p>
                         </div>
+
+                        <div class="control-group" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line);">
+                            <label class="toggle-switch" style="display: flex; align-items: center; width: 100%; gap: 10px; cursor: pointer;">
+                                <div style="position: relative; width: 40px; height: 22px; flex-shrink: 0;">
+                                    <input type="checkbox" id="force-center-toggle" onchange="updateUI()">
+                                    <span class="toggle-slider"></span>
+                                </div>
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">컨테이너 위치 강제 해제</span>
+                            </label>
+                            <p style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 6px; margin-bottom: 0;">HTML 코드 최상위 태그의 위치 고정(position/margin 등)만 무력화해서 가운데로 오게 합니다.</p>
+                            <p id="position-warning-detail" style="font-size: 0.72rem; margin-top: 8px; margin-bottom: 0; font-weight: 600;"></p>
+                        </div>
                         
                         <div class="control-group" style="margin-top: 16px;">
                             <button class="btn" onclick="saveAsDefault()" style="width: 100%; margin-bottom: 8px;">현재 설정을 기본값으로 저장</button>
@@ -849,7 +886,8 @@
                 </div>
 
                 <div class="preview-canvas-wrapper">
-                    
+
+                    <div class="hover-zone-tr"></div>
                     <div class="floating-zoom">
                         <label>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -859,6 +897,7 @@
                         <span class="zoom-value" id="scale-value">50%</span>
                     </div>
 
+                    <div class="hover-zone-br"></div>
                     <div class="floating-actions">
                         <button class="btn" onclick="openFullscreen()">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
@@ -1014,7 +1053,9 @@
             ovJustify: document.getElementById('ov-justify'), ovAlign: document.getElementById('ov-align'),
             ovX: document.getElementById('ov-x'), ovY: document.getElementById('ov-y'),
             
-            forceOverflow: document.getElementById('force-overflow-toggle')
+            forceOverflow: document.getElementById('force-overflow-toggle'),
+            forceCenter: document.getElementById('force-center-toggle'),
+            charWrap: document.getElementById('char-wrap-toggle')
         };
 
         function updateUI() {
@@ -1040,12 +1081,14 @@
                 DOM.pText.style.fontSize = '';
                 DOM.pText.style.lineHeight = ''; 
                 DOM.pText.style.textAlign = ''; 
+                DOM.pText.style.wordBreak = '';
                 
                 const hScale = parseFloat(DOM.htmlScale.value) || 1.0;
                 DOM.pText.style.transform = `scale(${hScale})`;
                 DOM.pText.style.transformOrigin = 'center center';
                 
                 DOM.pText.innerHTML = DOM.text.value;
+                handleForcedPosition();
             } else {
                 DOM.sectionTypography.style.display = 'block';
                 DOM.sectionHtmlLayout.style.display = 'none';
@@ -1057,6 +1100,7 @@
                 DOM.pText.style.fontSize = DOM.size.value + 'px';
                 DOM.pText.style.lineHeight = DOM.lh.value;
                 DOM.pText.style.textAlign = DOM.align.value;
+                DOM.pText.style.wordBreak = DOM.charWrap.checked ? 'break-all' : 'keep-all';
                 
                 DOM.pText.style.transform = 'none'; 
                 
@@ -1099,6 +1143,59 @@
 
             updateBgLayer();
             updateScale(); 
+        }
+
+        /* -------------------------------------------------------------
+           HTML 최상위 태그 위치 강제 코드 감지 및 해제
+        ------------------------------------------------------------- */
+        function handleForcedPosition() {
+            const detailEl = document.getElementById('position-warning-detail');
+
+            if (!DOM.htmlToggle.checked) {
+                detailEl.textContent = '';
+                return;
+            }
+
+            const outer = DOM.pText.firstElementChild;
+            if (!outer) {
+                detailEl.textContent = '';
+                return;
+            }
+
+            const style = outer.getAttribute('style') || '';
+            const found = [];
+
+            const posMatch = style.match(/position\s*:\s*(absolute|fixed|relative)/i);
+            if (posMatch) {
+                found.push(`position:${posMatch[1]}`);
+                ['top', 'left', 'right', 'bottom'].forEach(prop => {
+                    const m = style.match(new RegExp(prop + '\\s*:\\s*[^;]+', 'i'));
+                    if (m) found.push(m[0].replace(/\s+/g, ''));
+                });
+            }
+            if (/margin(?:-\w+)?\s*:\s*-\s*[0-9]/i.test(style)) found.push('margin(음수)');
+            if (/float\s*:\s*(left|right)/i.test(style)) found.push('float');
+            if (/transform\s*:\s*[^;]*translate/i.test(style)) found.push('transform(translate)');
+
+            if (found.length === 0) {
+                detailEl.style.color = 'var(--ink-soft)';
+                detailEl.textContent = '위치를 강제하는 코드가 감지되지 않았습니다.';
+                return;
+            }
+
+            detailEl.style.color = 'var(--danger)';
+            detailEl.textContent = `⚠️ <${outer.tagName.toLowerCase()}> 태그에서 감지됨: ${found.join(', ')}`;
+
+            if (DOM.forceCenter.checked) {
+                outer.style.position = 'static';
+                outer.style.top = '';
+                outer.style.left = '';
+                outer.style.right = '';
+                outer.style.bottom = '';
+                outer.style.float = 'none';
+                outer.style.margin = '0 auto';
+                outer.style.transform = 'none';
+            }
         }
 
         DOM.htmlToggle.addEventListener('change', () => {
@@ -1153,7 +1250,7 @@
                 width: 700, height: 700, bgColor: '#ffffff', dim: 0,
                 font: "'Noto Serif KR', serif", color: '#222222', size: 24, lh: 1.2, paraGap: 5, pad: 15, align: 'center',
                 marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0, htmlScale: 1.0, textOffsetX: 0, textOffsetY: 0,
-                forceOverflow: false,
+                forceOverflow: false, forceCenter: false, charWrap: false,
                 wmChar: '', wmCreator: '', wmSize: 14, wmColor: '#ffffff', wmJustify: 'center', wmAlign: 'flex-end', wmX: 0, wmY: 0,
                 ovScale: 1.0, ovJustify: 'center', ovAlign: 'center', ovX: 0, ovY: 0
             };
@@ -1165,6 +1262,7 @@
             DOM.color.value = defs.color || '#222222'; DOM.size.value = defs.size || 24;
             DOM.lh.value = defs.lh || 1.2; DOM.paraGap.value = defs.paraGap || 5;
             DOM.pad.value = defs.pad || 15; DOM.align.value = defs.align || 'center';
+            DOM.charWrap.checked = defs.charWrap || false;
             
             currentFontVal = defs.font || "'Noto Serif KR', serif";
             const fontTrigger = document.getElementById('font-picker-trigger');
@@ -1189,6 +1287,7 @@
             
             removeBgImage(); removeOvImg();
             DOM.forceOverflow.checked = defs.forceOverflow || false;
+            DOM.forceCenter.checked = defs.forceCenter || false;
 
             DOM.wmChar.value = defs.wmChar || ''; DOM.wmCreator.value = defs.wmCreator || '';
             DOM.wmSize.value = defs.wmSize || 14; DOM.wmColor.value = defs.wmColor || '#ffffff';
@@ -1508,7 +1607,7 @@
                 htmlScale: DOM.htmlScale.value,
                 font: currentFontVal, color: DOM.color.value, size: DOM.size.value,
                 pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value,
-                forceOverflow: DOM.forceOverflow.checked,
+                forceOverflow: DOM.forceOverflow.checked, forceCenter: DOM.forceCenter.checked, charWrap: DOM.charWrap.checked,
                 wmChar: DOM.wmChar.value, wmCreator: DOM.wmCreator.value, wmSize: DOM.wmSize.value, wmColor: DOM.wmColor.value,
                 wmJustify: DOM.wmJustify.value, wmAlign: DOM.wmAlign.value, wmX: DOM.wmX.value, wmY: DOM.wmY.value,
                 ovImg: currentOvImageDataUrl, ovScale: DOM.ovScale.value, ovJustify: DOM.ovJustify.value, 
@@ -1543,15 +1642,6 @@
         function applyConfig(config, isFromArchive = false) {
             if (isFromArchive && config.text !== undefined) DOM.text.value = config.text;
             DOM.width.value = config.width || 700; DOM.height.value = config.height || 700;
-            
-            if (config.bgImg !== undefined) {
-                currentBgImageDataUrl = config.bgImg;
-                if (currentBgImageDataUrl) {
-                    const tempImg = new Image();
-                    tempImg.onload = () => { originalBgWidth = tempImg.width; originalBgHeight = tempImg.height; DOM.bgImage.src = currentBgImageDataUrl; updateBgLayer(); };
-                    tempImg.src = currentBgImageDataUrl;
-                } else { DOM.bgImage.src = ''; updateBgLayer(); }
-            }
 
             if (config.ovImg !== undefined) {
                 currentOvImageDataUrl = config.ovImg;
@@ -1576,6 +1666,8 @@
             DOM.htmlToggle.checked = !!config.isHtmlMode;
             
             DOM.forceOverflow.checked = !!config.forceOverflow;
+            DOM.forceCenter.checked = !!config.forceCenter;
+            DOM.charWrap.checked = !!config.charWrap;
             DOM.wmChar.value = config.wmChar || ''; DOM.wmCreator.value = config.wmCreator || '';
             DOM.wmSize.value = config.wmSize || 14; DOM.wmColor.value = config.wmColor || '#ffffff';
             DOM.wmJustify.value = config.wmJustify || 'center'; DOM.wmAlign.value = config.wmAlign || 'flex-end';
@@ -1589,7 +1681,30 @@
                 const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
                 if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
             }
-            updateUI();
+
+            // 배경이미지는 실제 디코딩이 끝난 뒤에 딱 한 번만 화면을 갱신한다.
+            // (예전에는 아래쪽에서 updateUI()가 먼저 동기 실행되어, 새 이미지의
+            //  가로세로 비율이 반영되기 전 상태로 한 번 그려지면서 좌우로
+            //  찌그러져 보이는 현상이 있었다.)
+            if (config.bgImg !== undefined) {
+                currentBgImageDataUrl = config.bgImg;
+                if (currentBgImageDataUrl) {
+                    const tempImg = new Image();
+                    tempImg.onload = () => {
+                        originalBgWidth = tempImg.width; originalBgHeight = tempImg.height;
+                        DOM.bgImage.src = currentBgImageDataUrl;
+                        updateUI();
+                    };
+                    tempImg.onerror = () => { updateUI(); };
+                    tempImg.src = currentBgImageDataUrl;
+                } else {
+                    DOM.bgImage.src = '';
+                    originalBgWidth = 0; originalBgHeight = 0;
+                    updateUI();
+                }
+            } else {
+                updateUI();
+            }
         }
 
         function switchTab(tabName) {
