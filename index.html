@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브_v.3.0</title>
+    <title>AI 대화 아카이브_프로</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
 
     <style>
@@ -48,10 +47,11 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* 전체화면 모드 대응 CSS */
         body.fullscreen-mode header,
         body.fullscreen-mode .controls,
-        body.fullscreen-mode .preview-toolbar {
+        body.fullscreen-mode .preview-toolbar,
+        body.fullscreen-mode .floating-actions,
+        body.fullscreen-mode .floating-zoom {
             display: none !important;
         }
         body.fullscreen-mode .preview-canvas-wrapper {
@@ -65,8 +65,12 @@
             margin: 0 !important; padding: 0 !important;
             cursor: pointer; 
         }
-        body.fullscreen-mode .preview-area {
-            background-image: none !important;
+        body.fullscreen-mode .preview-area { background-image: none !important; }
+
+        body.toolbar-always .floating-zoom,
+        body.toolbar-always .floating-actions {
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
 
         .app-container {
@@ -152,14 +156,11 @@
             padding-right: 28px; cursor: pointer; height: 34px;
         }
 
-        .custom-font-picker {
-            position: relative; width: 100%; font-size: 0.85rem; outline: none;
-        }
+        .custom-font-picker { position: relative; width: 100%; font-size: 0.85rem; outline: none; }
         .picker-trigger {
             border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 7px 10px;
             background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2386807a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
-            background-size: 11px; cursor: pointer; height: 34px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            padding-right: 28px;
+            background-size: 11px; cursor: pointer; height: 34px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 28px;
         }
         .picker-options {
             position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px;
@@ -178,7 +179,6 @@
         }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
-
         input[type="range"] { accent-color: var(--ink); cursor: pointer; height: 4px; }
 
         input[type="file"] { font-size: 0.76rem; color: var(--ink-soft); width: 100%; }
@@ -201,6 +201,20 @@
         .btn-danger { color: var(--danger); border-color: #e2b4b5; background: #fcf3f3; }
         .btn-danger:hover { background: #f8ebea; border-color: var(--danger); }
 
+        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--line); transition: .3s; border-radius: 22px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+            background-color: white; transition: .3s; border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        input:checked + .toggle-slider { background-color: var(--ink); }
+        input:checked + .toggle-slider:before { transform: translateX(18px); }
+
         .controls {
             flex: 3; min-width: 360px; max-width: 420px; 
             background: var(--paper-soft); border: 1px solid var(--line);
@@ -214,16 +228,12 @@
             font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase;
             color: var(--ink-soft); font-weight: 700; margin-bottom: 12px;
         }
-
-        #input-text { 
-            height: 240px; font-family: 'Noto Serif KR', serif; 
-            font-size: 0.95rem; line-height: 1.6; 
-        }
+        #input-text { height: 240px; font-family: 'Noto Serif KR', serif; font-size: 0.95rem; line-height: 1.6; }
 
         .preset-row { display: flex; gap: 8px; align-items: stretch; }
         .preset-slots { display: flex; gap: 6px; flex: 1.5; }
         .preset-btn {
-            position: relative; flex: 1; background: transparent; border: 1px solid var(--line);
+            flex: 1; background: transparent; border: 1px solid var(--line);
             border-radius: var(--radius-sm); color: var(--ink-faint);
             cursor: pointer; padding: 6px 0; font-size: 0.8rem; font-weight: 700;
             transition: all 0.2s;
@@ -234,8 +244,7 @@
         .preset-actions .btn { flex: 1; padding: 6px 0; font-size: 0.75rem; }
 
         .collapsible-header {
-            display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer; user-select: none;
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;
         }
         .collapsible-header:hover .ctrl-eyebrow { color: var(--ink); }
         .collapsible-icon { transition: transform 0.2s ease; color: var(--ink-soft); }
@@ -243,15 +252,11 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
         .preview-container { flex: 7; display: flex; flex-direction: column; min-width: 0; }
-        
         .preview-toolbar { 
             display: flex; justify-content: space-between; align-items: flex-end; 
-            padding: 12px 20px; margin-bottom: 16px;
-            background: var(--paper); border: 1px solid var(--line); 
-            border-radius: var(--radius-md); box-shadow: var(--shadow-soft);
-            flex-wrap: wrap; gap: 15px;
+            padding: 12px 20px; margin-bottom: 16px; background: var(--paper); border: 1px solid var(--line); 
+            border-radius: var(--radius-md); box-shadow: var(--shadow-soft); flex-wrap: wrap; gap: 15px;
         }
-        
         .toolbar-group { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
         .toolbar-divider { width: 1px; height: 26px; background: var(--line); margin: 0 4px; }
         .toolbar-item { display: flex; flex-direction: column; gap: 5px; }
@@ -265,96 +270,58 @@
 
         .preview-canvas-wrapper {
             position: relative; flex: 1; display: flex; flex-direction: column;
-            border: 1px solid var(--line); border-radius: var(--radius-md);
-            overflow: hidden; background-color: var(--paper-muted);
+            border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; background-color: var(--paper-muted);
         }
 
-        /* 💡 툴바 동적 투명화 대응 오버 제어 */
         .floating-zoom {
             position: absolute; top: 16px; right: 16px; z-index: 100;
             background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px);
             padding: 8px 14px; border-radius: var(--radius-md); 
             border: 1px solid var(--line); box-shadow: var(--shadow-float);
-            display: flex; align-items: center; gap: 10px;
-            transition: opacity 0.18s ease;
+            display: flex; align-items: center; gap: 10px; opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
         }
         .floating-zoom label { font-size: 0.76rem; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; font-weight: 600; margin: 0;}
         .floating-zoom input[type="range"] { width: 100px; }
-        .zoom-value {
-            font-size: 0.72rem; color: var(--ink); background: var(--paper-muted);
-            padding: 2px 7px; border-radius: 20px; min-width: 42px; text-align: center; font-weight: 600;
-        }
+        .zoom-value { font-size: 0.72rem; color: var(--ink); background: var(--paper-muted); padding: 2px 7px; border-radius: 20px; min-width: 42px; text-align: center; font-weight: 600; }
 
         .floating-actions {
             position: absolute; bottom: 20px; right: 20px; z-index: 100; display: flex; gap: 12px;
-            transition: opacity 0.18s ease;
+            opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
         }
         .floating-actions .btn {
             box-shadow: var(--shadow-float); padding: 12px 18px; font-size: 0.85rem;
             display: flex; align-items: center; gap: 6px; border-radius: var(--radius-md);
         }
+        .floating-actions .btn svg { vertical-align: middle; }
 
-        .hover-zone-tr { position: absolute; top: 0; right: 0; width: 260px; height: 110px; z-index: 90; }
-        .hover-zone-br { position: absolute; bottom: 0; right: 0; width: 440px; height: 130px; z-index: 90; }
+        .hover-zone-tr { position: absolute; top: 0; right: 0; width: 230px; height: 110px; z-index: 90; }
+        .hover-zone-br { position: absolute; bottom: 0; right: 0; width: 320px; height: 130px; z-index: 90; }
 
-        /* 💡 호버 숨김 클래스 자동 적용 제어 스타일단 */
-        .preview-canvas-wrapper.toolbar-hover-active .floating-zoom,
-        .preview-canvas-wrapper.toolbar-hover-active .floating-actions {
-            opacity: 0; pointer-events: none;
-        }
-        .preview-canvas-wrapper.toolbar-hover-active .hover-zone-tr:hover ~ .floating-zoom,
-        .preview-canvas-wrapper.toolbar-hover-active .floating-zoom:hover {
-            opacity: 1; pointer-events: auto;
-        }
-        .preview-canvas-wrapper.toolbar-hover-active .hover-zone-br:hover ~ .floating-actions,
-        .preview-canvas-wrapper.toolbar-hover-active .floating-actions:hover {
-            opacity: 1; pointer-events: auto;
-        }
+        .hover-zone-tr:hover ~ .floating-zoom, .floating-zoom:hover { opacity: 1; pointer-events: auto; }
+        .hover-zone-br:hover ~ .floating-actions, .floating-actions:hover { opacity: 1; pointer-events: auto; }
 
         .preview-area {
             flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center; 
             background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 20px 20px;
         }
         
-        #card-preview-wrapper { position: relative; transition: width 0.1s, height 0.1s; }
+        #card-preview-wrapper { transition: width 0.1s, height 0.1s; }
         
         #card-preview {
-            background-color: #ffffff;
-            display: flex; flex-direction: column; justify-content: center; position: relative;
-            box-shadow: 0 22px 44px rgba(28,27,26,0.16), 0 3px 10px rgba(28,27,26,0.08);
-            transform-origin: top left; overflow: hidden; 
-            transition: box-shadow 0.1s;
+            background-color: #ffffff; display: flex; flex-direction: column; justify-content: center; position: relative;
+            box-shadow: 0 22px 44px rgba(28,27,26,0.16), 0 3px 10px rgba(28,27,26,0.08); transform-origin: top left; overflow: hidden; 
         }
 
-        /* 💡 가이드라인 표시 오버레이 효과 */
-        .guide-indicator-box {
-            position: absolute; top:0; left:0; right:0; bottom:0;
-            border: 2px dashed rgba(239, 68, 68, 0.45); pointer-events: none; z-index: 999; opacity: 0; transition: opacity 0.2s;
-        }
-        .guide-indicator-box.active { opacity: 1; }
-        
-        /* Z-index 레이어 완전 고정화 */
         #card-bg-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; }
         #card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none; }
-        
-        /* 💡 포토샵식 오버레이 크롭 마스크 틀 레이어 */
-        #overlay-img-wrapper { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; 
-            justify-content: center; align-items: center; 
-        }
-        #ov-mask-frame {
-            position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; background: transparent;
-        }
-        #overlay-img-content { position: absolute; transform-origin: center; max-width: none; max-height: none; display: none; }
-
+        #overlay-img-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; }
         #watermark-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end; }
         .card-content { position: relative; z-index: 4; width: 100%; pointer-events: none; }
         
         #card-bg-image { position: absolute; transform-origin: center; pointer-events: none; display: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
-        #watermark-content { pointer-events: auto; font-family: inherit; font-size: 14px; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
 
-        /* 아카이브 UI 단 */
+        /* 아카이브 UI */
         #archive-page { flex-direction: column; overflow-y: auto; }
         .archive-header { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; align-items: center; justify-content: space-between; }
         .archive-header-left { display: flex; gap: 12px; flex: 1; min-width: 300px; align-items: center; }
@@ -362,19 +329,30 @@
         .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-soft); pointer-events: none; }
         .search-wrap input { padding-left: 34px; }
         .archive-header-right { display: flex; gap: 8px; align-items: center; }
-
         #gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding-bottom: 40px; }
-        .gallery-item { position: relative; border-radius: var(--radius-md); overflow: hidden; background: var(--paper); border: 1px solid var(--line); aspect-ratio: 1 / 1; box-shadow: var(--shadow-soft); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+
+        .gallery-item {
+            position: relative; border-radius: var(--radius-md); overflow: hidden; background: var(--paper); border: 1px solid var(--line);
+            aspect-ratio: 1 / 1; box-shadow: var(--shadow-soft); transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
         .gallery-item:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(28,27,26,0.14); }
         .gallery-item > img { width: 100%; height: 100%; object-fit: contain; background: var(--paper-muted); padding: 10px; box-sizing: border-box; display: block; }
-        .item-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(20, 19, 18, 0.92); color: var(--paper); display: flex; flex-direction: column; justify-content: space-between; padding: 18px; opacity: 0; visibility: hidden; transition: opacity 0.2s ease; z-index: 10; }
+
+        .item-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(20, 19, 18, 0.92); color: var(--paper);
+            display: flex; flex-direction: column; justify-content: space-between; padding: 18px; opacity: 0; visibility: hidden; transition: opacity 0.2s ease; z-index: 10;
+        }
         .gallery-item:hover .item-overlay { opacity: 1; visibility: visible; }
         .overlay-info { overflow-y: auto; }
         .overlay-tags { display: flex; flex-wrap: wrap; margin-bottom: 10px; }
         .tag-chip { display: inline-block; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); color: #e6e1d6; font-size: 0.68rem; padding: 3px 9px; border-radius: 20px; margin: 0 5px 5px 0; }
+        .tag-chip-empty { opacity: 0.5; border-style: dashed; }
         .overlay-memo { font-family: 'Noto Serif KR', serif; font-size: 0.86rem; line-height: 1.55; color: #f1ede4; white-space: pre-wrap; }
+
         .overlay-actions { display: flex; gap: 6px; margin-top: 14px; }
-        .overlay-actions button { flex: 1; padding: 8px 0; font-size: 0.78rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; transition: background 0.15s; font-family: inherit; }
+        .overlay-actions button {
+            flex: 1; padding: 8px 0; font-size: 0.78rem; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; border: none; transition: background 0.15s; font-family: inherit;
+        }
         .btn-overlay-save { background: rgba(255,255,255,0.14); color: var(--paper); }
         .btn-overlay-save:hover { background: rgba(255,255,255,0.26); }
         .btn-overlay-edit { background: var(--paper); color: var(--ink); }
@@ -382,8 +360,32 @@
         .btn-overlay-delete { background: var(--danger); color: var(--paper); }
         .btn-overlay-delete:hover { background: #98393b; }
 
-        /* 전용 단독 툴팁 박스 커스텀 */
-        [title] { position: relative; }
+        .empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 90px 20px; gap: 6px; color: var(--ink-soft); text-align: center; }
+        .empty-state svg { color: var(--ink-faint); margin-bottom: 6px; }
+        .empty-state p { margin: 0; font-size: 0.95rem; color: var(--ink); font-weight: 600; }
+
+        #save-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(28,27,26,0.35); backdrop-filter: blur(2px); z-index: 10000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: var(--paper); padding: 28px 26px; border-radius: var(--radius-md);
+            width: 380px; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(28,27,26,0.2);
+        }
+        .modal-content h3 { margin: 0 0 4px; font-family: 'Noto Serif KR', serif; font-size: 1.1rem; font-weight: 700; }
+        .modal-content .modal-hint { font-size: 0.78rem; color: var(--ink-soft); margin: 0 0 18px; }
+        .modal-content .control-group { margin-bottom: 14px; }
+        .modal-content #modal-memo { height: 84px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
+        .modal-actions .btn { flex: 1; padding: 10px; }
+
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--ink); color: var(--paper); padding: 12px 24px; border-radius: 30px;
+            font-size: 0.85rem; box-shadow: 0 10px 28px rgba(28,27,26,0.25);
+            opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 10500; cursor: pointer;
+        }
+        #toast.show { opacity: 1; visibility: visible; }
     </style>
 </head>
 <body>
@@ -408,17 +410,19 @@
                 <div class="ctrl-section" style="padding-top: 10px; border-bottom: none; padding-bottom: 0;">
                     <div style="background: var(--paper-muted); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 10px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #dcd8cf;">
-                            <div><label style="margin: 0; font-size: 0.78rem; font-weight: 700; color: var(--ink);">HTML 뷰어 모드</label></div>
+                            <div>
+                                <label style="margin: 0; font-size: 0.78rem; font-weight: 700; color: var(--ink);">HTML 뷰어 모드</label>
+                            </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="html-mode-toggle">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                         <div style="display: flex; gap: 6px;">
-                            <button class="btn btn-sm" onclick="wrapText('<b>', '</b>')" style="font-weight: 900;" title="굵게">B</button>
-                            <button class="btn btn-sm" onclick="wrapText('<i>', '</i>')" style="font-style: italic;" title="기울임">I</button>
+                            <button class="btn btn-sm" onclick="wrapText('<b>', '</b>')" style="font-weight: 900; font-family: serif;" title="굵게">B</button>
+                            <button class="btn btn-sm" onclick="wrapText('<i>', '</i>')" style="font-style: italic; font-family: serif;" title="기울임">I</button>
                             <button class="btn btn-sm" onclick="insertText('—')" title="엠대시(긴 줄)">—</button>
-                            <button class="btn btn-sm" onclick="insertText('\n<hr>\n')" title="구분선 삽입">구분선</button>
+                            <button class="btn btn-sm" onclick="insertText('\n<hr>\n')" title="가로 구분선 삽입" style="font-size: 0.7rem; padding: 4px 8px;">구분선</button>
                         </div>
                     </div>
                     <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..."></textarea>
@@ -441,27 +445,32 @@
 
                 <div class="ctrl-section" id="section-typography">
                     <div class="ctrl-eyebrow">타이포그래피</div>
+                    
                     <div class="flex-group" style="margin-bottom: 12px;">
                         <div class="control-group" style="margin:0; flex: 1.4;">
                             <label>폰트 설정</label>
                             <div class="custom-font-picker" id="font-picker-wrapper">
-                                <div class="picker-trigger" id="font-picker-trigger">명조체</div>
+                                <div class="picker-trigger" id="font-picker-trigger" style="font-family: 'Noto Serif KR', serif;">명조체</div>
                                 <div class="picker-options" id="font-picker-options">
-                                    <div class="picker-opt" data-val="'Noto Serif KR', serif">명조체</div>
-                                    <div class="picker-opt" data-val="'Noto Sans KR', sans-serif">고딕체</div>
-                                    <div class="picker-opt" data-val="'Gowun Dodum', sans-serif">고운돋움</div>
-                                    <div class="picker-opt" data-val="'Nanum Myeongjo', serif">나눔명조</div>
-                                    <div class="picker-opt" data-val="'Pretendard', sans-serif">프리텐다드</div>
+                                    <div class="picker-opt" data-val="'Noto Serif KR', serif" style="font-family: 'Noto Serif KR', serif">명조체</div>
+                                    <div class="picker-opt" data-val="'Noto Sans KR', sans-serif" style="font-family: 'Noto Sans KR', sans-serif">고딕체</div>
+                                    <div class="picker-opt" data-val="'Gowun Dodum', sans-serif" style="font-family: 'Gowun Dodum', sans-serif">고운돋움</div>
+                                    <div class="picker-opt" data-val="'Nanum Myeongjo', serif" style="font-family: 'Nanum Myeongjo', serif">나눔명조</div>
+                                    <div class="picker-opt" data-val="'Pretendard', sans-serif" style="font-family: 'Pretendard', sans-serif">프리텐다드</div>
                                 </div>
                             </div>
                         </div>
                         <div class="control-group" style="margin:0; flex: 1;">
-                            <label>내 폰트</label><input type="file" id="input-custom-font" accept=".ttf,.otf,.woff">
+                            <label>내 폰트</label>
+                            <input type="file" id="input-custom-font" accept=".ttf,.otf,.woff">
                         </div>
                     </div>
 
                     <div class="flex-group" style="margin-bottom: 12px;">
-                        <div class="control-group" style="margin:0;"><label>글자 색상</label><input type="color" id="input-color" value="#222222"></div>
+                        <div class="control-group" style="margin:0;">
+                            <label>글자 색상</label>
+                            <input type="color" id="input-color" value="#222222">
+                        </div>
                         <div class="control-group" style="margin:0;">
                             <label>글자 크기 (px)</label>
                             <div class="num-ctrl">
@@ -476,134 +485,231 @@
                         <div class="control-group" style="margin:0;">
                             <label>줄 간격</label>
                             <div class="num-ctrl">
-                                <button type="button" onclick="adjustNum('input-lineheight', -1, 0.1, true)">-</button>
+                                <button type="button" onclick="adjustNum('input-lineheight', -1, 0.1)">-</button>
                                 <input type="number" id="input-lineheight" value="1.2" step="0.1">
-                                <button type="button" onclick="adjustNum('input-lineheight', 1, 0.1, true)">+</button>
+                                <button type="button" onclick="adjustNum('input-lineheight', 1, 0.1)">+</button>
                             </div>
                         </div>
                         <div class="control-group" style="margin:0;">
                             <label>문단 간격 (px)</label>
                             <div class="num-ctrl">
-                                <button type="button" onclick="adjustNum('input-para-gap', -1, 5, true)">-</button>
+                                <button type="button" onclick="adjustNum('input-para-gap', -1, 5)">-</button>
                                 <input type="number" id="input-para-gap" value="5" step="5">
-                                <button type="button" onclick="adjustNum('input-para-gap', 1, 5, true)">+</button>
+                                <button type="button" onclick="adjustNum('input-para-gap', 1, 5)">+</button>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="flex-group" style="margin-bottom: 12px;">
-                        <div class="control-group" style="margin:0; flex: 1.2;">
-                            <label>내부 여백 (px)</label>
-                            <div class="num-ctrl">
-                                <button type="button" onclick="adjustNum('input-padding', -1, 5, true)">-</button>
-                                <input type="number" id="input-padding" value="15">
-                                <button type="button" onclick="adjustNum('input-padding', 1, 5, true)">+</button>
-                            </div>
-                        </div>
-                        <div class="control-group" style="margin:0; flex: 1;">
-                            <label>정렬</label>
-                            <select id="input-align"><option value="center">가운데</option><option value="left">왼쪽</option><option value="right">오른쪽</option></select>
-                        </div>
-                        <div class="control-group" style="margin:0; flex: 1;">
-                            <label>텍스트 이동</label>
-                            <button type="button" class="btn btn-sm" id="btn-text-drag" onclick="toggleTextDrag()" style="width: 100%; height: 34px; padding:0; display:flex; justify-content:center; align-items:center; gap:4px;">켜기</button>
                         </div>
                     </div>
 
                     <div class="flex-group">
-                        <div class="control-group" style="margin:0;">
-                            <label class="toggle-switch" style="display: flex; align-items: center; width: 100%; gap: 10px; cursor: pointer;">
-                                <div style="position: relative; width: 40px; height: 22px; flex-shrink: 0;">
-                                    <input type="checkbox" id="char-wrap-toggle" onchange="updateUI()">
-                                    <span class="toggle-slider"></span>
-                                </div>
-                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">줄바꿈: 글자 단위</span>
-                            </label>
+                        <div class="control-group" style="margin:0; flex: 1.2;">
+                            <label>내부 여백 (px)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('input-padding', -1, 5)">-</button>
+                                <input type="number" id="input-padding" value="15">
+                                <button type="button" onclick="adjustNum('input-padding', 1, 5)">+</button>
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin:0; flex: 1;">
+                            <label>정렬</label>
+                            <select id="input-align">
+                                <option value="center">가운데</option><option value="left">왼쪽</option><option value="right">오른쪽</option>
+                            </select>
+                        </div>
+                        <div class="control-group" style="margin:0; flex: 1;">
+                            <label>텍스트 이동</label>
+                            <button type="button" class="btn btn-sm" id="btn-text-drag" onclick="toggleTextDrag()" style="width: 100%; height: 34px; padding:0; display:flex; justify-content:center; align-items:center; gap:4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                켜기
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="control-group style-shadow-panel-sub" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line);">
-                        <label style="font-weight: 700;">텍스트 하단 그림자 (Drop Shadow)</label>
-                        <div class="flex-group mt-2">
-                            <div class="control-group" style="margin:0;"><label>그림자 색상</label><input type="color" id="text-shadow-color" value="#86807a"></div>
-                            <div class="control-group" style="margin:0;"><label>흐림 반경 (px)</label><input type="number" id="text-shadow-blur" value="0" min="0" oninput="updateUI()"></div>
-                            <div class="control-group" style="margin:0;"><label>거리 Y (px)</label><input type="number" id="text-shadow-y" value="0" oninput="updateUI()"></div>
-                        </div>
+
+                    <div class="control-group" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line);">
+                        <label class="toggle-switch" style="display: flex; align-items: center; width: 100%; gap: 10px; cursor: pointer;">
+                            <div style="position: relative; width: 40px; height: 22px; flex-shrink: 0;">
+                                <input type="checkbox" id="char-wrap-toggle" onchange="updateUI()">
+                                <span class="toggle-slider"></span>
+                            </div>
+                            <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">줄바꿈: 글자 단위</span>
+                        </label>
+                        <p style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 6px; margin-bottom: 0;">끄면 단어 단위(기본), 켜면 글자 단위로 줄바꿈됩니다.</p>
                     </div>
                 </div>
 
                 <div class="ctrl-section" id="section-html-layout" style="display: none;">
                     <div class="ctrl-eyebrow">HTML 뷰어 레이아웃</div>
+                    
                     <div class="flex-group" style="margin-bottom: 12px;">
-                        <div class="control-group" style="margin:0;"><label>상단 여백 (px)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('margin-top', -1, 5)">-</button><input type="number" id="margin-top" value="0"><button type="button" onclick="adjustNum('margin-top', 1, 5)">+</button></div></div>
-                        <div class="control-group" style="margin:0;"><label>하단 여백 (px)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('margin-bottom', -1, 5)">-</button><input type="number" id="margin-bottom" value="0"><button type="button" onclick="adjustNum('margin-bottom', 1, 5)">+</button></div></div>
+                        <div class="control-group" style="margin:0;">
+                            <label>상단 여백 (px)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('margin-top', -1, 5)">-</button>
+                                <input type="number" id="margin-top" value="0">
+                                <button type="button" onclick="adjustNum('margin-top', 1, 5)">+</button>
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin:0;">
+                            <label>하단 여백 (px)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('margin-bottom', -1, 5)">-</button>
+                                <input type="number" id="margin-bottom" value="0">
+                                <button type="button" onclick="adjustNum('margin-bottom', 1, 5)">+</button>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="flex-group" style="margin-bottom: 12px;">
-                        <div class="control-group" style="margin:0;"><label>좌측 여백 (px)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('margin-left', -1, 5)">-</button><input type="number" id="margin-left" value="0"><button type="button" onclick="adjustNum('margin-left', 1, 5)">+</button></div></div>
-                        <div class="control-group" style="margin:0;"><label>우측 여백 (px)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('margin-right', -1, 5)">-</button><input type="number" id="margin-right" value="0"><button type="button" onclick="adjustNum('margin-right', 1, 5)">+</button></div></div>
+                        <div class="control-group" style="margin:0;">
+                            <label>좌측 여백 (px)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('margin-left', -1, 5)">-</button>
+                                <input type="number" id="margin-left" value="0">
+                                <button type="button" onclick="adjustNum('margin-left', 1, 5)">+</button>
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin:0;">
+                            <label>우측 여백 (px)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('margin-right', -1, 5)">-</button>
+                                <input type="number" id="margin-right" value="0">
+                                <button type="button" onclick="adjustNum('margin-right', 1, 5)">+</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex-group" style="margin-bottom: 12px;">
-                        <div class="control-group" style="margin:0; flex: 1.2;"><label>콘텐츠 크기 (배율)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('html-scale', -1, 0.1)">-</button><input type="number" id="html-scale" value="1.0" step="0.1"><button type="button" onclick="adjustNum('html-scale', 1, 0.1)">+</button></div></div>
-                        <div class="control-group" style="margin:0; flex: 1;"><label>위치 이동</label><button type="button" class="btn btn-sm" id="btn-text-drag-html" onclick="toggleTextDrag()" style="width: 100%; height: 34px;">켜기</button></div>
-                    </div>
-                    <div class="control-group">
-                        <label class="toggle-switch" style="display: flex; align-items: center; width: 100%; gap: 10px; cursor: pointer;">
-                            <div style="position: relative; width: 40px; height: 22px; flex-shrink: 0;"><input type="checkbox" id="force-center-toggle" onchange="updateUI()"><span class="toggle-slider"></span></div>
-                            <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">컨테이너 위치 강제 해제</span>
-                        </label>
-                        <p id="position-warning-detail" style="font-size: 0.72rem; margin-top: 8px; margin-bottom: 0; font-weight: 600;"></p>
+
+                    <div class="flex-group">
+                        <div class="control-group" style="margin:0; flex: 1.2;">
+                            <label>콘텐츠 크기 (강제 배율)</label>
+                            <div class="num-ctrl">
+                                <button type="button" onclick="adjustNum('html-scale', -1, 0.1)">-</button>
+                                <input type="number" id="html-scale" value="1.0" step="0.1">
+                                <button type="button" onclick="adjustNum('html-scale', 1, 0.1)">+</button>
+                            </div>
+                        </div>
+                        <div class="control-group" style="margin:0; flex: 1;">
+                            <label>콘텐츠 위치 이동</label>
+                            <button type="button" class="btn btn-sm" id="btn-text-drag-html" onclick="toggleTextDrag()" style="width: 100%; height: 34px; padding:0; display:flex; justify-content:center; align-items:center; gap:4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                켜기
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
-                        <div class="ctrl-eyebrow" style="margin:0;">오버레이 이미지 (포토샵 크롭식)</div>
-                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                        <div class="ctrl-eyebrow" style="margin:0;">오버레이 이미지 (크롭 지원)</div>
+                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
                         <div class="control-group" style="margin-bottom: 12px;">
                             <input type="file" id="ov-upload" accept="image/*">
-                            <div style="display:flex; gap:6px; margin-top:6px;">
-                                <button class="btn btn-sm" id="btn-ov-drag" onclick="toggleOvDrag()" style="flex:1;">이미지 이동</button>
-                                <button class="btn btn-sm btn-danger" onclick="removeOvImg()" style="flex:1;">삭제</button>
+                            <button class="btn btn-sm" onclick="removeOvImg()" style="margin-top: 6px; width: 100%;">이미지 삭제</button>
+                        </div>
+                        
+                        <div class="flex-group" style="margin-bottom: 12px;">
+                            <div class="control-group" style="margin:0;">
+                                <label>마스크 가로 (px)</label>
+                                <input type="number" id="ov-mask-w" value="300" oninput="updateUI()">
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>마스크 세로 (px)</label>
+                                <input type="number" id="ov-mask-h" value="300" oninput="updateUI()">
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>둥글기 (px)</label>
+                                <input type="number" id="ov-mask-r" value="0" oninput="updateUI()">
                             </div>
                         </div>
+
                         <div class="flex-group" style="margin-bottom: 12px;">
-                            <div class="control-group" style="margin:0;"><label>마스크 가로 (px)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('ov-mask-w', -10, 10)">-</button><input type="number" id="ov-mask-w" value="300"><button type="button" onclick="adjustNum('ov-mask-w', 10, 10)">+</button></div></div>
-                            <div class="control-group" style="margin:0;"><label>마스크 세로 (px)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('ov-mask-h', -10, 10)">-</button><input type="number" id="ov-mask-h" value="200"><button type="button" onclick="adjustNum('ov-mask-h', 10, 10)">+</button></div></div>
+                            <div class="control-group" style="margin:0;">
+                                <label>가로 정렬</label>
+                                <select id="ov-justify"><option value="flex-start">좌측</option><option value="center" selected>중앙</option><option value="flex-end">우측</option></select>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>세로 정렬</label>
+                                <select id="ov-align"><option value="flex-start">상단</option><option value="center" selected>중앙</option><option value="flex-end">하단</option></select>
+                            </div>
                         </div>
-                        <div class="flex-group" style="margin-bottom: 12px;">
-                            <div class="control-group" style="margin:0;"><label>곡률 Radius (px)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('ov-mask-r', -2, 2)">-</button><input type="number" id="ov-mask-r" value="12" min="0"><button type="button" onclick="adjustNum('ov-mask-r', 2, 2)">+</button></div></div>
-                            <div class="control-group" style="margin:0;"><label>내부 이미지 배율</label><div class="num-ctrl"><button type="button" onclick="adjustNum('ov-scale', -0.1, 0.1)">-</button><input type="number" id="ov-scale" value="1.0" step="0.1" min="0.1"><button type="button" onclick="adjustNum('ov-scale', 0.1, 0.1)">+</button></div></div>
-                        </div>
+
                         <div class="flex-group">
-                            <div class="control-group" style="margin:0;"><label>가로 틀 정렬</label><select id="ov-justify"><option value="flex-start">좌측</option><option value="center" selected>중앙</option><option value="flex-end">우측</option></select></div>
-                            <div class="control-group" style="margin:0;"><label>세로 틀 정렬</label><select id="ov-align"><option value="flex-start">상단</option><option value="center" selected>중앙</option><option value="flex-end">하단</option></select></div>
+                            <div class="control-group" style="margin:0; flex: 1.2;">
+                                <label>내부 이미지 배율</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('ov-scale', -1, 0.1)">-</button>
+                                    <input type="number" id="ov-scale" value="1.0" step="0.1">
+                                    <button type="button" onclick="adjustNum('ov-scale', 1, 0.1)">+</button>
+                                </div>
+                            </div>
+                            <div class="control-group" style="margin:0; flex: 1;">
+                                <label>내부 이미지 이동</label>
+                                <button type="button" class="btn btn-sm" id="btn-ov-drag" onclick="toggleOvDrag()" style="width: 100%; height: 34px; padding:0; display:flex; justify-content:center; align-items:center; gap:4px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                    켜기
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
-                        <div class="ctrl-eyebrow" style="margin:0;">출처 표시 (중앙 영점 기준)</div>
-                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                        <div class="ctrl-eyebrow" style="margin:0;">출처 표시 (워터마크)</div>
+                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
                         <div class="flex-group" style="margin-bottom: 12px;">
-                            <div class="control-group" style="margin:0;"><label>캐릭터 이름</label><input type="text" id="wm-char" placeholder="캐릭터명"></div>
-                            <div class="control-group" style="margin:0;"><label>제작자</label><input type="text" id="wm-creator" placeholder="제작자명"></div>
+                            <div class="control-group" style="margin:0;">
+                                <label>캐릭터 이름</label>
+                                <input type="text" id="wm-char" placeholder="캐릭터명">
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>제작자</label>
+                                <input type="text" id="wm-creator" placeholder="제작자명">
+                            </div>
                         </div>
                         <div class="flex-group" style="margin-bottom: 12px;">
-                            <div class="control-group" style="margin:0;"><label>가로 정렬</label><select id="wm-justify"><option value="flex-start">좌측</option><option value="center" selected>중앙</option><option value="flex-end">우측</option></select></div>
-                            <div class="control-group" style="margin:0;"><label>세로 정렬</label><select id="wm-align"><option value="flex-start">상단</option><option value="center">중앙</option><option value="flex-end" selected>하단</option></select></div>
+                            <div class="control-group" style="margin:0;">
+                                <label>가로 정렬</label>
+                                <select id="wm-justify"><option value="flex-start">좌측</option><option value="center" selected>중앙</option><option value="flex-end">우측</option></select>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>세로 정렬</label>
+                                <select id="wm-align"><option value="flex-start">상단</option><option value="center">중앙</option><option value="flex-end" selected>하단</option></select>
+                            </div>
                         </div>
                         <div class="flex-group" style="margin-bottom: 12px;">
-                            <div class="control-group" style="margin:0;"><label>글자 크기 (px)</label><div class="num-ctrl"><button type="button" onclick="adjustNum('wm-size', -1, 1)">-</button><input type="number" id="wm-size" value="14"><button type="button" onclick="adjustNum('wm-size', 1, 1)">+</button></div></div>
-                            <div class="control-group" style="margin:0;"><label>글자 색상</label><input type="color" id="wm-color" value="#ffffff"></div>
+                            <div class="control-group" style="margin:0;">
+                                <label>글자 크기 (px)</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('wm-size', -1, 1)">-</button>
+                                    <input type="number" id="wm-size" value="14">
+                                    <button type="button" onclick="adjustNum('wm-size', 1, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>글자 색상</label>
+                                <input type="color" id="wm-color" value="#ffffff">
+                            </div>
                         </div>
                         <div class="flex-group">
-                            <div class="control-group" style="margin:0;"><label>좌우 오프셋 X (+우)</label><input type="number" id="wm-x" value="0" oninput="updateUI()"></div>
-                            <div class="control-group" style="margin:0;"><label>상하 오프셋 Y (+위)</label><input type="number" id="wm-y" value="0" oninput="updateUI()"></div>
+                            <div class="control-group" style="margin:0;">
+                                <label>X 이동 (우측 +)</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('wm-x', -5, 5)">-</button>
+                                    <input type="number" id="wm-x" value="0">
+                                    <button type="button" onclick="adjustNum('wm-x', 5, 5)">+</button>
+                                </div>
+                            </div>
+                            <div class="control-group" style="margin:0;">
+                                <label>Y 이동 (상단 +)</label>
+                                <div class="num-ctrl">
+                                    <button type="button" onclick="adjustNum('wm-y', -5, 5)">-</button>
+                                    <input type="number" id="wm-y" value="0">
+                                    <button type="button" onclick="adjustNum('wm-y', 5, 5)">+</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -611,10 +717,12 @@
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
                         <div class="ctrl-eyebrow" style="margin:0;">기타 부가 기능</div>
-                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
-                        <div class="control-group" style="margin:0;">
+                        
+                        <div class="control-group" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line);">
+                            <label style="margin-bottom: 8px;">텍스트 모드에서 글자를 드래그한 후 누르세요.</label>
                             <div class="flex-group" style="align-items: center; gap: 8px;">
                                 <input type="color" id="hl-color" value="#a3e635" style="width: 40px; padding: 0; flex: none;">
                                 <input type="range" id="hl-opacity" min="0.1" max="1.0" step="0.1" value="0.5" style="flex: 1; min-width: 60px;">
@@ -622,32 +730,71 @@
                                 <button class="btn btn-sm btn-danger" onclick="clearHighlights()" style="white-space: nowrap;">삭제</button>
                             </div>
                         </div>
+
+                        <div class="control-group" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line);">
+                            <label style="margin-bottom: 8px;">텍스트 하단 그림자 (Drop Shadow)</label>
+                            <div class="flex-group" style="margin-bottom: 8px; align-items: center; gap: 8px;">
+                                <input type="color" id="ts-color" value="#000000" style="width: 40px; padding: 0; flex: none;">
+                                <input type="range" id="ts-opacity" min="0" max="1.0" step="0.1" value="0" style="flex: 1; min-width: 60px;">
+                            </div>
+                            <div class="flex-group">
+                                <div class="control-group" style="margin:0;">
+                                    <label>흐림 (Blur)</label>
+                                    <input type="number" id="ts-blur" value="5" oninput="updateUI()">
+                                </div>
+                                <div class="control-group" style="margin:0;">
+                                    <label>Y 위치 이동</label>
+                                    <input type="number" id="ts-y" value="2" oninput="updateUI()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="toggle-switch" style="display: flex; align-items: center; width: 100%; gap: 10px; cursor: pointer;">
+                                <div style="position: relative; width: 40px; height: 22px; flex-shrink: 0;">
+                                    <input type="checkbox" id="force-center-toggle" onchange="updateUI()">
+                                    <span class="toggle-slider"></span>
+                                </div>
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">컨테이너 위치 강제 해제</span>
+                            </label>
+                            <p style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 6px; margin-bottom: 0;">HTML 코드 최상위 태그의 위치 고정(position/margin 등)만 무력화해서 가운데로 오게 합니다.</p>
+                            <p id="position-warning-detail" style="font-size: 0.72rem; margin-top: 8px; margin-bottom: 0; font-weight: 600;"></p>
+                        </div>
+                        
                     </div>
                 </div>
 
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
-                        <div class="ctrl-eyebrow" style="margin:0; color: var(--ink);">⚙️ 시스템 및 초기화 설정</div>
-                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                        <div class="ctrl-eyebrow" style="margin:0;">⚙️ 시스템 및 초기화 설정</div>
+                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
-                        <div class="control-group" style="margin-bottom: 14px;">
+                        <div class="control-group" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed var(--line);">
                             <label class="toggle-switch" style="display: flex; align-items: center; width: 100%; gap: 10px; cursor: pointer;">
                                 <div style="position: relative; width: 40px; height: 22px; flex-shrink: 0;">
-                                    <input type="checkbox" id="toolbar-hover-toggle" onchange="toggleHoverToolbarActive()">
+                                    <input type="checkbox" id="toolbar-always-toggle" onchange="toggleToolbarAlways()">
                                     <span class="toggle-slider"></span>
                                 </div>
-                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">미리보기 UI 마우스 호버 시에만 표시</span>
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--ink);">메뉴 툴바 항상 표시</span>
                             </label>
+                            <p style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 6px; margin-bottom: 0;">켜면 미리보기 우측 아이콘들이 투명해지지 않고 항상 켜져있습니다.</p>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px dashed var(--line); padding-top: 12px;">
-                            <button class="btn text-left" id="opt-save-typo" onclick="saveAsDefault('typo')" title="폰트, 색상, 크기, 간격 등 글자 영역 설정을 현재 상태로 기본 브라우저 브랜딩 세팅합니다.">타이포 기본값 설정 저장</button>
-                            <button class="btn text-left" id="opt-save-bg" onclick="saveAsDefault('bg')" title="캔버스 규격, 배경 이미지 상태, 오버레이 크롭 구역, 워터마크 세팅 및 줌 배율까지 기본값으로 락인합니다.">배경영역 기본값 설정 저장</button>
-                            <div style="display:flex; gap:6px; margin-top:4px;">
-                                <button class="btn btn-danger" id="opt-init-typo" onclick="resetTypography()" style="flex:1; padding:6px; font-size:0.75rem;" title="지정해 둔 나만의 타이포그래피 커스텀 세팅 혹은 팩토리 초기 세팅값으로 서식을 롤백합니다.">타이포 초기화</button>
-                                <button class="btn btn-danger" id="opt-init-bg" onclick="resetBackground()" style="flex:1; padding:6px; font-size:0.75rem;" title="배경 가로세로 규격, 투명 마스크 크롭 박스 상태 및 정렬 배율 상태만 단독 팩토리 리셋합니다.">배경 초기화</button>
+
+                        <div class="control-group" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed var(--line);">
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <button class="btn btn-primary" onclick="saveTypoDefault()" style="flex: 1; padding: 6px;" title="현재의 폰트, 여백, 정렬 상태를 기본값으로 저장합니다. 새로고침해도 이 값이 적용됩니다.">타이포 기본값 저장</button>
+                                <button class="btn btn-primary" onclick="saveBgDefault()" style="flex: 1; padding: 6px;" title="현재의 배경, 배율, 부가기능 상태를 기본값으로 저장합니다. 미리보기 배율도 포함됩니다.">배경영역 기본값 저장</button>
                             </div>
-                            <button class="btn btn-danger w-full mt-1" id="opt-init-all" onclick="resetAllMasterSettings()" style="padding:8px;" title="저장된 커스텀 기본값 데이터베이스를 모두 만료시키고 최초 빌드 팩토리 상태로 전체 강제 포맷팅합니다.">전체 초기화 (Factory Reset)</button>
+                        </div>
+
+                        <div class="control-group">
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <button class="btn btn-danger" onclick="resetTypography()" style="flex: 1; padding: 6px;" title="사용자가 지정한 '타이포 기본값'으로 텍스트 관련 설정만 되돌립니다.">타이포 초기화</button>
+                                <button class="btn btn-danger" onclick="resetBackground()" style="flex: 1; padding: 6px;" title="사용자가 지정한 '배경영역 기본값'으로 배경 및 부가기능만 되돌립니다.">배경 초기화</button>
+                            </div>
+                            <button class="btn btn-danger" onclick="resetAllSettings()" style="width: 100%; padding: 6px;" title="모든 설정을 공장 초기화 상태로 완전히 리셋합니다.">전체 공장 초기화</button>
+                            <p style="font-size: 0.7rem; color: var(--ink-soft); text-align: center; margin-top: 8px; margin-bottom: 0;">작성한 대화 내용과 코드는 지워지지 않습니다.</p>
                         </div>
                     </div>
                 </div>
@@ -655,79 +802,122 @@
             </div>
 
             <div class="preview-container">
+                
                 <div class="preview-toolbar">
                     <div class="toolbar-group" style="flex:1;">
+                        
                         <div class="toolbar-item">
                             <label>가로 (px)</label>
-                            <div class="num-ctrl" style="height: 26px;"><button type="button" onclick="adjustNum('card-width', -1, 50)">-</button><input type="number" id="card-width" value="700" style="width: 45px;"><button type="button" onclick="adjustNum('card-width', 1, 50)">+</button></div>
+                            <div class="num-ctrl" style="height: 26px;">
+                                <button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">-</button>
+                                <input type="number" id="card-width" value="700" style="width: 45px;">
+                                <button type="button" onclick="adjustNum('card-width', 1, 50)" style="padding:0 6px;">+</button>
+                            </div>
                         </div>
                         <div class="toolbar-item">
                             <label>세로 (px)</label>
-                            <div class="num-ctrl" style="height: 26px;"><button type="button" onclick="adjustNum('card-height', -1, 50)">-</button><input type="number" id="card-height" value="700" style="width: 45px;"><button type="button" onclick="adjustNum('card-height', 1, 50)">+</button></div>
-                        </div>
-                        <div class="toolbar-item"><label>단색 배경</label><input type="color" id="bg-color" value="#ffffff"></div>
-                        <div class="toolbar-divider"></div>
-                        <div class="toolbar-item">
-                            <label>배경 이미지</label>
-                            <div style="display: flex; gap: 4px; align-items: center;">
-                                <input type="file" id="input-bg" accept="image/*">
-                                <button class="btn btn-sm btn-primary" id="btn-bg-drag" onclick="toggleBgDrag()" style="height:26px; padding:2px 8px; font-size:0.75rem;">이동</button>
-                                <button class="btn btn-sm" onclick="resetBgPosition()" style="height:26px; padding:2px 8px; font-size:0.75rem;" title="조절된 배경 이미지의 드래그 좌표값과 확대 스케일을 원위치로 초기화합니다.">↺</button>
-                                <button class="btn btn-sm" onclick="removeBgImage()" style="height:26px; padding:2px 8px; font-size:0.75rem;">삭제</button>
+                            <div class="num-ctrl" style="height: 26px;">
+                                <button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">-</button>
+                                <input type="number" id="card-height" value="700" style="width: 45px;">
+                                <button type="button" onclick="adjustNum('card-height', 1, 50)" style="padding:0 6px;">+</button>
                             </div>
                         </div>
+                        <div class="toolbar-item">
+                            <label>단색 배경</label>
+                            <input type="color" id="bg-color" value="#ffffff">
+                        </div>
+                        
                         <div class="toolbar-divider"></div>
-                        <div class="toolbar-item"><label>어둡기 (Dim)</label><input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 130px;"></div>
+                        
+                        <div class="toolbar-item">
+                            <label>배경 이미지</label>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <input type="file" id="input-bg" accept="image/*">
+                                <button class="btn btn-sm" onclick="removeBgImage()">삭제</button>
+                            </div>
+                        </div>
+                        
+                        <div class="toolbar-divider"></div>
+                        
+                        <div class="toolbar-item">
+                            <label>어둡기 (Dim)</label>
+                            <input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 130px;">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-left: auto; align-self: flex-end;">
+                        <div style="display: flex; gap: 4px;">
+                            <button class="btn btn-sm" id="btn-bg-drag" onclick="toggleBgDrag()" style="height: 26px; display: flex; align-items: center; gap: 4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                배경 이동
+                            </button>
+                            <button class="btn btn-sm" onclick="resetBgPos()" style="height: 26px; padding: 0 8px;" title="배경 위치 초기화">↺</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="preview-canvas-wrapper" id="canvas-frame-container">
-                    
+                <div class="preview-canvas-wrapper">
+
                     <div class="hover-zone-tr"></div>
-                    <div class="floating-zoom" id="ui-zoom-floating">
-                        <label>배율</label>
+                    <div class="floating-zoom">
+                        <button class="btn btn-sm" onclick="openFullscreen()" style="padding: 4px 8px; margin-right: 8px;" title="전체화면 모드">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                        </button>
+                        <label>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            배율
+                        </label>
                         <input type="range" id="preview-scale" min="0.1" max="2.0" step="0.05" value="0.5">
                         <span class="zoom-value" id="scale-value">50%</span>
-                        
-                        <button class="btn btn-primary" onclick="openFullscreen()" style="padding: 2px 8px; font-size:0.72rem; height:22px; display:flex; align-items:center; gap:2px;">
-                            전체화면
-                        </button>
                     </div>
 
                     <div class="hover-zone-br"></div>
-                    <div class="floating-actions" id="ui-actions-floating">
-                        <button class="btn" onclick="copyToClipboard()">클립보드 복사</button>
-                        <button class="btn" onclick="downloadCard()">다운로드</button>
-                        <button class="btn btn-primary" onclick="openModal()">아카이브 저장</button>
+                    <div class="floating-actions">
+                        <button class="btn" onclick="copyToClipboard()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            클립보드 복사
+                        </button>
+                        <button class="btn" onclick="downloadCard()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            다운로드
+                        </button>
+                        <button class="btn btn-primary" onclick="openModal()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                            아카이브 저장
+                        </button>
                     </div>
 
                     <div class="preview-area" id="preview-scroll-area">
                         <div id="card-preview-wrapper">
                             <div id="card-preview">
                                 
-                                <div id="card-bg-mask">
-                                    <img id="card-bg-image" alt="Background">
+                                <div id="card-bg-mask" style="position: absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; z-index:0;">
+                                    <img id="card-bg-image" style="position: absolute; transform-origin: center; pointer-events: none; display: none;">
                                 </div>
-                                <div id="card-overlay"></div>
                                 
-                                <div id="overlay-img-wrapper">
-                                    <div id="ov-mask-frame">
-                                        <img id="overlay-img-content" alt="Overlay">
+                                <div id="card-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; z-index:1; pointer-events: none;"></div>
+                                
+                                <div id="overlay-img-wrapper" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; z-index: 2; pointer-events: none; justify-content: center; align-items: center;">
+                                    <div id="overlay-mask" style="position: relative; width: 300px; height: 300px; border-radius: 0px; overflow: hidden; pointer-events: none;">
+                                        <div id="overlay-img-transform" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%) scale(1); pointer-events: none;">
+                                            <img id="overlay-img-content" src="" style="max-width: none; pointer-events: auto; display: none;">
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div id="watermark-wrapper">
-                                    <div id="watermark-transform">
-                                        <div id="watermark-content"></div>
+                                <div id="watermark-wrapper" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end;">
+                                    <div id="watermark-transform" style="transform: translate(0px, 0px);">
+                                        <div id="watermark-content" style="pointer-events: auto; font-family: inherit; font-size: 14px; color: #fff;"></div>
                                     </div>
                                 </div>
                                 
-                                <div class="card-content" id="card-content">
-                                    <div id="preview-text"></div>
+                                <div class="card-content" id="card-content" style="position: relative; z-index: 4; width: 100%; pointer-events: none;">
+                                    <div id="preview-text" style="text-align: center; word-break: keep-all; width: 100%; pointer-events: auto;"></div>
                                 </div>
                                 
-                                <div class="guide-indicator-box" id="ui-guide-lines"></div>
-                                
+                                <div id="guide-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease;">
+                                    <div id="guide-box" style="width:100%; height:100%; border: 2px dashed #ff4757; box-sizing:border-box; background-clip: content-box; background-color: rgba(255,71,87,0.08);"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -740,11 +930,14 @@
             <div class="archive-header">
                 <div class="archive-header-left">
                     <div class="search-wrap">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <input type="text" id="search-input" placeholder="태그 · 메모 검색" oninput="loadGallery()">
                     </div>
-                    <select id="sort-select" onchange="loadGallery()"><option value="desc">최신순</option><option value="asc">오래된순</option></select>
+                    <select id="sort-select" onchange="loadGallery()">
+                        <option value="desc">최신순</option><option value="asc">오래된순</option>
+                    </select>
                 </div>
+                
                 <div class="archive-header-right">
                     <button class="btn" onclick="exportData()" style="height: 34px; padding: 0 16px;">백업 저장</button>
                     <label class="btn btn-primary" style="height: 34px; margin: 0; padding: 0 16px; display: flex; align-items: center; cursor: pointer;">
@@ -784,24 +977,30 @@
         
         let currentBgImageDataUrl = '';
         let currentOvImageDataUrl = '';
-        let originalBgWidth = 0; let originalBgHeight = 0;
-        let originalOvWidth = 0; let originalOvHeight = 0;
+        let originalBgWidth = 0;
+        let originalBgHeight = 0;
         
         let isBgDragMode = false;
         let isTextDragMode = false;
         let isOvDragMode = false;
         
-        let isDraggingBg = false; let isDraggingText = false; let isDraggingOv = false;
+        let isDraggingBg = false;
+        let isDraggingText = false;
+        let isDraggingOv = false;
         let isCapturing = false; 
         
-        let bgScale = 1.0; let bgOffsetX = 0; let bgOffsetY = 0;
-        let textOffsetX = 0; let textOffsetY = 0;
-        let ovOffsetX = 0; let ovOffsetY = 0;
-        let startMouseX = 0; let startMouseY = 0;
+        let bgScale = 1.0;
+        let bgOffsetX = 0;
+        let bgOffsetY = 0;
+        let textOffsetX = 0;
+        let textOffsetY = 0;
+        let ovOffsetX = 0;
+        let ovOffsetY = 0;
+        let startMouseX = 0;
+        let startMouseY = 0;
         
         let currentActiveSlot = '1'; 
         let userManuallyToggledHtml = false;
-        let guideTimer = null;
 
         const DOM = {
             text: document.getElementById('input-text'), width: document.getElementById('card-width'), height: document.getElementById('card-height'),
@@ -815,7 +1014,7 @@
             htmlScale: document.getElementById('html-scale'), 
             
             textDragBtn: document.getElementById('btn-text-drag'), textDragBtnHtml: document.getElementById('btn-text-drag-html'),
-            bgDragBtn: document.getElementById('btn-bg-drag'), ovDragBtn: document.getElementById('btn-ov-drag'),
+            bgDragBtn: document.getElementById('btn-bg-drag'),
             
             sectionTypography: document.getElementById('section-typography'),
             sectionHtmlLayout: document.getElementById('section-html-layout'),
@@ -834,10 +1033,16 @@
             ovJustify: document.getElementById('ov-justify'), ovAlign: document.getElementById('ov-align'),
             ovMaskW: document.getElementById('ov-mask-w'), ovMaskH: document.getElementById('ov-mask-h'), ovMaskR: document.getElementById('ov-mask-r'),
             
-            forceCenter: document.getElementById('force-center-toggle'),
-            charWrap: document.getElementById('char-wrap-toggle'),
-            toolbarHover: document.getElementById('toolbar-hover-toggle')
+            tsColor: document.getElementById('ts-color'), tsOpacity: document.getElementById('ts-opacity'),
+            tsBlur: document.getElementById('ts-blur'), tsY: document.getElementById('ts-y'),
+
+            forceCenter: document.getElementById('force-center-toggle'), charWrap: document.getElementById('char-wrap-toggle')
         };
+
+        function hexToRgbStr(hex) {
+            let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `${r}, ${g}, ${b}`;
+        }
 
         function updateUI() {
             DOM.preview.style.width = DOM.width.value + 'px';
@@ -851,21 +1056,30 @@
                 DOM.sectionTypography.style.display = 'none';
                 DOM.sectionHtmlLayout.style.display = 'block';
 
-                const pt = DOM.marginTop.value || 0; const pb = DOM.marginBottom.value || 0;
-                const pl = DOM.marginLeft.value || 0; const pr = DOM.marginRight.value || 0;
+                const pt = DOM.marginTop.value || 0;
+                const pb = DOM.marginBottom.value || 0;
+                const pl = DOM.marginLeft.value || 0;
+                const pr = DOM.marginRight.value || 0;
                 DOM.preview.style.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
 
-                DOM.contentWrapper.style.fontFamily = ''; DOM.contentWrapper.style.color = '';
-                DOM.pText.style.fontSize = ''; DOM.pText.style.lineHeight = ''; DOM.pText.style.textAlign = ''; DOM.pText.style.wordBreak = '';
+                DOM.contentWrapper.style.fontFamily = '';
+                DOM.contentWrapper.style.color = '';
+                DOM.pText.style.fontSize = '';
+                DOM.pText.style.lineHeight = ''; 
+                DOM.pText.style.textAlign = ''; 
+                DOM.pText.style.wordBreak = '';
                 DOM.pText.style.textShadow = 'none';
                 
                 const hScale = parseFloat(DOM.htmlScale.value) || 1.0;
-                DOM.pText.style.transform = `scale(${hScale})`; DOM.pText.style.transformOrigin = 'center center';
+                DOM.pText.style.transform = `scale(${hScale})`;
+                DOM.pText.style.transformOrigin = 'center center';
+                
                 DOM.pText.innerHTML = DOM.text.value;
                 handleForcedPosition();
             } else {
                 DOM.sectionTypography.style.display = 'block';
                 DOM.sectionHtmlLayout.style.display = 'none';
+
                 DOM.preview.style.padding = DOM.pad.value + 'px';
                 
                 DOM.contentWrapper.style.fontFamily = currentFontVal;
@@ -875,13 +1089,16 @@
                 DOM.pText.style.textAlign = DOM.align.value;
                 DOM.pText.style.wordBreak = DOM.charWrap.checked ? 'break-all' : 'keep-all';
                 
-                // 💡 추가된 글자 하단 그림자 옵션 동적 바인딩
-                const sColor = document.getElementById('text-shadow-color').value;
-                const sBlur = document.getElementById('text-shadow-blur').value || 0;
-                const sY = document.getElementById('text-shadow-y').value || 0;
-                DOM.pText.style.textShadow = `0px ${sY}px ${sBlur}px ${sColor}`;
-                
+                // 💡 텍스트 하단 그림자 반영
+                if (parseFloat(DOM.tsOpacity.value) > 0) {
+                    const tsRgb = hexToRgbStr(DOM.tsColor.value);
+                    DOM.pText.style.textShadow = `0px ${DOM.tsY.value}px ${DOM.tsBlur.value}px rgba(${tsRgb}, ${DOM.tsOpacity.value})`;
+                } else {
+                    DOM.pText.style.textShadow = 'none';
+                }
+
                 DOM.pText.style.transform = 'none'; 
+                
                 const gap = DOM.paraGap.value;
                 const lines = DOM.text.value.split('\n');
                 DOM.pText.innerHTML = lines.map(line => `<div style="margin-bottom: ${gap}px">${line || '<br>'}</div>`).join('');
@@ -889,25 +1106,26 @@
             
             DOM.contentWrapper.style.transform = `translate(${textOffsetX}px, ${textOffsetY}px)`;
             
-            // 💡 포토샵식 오버레이 크롭 마스크 사양 렌더링
+            // 💡 오버레이 크롭 마스크 설정 반영
             const ovWrapper = document.getElementById('overlay-img-wrapper');
-            const ovFrame = document.getElementById('ov-mask-frame');
-            const ovContent = document.getElementById('overlay-img-content');
+            const ovMask = document.getElementById('overlay-mask');
+            const ovTransform = document.getElementById('overlay-img-transform');
+            
             ovWrapper.style.justifyContent = DOM.ovJustify.value;
             ovWrapper.style.alignItems = DOM.ovAlign.value;
-            
-            ovFrame.style.width = DOM.ovMaskW.value + 'px';
-            ovFrame.style.height = DOM.ovMaskH.value + 'px';
-            ovFrame.style.borderRadius = DOM.ovMaskR.value + 'px';
-            
-            ovContent.style.transform = `translate(${ovOffsetX}px, ${ovOffsetY}px) scale(${DOM.ovScale.value})`;
+            ovMask.style.width = DOM.ovMaskW.value + 'px';
+            ovMask.style.height = DOM.ovMaskH.value + 'px';
+            ovMask.style.borderRadius = DOM.ovMaskR.value + 'px';
+            // 중앙 정점을 기준으로 이동(+X, +Y)
+            ovTransform.style.transform = `translate(calc(-50% + ${ovOffsetX}px), calc(-50% + ${ovOffsetY}px)) scale(${DOM.ovScale.value})`;
 
-            // 💡 수학적 역산 보정 징검다리 워터마크 영점 처리
+            // 워터마크 설정 반영
             const wmWrapper = document.getElementById('watermark-wrapper');
             const wmTransform = document.getElementById('watermark-transform');
             const wmContent = document.getElementById('watermark-content');
             
-            let char = DOM.wmChar.value.trim(); let creator = DOM.wmCreator.value.trim();
+            let char = DOM.wmChar.value.trim();
+            let creator = DOM.wmCreator.value.trim();
             let wmText = '';
             if(char && creator) wmText = char + ' | ' + creator;
             else if(char) wmText = char;
@@ -918,27 +1136,40 @@
             wmContent.style.color = DOM.wmColor.value;
             wmWrapper.style.justifyContent = DOM.wmJustify.value;
             wmWrapper.style.alignItems = DOM.wmAlign.value;
-            
-            // 위쪽 방향이 양수가 되도록 오프셋 Y축 부호 반전 연산 주입
-            let calcY = -parseFloat(DOM.wmY.value || 0);
-            wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${calcY}px)`;
+            // 💡 좌표계 정상화 (오른쪽이 +x, 위쪽이 +y)
+            wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${-DOM.wmY.value}px)`;
 
             updateBgLayer();
-            updateScale();
-            autoSaveStateToCache(); // 실시간 캐시 스토리지 기입 단 트래킹
+            updateScale(); 
+            scheduleAutoSave(); // 자동 저장 트리거
         }
 
+        /* -------------------------------------------------------------
+           HTML 최상위 태그 위치 강제 코드 감지 및 해제
+        ------------------------------------------------------------- */
         function handleForcedPosition() {
             const detailEl = document.getElementById('position-warning-detail');
-            if (!DOM.htmlToggle.checked) { detailEl.textContent = ''; return; }
+
+            if (!DOM.htmlToggle.checked) {
+                detailEl.textContent = '';
+                return;
+            }
+
             const outer = DOM.pText.firstElementChild;
-            if (!outer) { detailEl.textContent = ''; return; }
-            const style = outer.getAttribute('style') || ''; const found = [];
+            if (!outer) {
+                detailEl.textContent = '';
+                return;
+            }
+
+            const style = outer.getAttribute('style') || '';
+            const found = [];
+
             const posMatch = style.match(/position\s*:\s*(absolute|fixed|relative)/i);
             if (posMatch) {
                 found.push(`position:${posMatch[1]}`);
                 ['top', 'left', 'right', 'bottom'].forEach(prop => {
-                    const m = style.match(new RegExp(prop + '\\s*:\\s*[^;]+', 'i')); if (m) found.push(m[0].replace(/\s+/g, ''));
+                    const m = style.match(new RegExp(prop + '\\s*:\\s*[^;]+', 'i'));
+                    if (m) found.push(m[0].replace(/\s+/g, ''));
                 });
             }
             if (/margin(?:-\w+)?\s*:\s*-\s*[0-9]/i.test(style)) found.push('margin(음수)');
@@ -946,322 +1177,550 @@
             if (/transform\s*:\s*[^;]*translate/i.test(style)) found.push('transform(translate)');
 
             if (found.length === 0) {
-                detailEl.style.color = 'var(--ink-soft)'; detailEl.textContent = '위치를 강제하는 코드가 감지되지 않았습니다.'; return;
+                detailEl.style.color = 'var(--ink-soft)';
+                detailEl.textContent = '위치를 강제하는 코드가 감지되지 않았습니다.';
+                return;
             }
-            detailEl.style.color = 'var(--danger)'; detailEl.textContent = `⚠️ 코드가 감지됨: ${found.join(', ')}`;
+
+            detailEl.style.color = 'var(--danger)';
+            detailEl.textContent = `⚠️ <${outer.tagName.toLowerCase()}> 태그에서 감지됨: ${found.join(', ')}`;
+
             if (DOM.forceCenter.checked) {
-                outer.style.position = 'static'; outer.style.top = ''; outer.style.left = ''; outer.style.right = ''; outer.style.bottom = ''; outer.style.float = 'none'; outer.style.margin = '0 auto'; outer.style.transform = 'none';
+                outer.style.position = 'static';
+                outer.style.top = ''; outer.style.left = ''; outer.style.right = ''; outer.style.bottom = '';
+                outer.style.float = 'none'; outer.style.margin = '0 auto'; outer.style.transform = 'none';
             }
         }
 
-        // 💡 여백 및 조절용 가이드라인 점선 연산 엔진
-        function triggerGuideLines() {
-            const linesBox = document.getElementById('ui-guide-lines');
-            linesBox.classList.add('active');
-            clearTimeout(guideTimer);
-            guideTimer = setTimeout(() => { linesBox.classList.remove('active'); }, 1000);
-        }
+        DOM.htmlToggle.addEventListener('change', () => {
+            userManuallyToggledHtml = true;
+            updateUI();
+        });
 
-        function toggleHoverToolbarActive() {
-            const targetContainer = document.getElementById('canvas-frame-container');
-            if(DOM.toolbarHover.checked) targetContainer.classList.add('toolbar-hover-active');
-            else targetContainer.classList.remove('toolbar-hover-active');
-            autoSaveStateToCache();
-        }
+        DOM.text.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (!DOM.htmlToggle.checked && !userManuallyToggledHtml && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
+                DOM.htmlToggle.checked = true;
+                showToast('HTML 뷰어 모드로 자동 전환되었습니다.');
+            }
+            updateUI();
+        });
 
         function wrapText(startTag, endTag) {
-            const ta = DOM.text; const start = ta.selectionStart; const end = ta.selectionEnd; const sel = ta.value.substring(start, end);
-            ta.setRangeText(startTag + sel + endTag, start, end, 'end'); updateUI();
+            const ta = DOM.text;
+            const start = ta.selectionStart; const end = ta.selectionEnd;
+            const sel = ta.value.substring(start, end);
+            ta.setRangeText(startTag + sel + endTag, start, end, 'end');
+            updateUI();
         }
-        function insertText(str) { const ta = DOM.text; ta.setRangeText(str, ta.selectionStart, ta.selectionEnd, 'end'); updateUI(); }
+        function insertText(str) {
+            const ta = DOM.text;
+            ta.setRangeText(str, ta.selectionStart, ta.selectionEnd, 'end');
+            updateUI();
+        }
 
         function openFullscreen() {
             document.body.classList.add('fullscreen-mode');
             setTimeout(() => { document.addEventListener('click', closeFullscreen); }, 10);
-            showToast('전체화면 모드가 활성화되었습니다. 화면을 클릭하면 해제됩니다.');
+            showToast('전체화면 모드입니다. 아무 곳이나 클릭하면 종료됩니다.');
         }
         function closeFullscreen(e) {
-            document.body.classList.remove('fullscreen-mode'); document.removeEventListener('click', closeFullscreen);
+            document.body.classList.remove('fullscreen-mode');
+            document.removeEventListener('click', closeFullscreen);
         }
 
-        // 💡 분리 고도화 세분화 저장 로직단
-        function saveAsDefault(targetMode) {
-            let config = JSON.parse(localStorage.getItem('archive_master_defaults')) || {};
-            let current = getCurrentConfig();
-            
-            if(targetMode === 'typo') {
-                config.color = current.color; config.size = current.size; config.lh = current.lh; config.paraGap = current.paraGap;
-                config.pad = current.pad; config.align = current.align; config.font = current.font; config.charWrap = current.charWrap;
-                config.textShadowColor = current.textShadowColor; config.textShadowBlur = current.textShadowBlur; config.textShadowY = current.textShadowY;
-                showToast('현재 타이포 서식 설정이 마스터 기본값으로 동기화되었습니다.');
-            } else if(targetMode === 'bg') {
-                config.width = current.width; config.height = current.height; config.bgColor = current.bgColor; config.dim = current.dim;
-                config.savedZoomScale = DOM.scale.value; // 미리보기 배율 동시 보존 처리
-                config.toolbarHover = current.toolbarHover;
-                config.wmChar = current.wmChar; config.wmCreator = current.wmCreator; config.wmSize = current.wmSize; config.wmColor = current.wmColor;
-                config.wmJustify = current.wmJustify; config.wmAlign = current.wmAlign; config.wmX = current.wmX; config.wmY = current.wmY;
-                config.ovMaskW = current.ovMaskW; config.ovMaskH = current.ovMaskH; config.ovMaskR = current.ovMaskR; config.ovScale = current.ovScale;
-                config.ovJustify = current.ovJustify; config.ovAlign = current.ovAlign;
-                showToast('현재 배경 규격 및 부가 영역 설정이 마스터 기본값으로 기입되었습니다.');
-            }
-            localStorage.setItem('archive_master_defaults', JSON.stringify(config));
-            autoSaveStateToCache();
+        /* -------------------------------------------------------------
+           자동 저장, 기본값, 초기화 로직
+        ------------------------------------------------------------- */
+        let autoSaveTimer;
+        function scheduleAutoSave() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                const config = getCurrentConfig();
+                try {
+                    localStorage.setItem('archive_autosave', JSON.stringify(config));
+                } catch(e) {
+                    // 용량 초과 시 무거운 이미지 객체 제외하고 저장
+                    delete config.bgImg; delete config.ovImg;
+                    try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } catch(e){}
+                }
+            }, 1000);
         }
 
-        function getFactoryConfig() {
-            return {
-                width: 700, height: 700, bgColor: '#ffffff', dim: 0,
-                font: "'Noto Serif KR', serif", color: '#222222', size: 24, lh: 1.2, paraGap: 5, pad: 15, align: 'center',
-                marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0, htmlScale: 1.0, textOffsetX: 0, textOffsetY: 0,
-                charWrap: false, toolbarHover: false,
-                textShadowColor: '#86807a', textShadowBlur: 0, textShadowY: 0,
-                wmChar: '', wmCreator: '', wmSize: 14, wmColor: '#ffffff', wmJustify: 'center', wmAlign: 'flex-end', wmX: 0, wmY: 0,
-                ovMaskW: 300, ovMaskH: 200, ovMaskR: 12, ovScale: 1.0, ovJustify: 'center', ovAlign: 'center', savedZoomScale: 0.5
-            };
+        function toggleToolbarAlways() {
+            const isChecked = document.getElementById('toolbar-always-toggle').checked;
+            if(isChecked) document.body.classList.add('toolbar-always');
+            else document.body.classList.remove('toolbar-always');
+            localStorage.setItem('archive_toolbar_always', isChecked);
         }
 
-        function getMergedConfig() {
-            const defs = JSON.parse(localStorage.getItem('archive_master_defaults')) || {};
-            return Object.assign({}, getFactoryConfig(), defs);
+        function saveTypoDefault() {
+            let config = getCurrentConfig();
+            let defs = JSON.parse(localStorage.getItem('archive_default_typo')) || {};
+            ['font','color','size','lh','paraGap','pad','align','charWrap','marginTop','marginBottom','marginLeft','marginRight','htmlScale'].forEach(k => defs[k] = config[k]);
+            localStorage.setItem('archive_default_typo', JSON.stringify(defs));
+            showToast('타이포그래피 설정이 기본값으로 저장되었습니다.');
+        }
+
+        function saveBgDefault() {
+            let config = getCurrentConfig();
+            let defs = JSON.parse(localStorage.getItem('archive_default_bg')) || {};
+            ['width','height','bgColor','dim','forceCenter','wmChar','wmCreator','wmSize','wmColor','wmJustify','wmAlign','wmX','wmY','ovMaskW','ovMaskH','ovMaskR','ovScale','ovJustify','ovAlign','tsColor','tsOpacity','tsBlur','tsY'].forEach(k => defs[k] = config[k]);
+            defs.previewScale = DOM.scale.value; // 미리보기 배율 포함
+            localStorage.setItem('archive_default_bg', JSON.stringify(defs));
+            showToast('배경 및 부가기능이 기본값으로 저장되었습니다.');
         }
 
         function resetTypography() {
-            if(!confirm('타이포 서식 설정을 초기화하시겠습니까?')) return;
-            const defs = getMergedConfig();
-            DOM.color.value = defs.color; DOM.size.value = defs.size; DOM.lh.value = defs.lh; DOM.paraGap.value = defs.paraGap;
-            DOM.pad.value = defs.pad; DOM.align.value = defs.align; DOM.charWrap.checked = defs.charWrap;
-            document.getElementById('text-shadow-color').value = defs.textShadowColor;
-            document.getElementById('text-shadow-blur').value = defs.textShadowBlur;
-            document.getElementById('text-shadow-y').value = defs.textShadowY;
+            if(!confirm('타이포그래피 설정을 저장된 기본값(없으면 공장초기화)으로 되돌리시겠습니까?')) return;
+            let defs = JSON.parse(localStorage.getItem('archive_default_typo')) || {};
             
-            currentFontVal = defs.font;
+            DOM.color.value = defs.color || '#222222'; DOM.size.value = defs.size || 24;
+            DOM.lh.value = defs.lh || 1.2; DOM.paraGap.value = defs.paraGap || 5;
+            DOM.pad.value = defs.pad || 15; DOM.align.value = defs.align || 'center';
+            DOM.charWrap.checked = defs.charWrap || false;
+            
+            currentFontVal = defs.font || "'Noto Serif KR', serif";
             const fontTrigger = document.getElementById('font-picker-trigger');
             fontTrigger.style.fontFamily = currentFontVal;
             const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
             if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
+            else fontTrigger.textContent = '명조체';
+
+            DOM.marginTop.value = defs.marginTop || 0; DOM.marginBottom.value = defs.marginBottom || 0;
+            DOM.marginLeft.value = defs.marginLeft || 0; DOM.marginRight.value = defs.marginRight || 0;
+            DOM.htmlScale.value = defs.htmlScale || 1.0;
+            textOffsetX = defs.textOffsetX || 0; textOffsetY = defs.textOffsetY || 0;
             
-            textOffsetX = 0; textOffsetY = 0;
-            updateUI(); showToast('타이포그래피 서식이 리셋되었습니다.');
+            updateUI(); showToast('타이포그래피 설정이 초기화되었습니다.');
         }
 
         function resetBackground() {
-            if(!confirm('배경영역 및 크롭 마스크 레이아웃을 초기화하시겠습니까?')) return;
-            const defs = getMergedConfig();
-            DOM.width.value = defs.width; DOM.height.value = defs.height; DOM.bgColor.value = defs.bgColor; DOM.dim.value = defs.dim;
-            DOM.toolbarHover.checked = defs.toolbarHover;
-            toggleHoverToolbarActive();
-
-            DOM.wmChar.value = defs.wmChar; DOM.wmCreator.value = defs.wmCreator; DOM.wmSize.value = defs.wmSize; DOM.wmColor.value = defs.wmColor;
-            DOM.wmJustify.value = defs.wmJustify; DOM.wmAlign.value = defs.wmAlign; DOM.wmX.value = defs.wmX; DOM.wmY.value = defs.wmY;
+            if(!confirm('배경 및 부가기능 설정을 저장된 기본값(없으면 공장초기화)으로 되돌리시겠습니까?')) return;
+            let defs = JSON.parse(localStorage.getItem('archive_default_bg')) || {};
             
-            DOM.ovMaskW.value = defs.ovMaskW; DOM.ovMaskH.value = defs.ovMaskH; DOM.ovMaskR.value = defs.ovMaskR; DOM.ovScale.value = defs.ovScale;
-            DOM.ovJustify.value = defs.ovJustify; DOM.ovAlign.value = defs.ovAlign;
-            ovOffsetX = 0; ovOffsetY = 0;
-
-            DOM.scale.value = defs.savedZoomScale;
+            DOM.width.value = defs.width || 700; DOM.height.value = defs.height || 700;
+            DOM.bgColor.value = defs.bgColor || '#ffffff'; DOM.dim.value = defs.dim || 0;
+            
             removeBgImage(); removeOvImg();
-            updateUI(); showToast('배경 레이아웃 환경이 리셋되었습니다.');
+            DOM.forceCenter.checked = defs.forceCenter || false;
+
+            DOM.wmChar.value = defs.wmChar || ''; DOM.wmCreator.value = defs.wmCreator || '';
+            DOM.wmSize.value = defs.wmSize || 14; DOM.wmColor.value = defs.wmColor || '#ffffff';
+            DOM.wmJustify.value = defs.wmJustify || 'center'; DOM.wmAlign.value = defs.wmAlign || 'flex-end';
+            DOM.wmX.value = defs.wmX || 0; DOM.wmY.value = defs.wmY || 0;
+
+            DOM.ovMaskW.value = defs.ovMaskW || 300; DOM.ovMaskH.value = defs.ovMaskH || 300; DOM.ovMaskR.value = defs.ovMaskR || 0;
+            DOM.ovScale.value = defs.ovScale || 1.0; DOM.ovJustify.value = defs.ovJustify || 'center'; DOM.ovAlign.value = defs.ovAlign || 'center';
+            ovOffsetX = 0; ovOffsetY = 0; // 마우스 이동 좌표는 무조건 리셋
+            
+            DOM.tsColor.value = defs.tsColor || '#000000'; DOM.tsOpacity.value = defs.tsOpacity || 0;
+            DOM.tsBlur.value = defs.tsBlur || 5; DOM.tsY.value = defs.tsY || 2;
+
+            if(defs.previewScale) { DOM.scale.value = defs.previewScale; updateScale(); }
+            
+            updateUI(); showToast('배경 및 부가 설정이 초기화되었습니다.');
+        }
+        
+        function resetAllSettings() { 
+            if(!confirm('모든 값을 공장 초기화하시겠습니까? (저장된 기본값도 무시됩니다)')) return;
+            localStorage.removeItem('archive_default_typo');
+            localStorage.removeItem('archive_default_bg');
+            resetTypography(); resetBackground(); 
         }
 
-        function resetAllMasterSettings() {
-            if(!confirm('시스템에 저장된 모든 커스텀 기본값을 소거하고 전체 공장 초기화를 진행합니까?')) return;
-            localStorage.removeItem('archive_master_defaults');
-            const defs = getFactoryConfig();
-            applyConfig(defs, false);
-            DOM.scale.value = defs.savedZoomScale;
-            removeBgImage(); removeOvImg();
-            updateUI(); showToast('전체 시스템 환경이 완전히 공장 초기화되었습니다.');
-        }
-
-        function resetBgPosition() {
-            bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0; updateBgLayer(); showToast('배경 이미지의 위치와 배율이 초기화되었습니다.');
-        }
-
+        /* -------------------------------------------------------------
+           배경 & 오버레이 위치/비율 제어
+        ------------------------------------------------------------- */
         function updateBgLayer() {
-            if (!currentBgImageDataUrl || !originalBgWidth || !originalBgHeight) { DOM.bgImage.style.display = 'none'; return; }
+            if (!currentBgImageDataUrl || !originalBgWidth || !originalBgHeight) {
+                DOM.bgImage.style.display = 'none'; return;
+            }
             DOM.bgImage.style.display = 'block';
-            const maskW = parseFloat(DOM.width.value) || 700; const maskH = parseFloat(DOM.height.value) || 700;
-            const maskRatio = maskW / maskH; const imgRatio = originalBgWidth / originalBgHeight;
+            const maskW = parseFloat(DOM.width.value) || 700;
+            const maskH = parseFloat(DOM.height.value) || 700;
+            const maskRatio = maskW / maskH;
+            const imgRatio = originalBgWidth / originalBgHeight;
+
             let baseWidth, baseHeight;
             if (imgRatio > maskRatio) { baseHeight = maskH; baseWidth = baseHeight * imgRatio; } 
             else { baseWidth = maskW; baseHeight = baseWidth / imgRatio; }
-            DOM.bgImage.style.width = `${baseWidth}px`; DOM.bgImage.style.height = `${baseHeight}px`;
-            DOM.bgImage.style.left = `calc(50% - ${baseWidth/2}px)`; DOM.bgImage.style.top = `calc(50% - ${baseHeight/2}px)`;
+
+            DOM.bgImage.style.width = `${baseWidth}px`;
+            DOM.bgImage.style.height = `${baseHeight}px`;
+            DOM.bgImage.style.left = `calc(50% - ${baseWidth/2}px)`;
+            DOM.bgImage.style.top = `calc(50% - ${baseHeight/2}px)`;
             DOM.bgImage.style.transform = `translate(${bgOffsetX}px, ${bgOffsetY}px) scale(${bgScale})`;
         }
+        
+        function resetBgPos() {
+            bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0;
+            updateBgLayer();
+        }
 
-        function adjustNum(id, delta, step = 1, requireGuide = false) {
-            const input = document.getElementById(id); let val = parseFloat(input.value) || 0; val += delta * step;
-            if (step < 1) val = parseFloat(val.toFixed(1)); input.value = val;
-            if (requireGuide) triggerGuideLines();
+        function adjustNum(id, delta, step = 1) {
+            const input = document.getElementById(id);
+            let val = parseFloat(input.value) || 0;
+            val += delta * step;
+            if (step < 1) val = parseFloat(val.toFixed(1)); 
+            input.value = val;
             updateUI(); 
         }
 
+        const inputs = [
+            DOM.width, DOM.height, DOM.bgColor, DOM.dim, DOM.color, DOM.size, DOM.pad, DOM.lh, DOM.paraGap, 
+            DOM.marginTop, DOM.marginBottom, DOM.marginLeft, DOM.marginRight, DOM.htmlScale,
+            DOM.wmChar, DOM.wmCreator, DOM.wmSize, DOM.wmColor, DOM.wmX, DOM.wmY,
+            DOM.ovMaskW, DOM.ovMaskH, DOM.ovMaskR, DOM.ovScale, 
+            DOM.tsColor, DOM.tsOpacity, DOM.tsBlur, DOM.tsY
+        ];
+        inputs.forEach(el => el.addEventListener('input', updateUI));
+        
+        ['input-align', 'wm-justify', 'wm-align', 'ov-justify', 'ov-align'].forEach(id => {
+            document.getElementById(id).addEventListener('change', updateUI);
+        });
+        
+        // 💡 여백 및 간격 조절 시 점선 가이드라인 표시
+        let guideTimer;
+        function showVisualGuide() {
+            if(DOM.htmlToggle.checked) return;
+            const overlay = document.getElementById('guide-overlay');
+            const box = document.getElementById('guide-box');
+            box.style.padding = DOM.pad.value + 'px';
+            overlay.style.opacity = '1';
+            clearTimeout(guideTimer);
+            guideTimer = setTimeout(() => { overlay.style.opacity = '0'; }, 1000);
+        }
+        [DOM.pad, DOM.lh, DOM.paraGap].forEach(el => el.addEventListener('input', showVisualGuide));
+
+        window.onload = () => {
+            setupFontPicker();
+            initPresetButtons();
+            
+            if(localStorage.getItem('archive_toolbar_always') === 'true') {
+                document.getElementById('toolbar-always-toggle').checked = true;
+                document.body.classList.add('toolbar-always');
+            }
+
+            const saved = localStorage.getItem('archive_autosave');
+            if(saved) {
+                applyConfig(JSON.parse(saved), true); // 저장된 캐시 로드 (비동기 완료 후 ui 업데이트 됨)
+            } else {
+                updateUI();
+            }
+        };
+
+        DOM.scale.addEventListener('input', updateScale);
+        function updateScale() {
+            const ratio = parseFloat(DOM.scale.value);
+            DOM.scaleVal.textContent = Math.round(ratio * 100) + '%';
+            DOM.preview.style.transform = `scale(${ratio})`;
+            DOM.previewWrapper.style.width = (DOM.width.value * ratio) + 'px';
+            DOM.previewWrapper.style.height = (DOM.height.value * ratio) + 'px';
+            DOM.scrollArea.style.alignItems = (DOM.height.value * ratio) < DOM.scrollArea.clientHeight ? 'center' : 'flex-start';
+        }
+
+        /* -------------------------------------------------------------
+           배경 & 오버레이 & 텍스트 마우스 드래그 이동
+        ------------------------------------------------------------- */
         DOM.bgImg.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = ev => { 
-                    currentBgImageDataUrl = ev.target.result; const tempImg = new Image();
-                    tempImg.onload = () => { originalBgWidth = tempImg.width; originalBgHeight = tempImg.height; bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0; DOM.bgImage.src = currentBgImageDataUrl; updateUI(); };
+                    currentBgImageDataUrl = ev.target.result;
+                    const tempImg = new Image();
+                    tempImg.onload = () => {
+                        originalBgWidth = tempImg.width; originalBgHeight = tempImg.height;
+                        bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0;
+                        DOM.bgImage.src = currentBgImageDataUrl;
+                        updateUI();
+                    };
                     tempImg.src = currentBgImageDataUrl;
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        function removeBgImage() { currentBgImageDataUrl = ''; DOM.bgImg.value = ''; originalBgWidth = 0; originalBgHeight = 0; bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0; updateUI(); }
+        function removeBgImage() { 
+            currentBgImageDataUrl = ''; DOM.bgImg.value = ''; 
+            originalBgWidth = 0; originalBgHeight = 0;
+            bgScale = 1.0; bgOffsetX = 0; bgOffsetY = 0;
+            updateUI(); 
+        }
 
         DOM.ovUpload.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = ev => { 
-                    currentOvImageDataUrl = ev.target.result; const tempImg = new Image();
-                    tempImg.onload = () => { originalOvWidth = tempImg.width; originalOvHeight = tempImg.height; ovOffsetX = 0; ovOffsetY = 0; document.getElementById('overlay-img-content').src = currentOvImageDataUrl; document.getElementById('overlay-img-content').style.display = 'block'; updateUI(); };
-                    tempImg.src = currentOvImageDataUrl;
+                    currentOvImageDataUrl = ev.target.result;
+                    document.getElementById('overlay-img-content').src = currentOvImageDataUrl;
+                    document.getElementById('overlay-img-content').style.display = 'block';
+                    updateUI();
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        function removeOvImg() { currentOvImageDataUrl = ''; DOM.ovUpload.value = ''; originalOvWidth = 0; originalOvHeight = 0; ovOffsetX = 0; ovOffsetY = 0; document.getElementById('overlay-img-content').src = ''; document.getElementById('overlay-img-content').style.display = 'none'; updateUI(); }
+        function removeOvImg() { 
+            currentOvImageDataUrl = ''; DOM.ovUpload.value = ''; 
+            ovOffsetX = 0; ovOffsetY = 0; DOM.ovScale.value = 1.0;
+            document.getElementById('overlay-img-content').src = '';
+            document.getElementById('overlay-img-content').style.display = 'none';
+            updateUI(); 
+        }
 
         function toggleBgDrag() {
-            if (isTextDragMode) toggleTextDrag(); if (isOvDragMode) toggleOvDrag();
+            if (isTextDragMode) toggleTextDrag(); 
+            if (isOvDragMode) toggleOvDrag();
             isBgDragMode = !isBgDragMode;
-            if (isBgDragMode) { DOM.bgDragBtn.classList.add('drag-active'); DOM.preview.style.cursor = 'move'; showToast('배경 드래그 모드가 켜졌습니다. 휠로 크기도 조정 가능합니다.'); } 
-            else { DOM.bgDragBtn.classList.remove('drag-active'); DOM.preview.style.cursor = 'default'; }
+            if (isBgDragMode) {
+                DOM.bgDragBtn.classList.add('drag-active');
+                DOM.preview.style.cursor = 'move';
+                showToast('마우스 드래그로 배경 위치를 조절하세요.');
+            } else {
+                DOM.bgDragBtn.classList.remove('drag-active');
+                DOM.preview.style.cursor = 'default';
+            }
         }
         
         function toggleTextDrag() {
-            if (isBgDragMode) toggleBgDrag(); if (isOvDragMode) toggleOvDrag();
+            if (isBgDragMode) toggleBgDrag(); 
+            if (isOvDragMode) toggleOvDrag();
             isTextDragMode = !isTextDragMode;
-            if (isTextDragMode) { DOM.textDragBtn.classList.add('drag-active'); DOM.textDragBtnHtml.classList.add('drag-active'); DOM.preview.style.cursor = 'move'; showToast('텍스트 이동 드래그 모드가 켜졌습니다.'); } 
-            else { DOM.textDragBtn.classList.remove('drag-active'); DOM.textDragBtnHtml.classList.remove('drag-active'); DOM.preview.style.cursor = 'default'; }
+            if (isTextDragMode) {
+                DOM.textDragBtn.classList.add('drag-active');
+                DOM.textDragBtnHtml.classList.add('drag-active');
+                DOM.preview.style.cursor = 'move';
+                showToast('마우스 드래그로 요소 위치를 조절하세요.');
+            } else {
+                DOM.textDragBtn.classList.remove('drag-active');
+                DOM.textDragBtnHtml.classList.remove('drag-active');
+                DOM.preview.style.cursor = 'default';
+            }
         }
 
         function toggleOvDrag() {
-            if (isBgDragMode) toggleBgDrag(); if (isTextDragMode) toggleTextDrag();
+            if (isBgDragMode) toggleBgDrag();
+            if (isTextDragMode) toggleTextDrag();
             isOvDragMode = !isOvDragMode;
-            if (isOvDragMode) { DOM.ovDragBtn.classList.add('drag-active'); DOM.preview.style.cursor = 'move'; showToast('오버레이 마스크 크롭 이동 모드가 켜졌습니다.'); } 
-            else { DOM.ovDragBtn.classList.remove('drag-active'); DOM.preview.style.cursor = 'default'; }
+            const btn = document.getElementById('btn-ov-drag');
+            if (isOvDragMode) {
+                btn.classList.add('drag-active');
+                DOM.preview.style.cursor = 'move';
+                showToast('마우스 드래그로 오버레이 이미지를 자르기(Crop) 하세요.');
+            } else {
+                btn.classList.remove('drag-active');
+                DOM.preview.style.cursor = 'default';
+            }
         }
 
         DOM.preview.addEventListener('mousedown', (e) => {
-            if (isBgDragMode && currentBgImageDataUrl) { isDraggingBg = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); } 
-            else if (isTextDragMode) { isDraggingText = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); }
-            else if (isOvDragMode && currentOvImageDataUrl) { isDraggingOv = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); }
+            if (isBgDragMode && currentBgImageDataUrl) {
+                isDraggingBg = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
+            } else if (isTextDragMode) {
+                isDraggingText = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
+            } else if (isOvDragMode && currentOvImageDataUrl) {
+                isDraggingOv = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
+            }
         });
 
         window.addEventListener('mousemove', (e) => {
             const previewScale = parseFloat(DOM.scale.value); 
             if (isDraggingBg) {
-                const dx = (e.clientX - startMouseX) / (previewScale * bgScale); const dy = (e.clientY - startMouseY) / (previewScale * bgScale);
-                bgOffsetX += dx; bgOffsetY += dy; startMouseX = e.clientX; startMouseY = e.clientY; updateBgLayer();
+                const dx = (e.clientX - startMouseX) / (previewScale * bgScale);
+                const dy = (e.clientY - startMouseY) / (previewScale * bgScale);
+                bgOffsetX += dx; bgOffsetY += dy;
+                startMouseX = e.clientX; startMouseY = e.clientY;
+                updateBgLayer();
             } else if (isDraggingText) {
-                const dx = (e.clientX - startMouseX) / previewScale; const dy = (e.clientY - startMouseY) / previewScale;
-                textOffsetX += dx; textOffsetY += dy; startMouseX = e.clientX; startMouseY = e.clientY; updateUI();
+                const dx = (e.clientX - startMouseX) / previewScale;
+                const dy = (e.clientY - startMouseY) / previewScale;
+                textOffsetX += dx; textOffsetY += dy;
+                startMouseX = e.clientX; startMouseY = e.clientY;
+                updateUI();
             } else if (isDraggingOv) {
-                const dx = (e.clientX - startMouseX) / previewScale; const dy = (e.clientY - startMouseY) / previewScale;
-                ovOffsetX += dx; ovOffsetY += dy; startMouseX = e.clientX; startMouseY = e.clientY; updateUI();
+                const dx = (e.clientX - startMouseX) / (previewScale * DOM.ovScale.value);
+                const dy = (e.clientY - startMouseY) / (previewScale * DOM.ovScale.value);
+                ovOffsetX += dx; ovOffsetY += dy;
+                startMouseX = e.clientX; startMouseY = e.clientY;
+                updateUI();
             }
         });
 
         window.addEventListener('mouseup', () => { isDraggingBg = false; isDraggingText = false; isDraggingOv = false; });
 
         DOM.preview.addEventListener('wheel', (e) => {
-            if (!isBgDragMode || !currentBgImageDataUrl) return; e.preventDefault();
-            bgScale -= e.deltaY * 0.0005; bgScale = Math.max(0.1, Math.min(bgScale, 10)); updateBgLayer();
+            if (!isBgDragMode || !currentBgImageDataUrl) return;
+            e.preventDefault();
+            bgScale -= e.deltaY * 0.0005; 
+            bgScale = Math.max(0.1, Math.min(bgScale, 10)); 
+            updateBgLayer();
         }, { passive: false });
 
+
+        /* -------------------------------------------------------------
+           아코디언 및 형광펜 
+        ------------------------------------------------------------- */
         function toggleSection(headerEl) {
-            const content = headerEl.nextElementSibling; const icon = headerEl.querySelector('.collapsible-icon');
-            if (content.style.display === 'block') { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; } 
-            else { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; }
+            const content = headerEl.nextElementSibling;
+            const icon = headerEl.querySelector('.collapsible-icon');
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'block';
+                icon.style.transform = 'rotate(180deg)';
+            }
         }
 
         function applyHighlight() {
-            const textarea = DOM.text; const start = textarea.selectionStart; const end = textarea.selectionEnd;
+            const textarea = DOM.text;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
             if (start === end) return showToast('입력창에서 칠할 글자를 먼저 드래그하세요.');
+
             const selectedText = textarea.value.substring(start, end);
-            const rgba = hexToRgba(document.getElementById('hl-color').value, document.getElementById('hl-opacity').value);
+            const rgba = `rgba(${hexToRgbStr(document.getElementById('hl-color').value)}, ${document.getElementById('hl-opacity').value})`;
             const markedText = selectedText.split('\n').map(line => {
                 if (line.trim() === '') return line; 
                 return `<mark style="background-color: ${rgba}; border-radius: 4px; padding: 0px 4px; margin: 0; color: inherit; display: inline !important; box-decoration-break: clone; -webkit-box-decoration-break: clone; line-height: inherit;">${line}</mark>`;
             }).join('\n');
-            textarea.setRangeText(markedText, start, end, 'end'); updateUI(); 
+
+            textarea.setRangeText(markedText, start, end, 'end');
+            updateUI(); 
         }
 
-        function clearHighlights() { DOM.text.value = DOM.text.value.replace(/<mark[^>]*>/g, '').replace(/<\/mark>/g, ''); updateUI(); showToast('형광펜이 모두 소거되었습니다.'); }
+        function clearHighlights() {
+            DOM.text.value = DOM.text.value.replace(/<mark[^>]*>/g, '').replace(/<\/mark>/g, '');
+            updateUI(); showToast('형광펜이 모두 지워졌습니다.');
+        }
 
-        const fontPicker = document.getElementById('font-picker-wrapper'); const fontTrigger = document.getElementById('font-picker-trigger'); const fontOptions = document.getElementById('font-picker-options');
+        /* -------------------------------------------------------------
+           폰트 선택 로직
+        ------------------------------------------------------------- */
+        const fontPicker = document.getElementById('font-picker-wrapper');
+        const fontTrigger = document.getElementById('font-picker-trigger');
+        const fontOptions = document.getElementById('font-picker-options');
+
         fontTrigger.addEventListener('click', () => fontOptions.classList.toggle('open'));
-        document.addEventListener('click', (e) => { if (!fontPicker.contains(e.target)) fontOptions.classList.remove('open'); });
+
+        document.addEventListener('click', (e) => {
+            if (!fontPicker.contains(e.target)) fontOptions.classList.remove('open');
+        });
 
         function setupFontPicker() {
             document.querySelectorAll('.picker-opt').forEach(opt => {
-                const newOpt = opt.cloneNode(true); opt.parentNode.replaceChild(newOpt, opt);
+                const newOpt = opt.cloneNode(true);
+                opt.parentNode.replaceChild(newOpt, opt);
                 newOpt.addEventListener('mouseenter', () => { DOM.pText.style.fontFamily = newOpt.dataset.val; });
                 newOpt.addEventListener('mouseleave', () => { DOM.pText.style.fontFamily = currentFontVal; });
                 newOpt.addEventListener('click', () => {
-                    currentFontVal = newOpt.dataset.val; fontTrigger.textContent = newOpt.textContent; fontTrigger.style.fontFamily = currentFontVal; fontOptions.classList.remove('open'); updateUI();
+                    currentFontVal = newOpt.dataset.val;
+                    fontTrigger.textContent = newOpt.textContent;
+                    fontTrigger.style.fontFamily = currentFontVal;
+                    fontOptions.classList.remove('open');
+                    updateUI();
                 });
             });
         }
 
         DOM.customFont.addEventListener('change', async (e) => {
-            const file = e.target.files[0]; if (!file) return;
+            const file = e.target.files[0];
+            if (!file) return;
+            
             const reader = new FileReader();
             reader.onload = async (ev) => {
-                window.currentCustomFontBase64 = ev.target.result; const fontName = 'Custom_' + Date.now(); const fontUrl = URL.createObjectURL(file); const font = new FontFace(fontName, `url(${fontUrl})`);
+                window.currentCustomFontBase64 = ev.target.result; // html-to-image 캡처용 Base64 저장
+                
+                const fontName = 'Custom_' + Date.now();
+                const fontUrl = URL.createObjectURL(file);
+                const font = new FontFace(fontName, `url(${fontUrl})`);
                 try {
-                    await font.load(); document.fonts.add(font); const opt = document.createElement('div'); opt.className = 'picker-opt'; opt.dataset.val = fontName; opt.style.fontFamily = fontName; opt.textContent = `내 폰트 (${file.name})`; fontOptions.appendChild(opt);
-                    currentFontVal = fontName; fontTrigger.textContent = opt.textContent; fontTrigger.style.fontFamily = fontName; fontOptions.classList.remove('open'); setupFontPicker(); updateUI(); showToast('폰트 커스텀 셋이 로드되었습니다.');
-                } catch (err) { showToast('폰트를 로드할 수 없습니다.'); }
+                    await font.load(); document.fonts.add(font);
+                    const opt = document.createElement('div');
+                    opt.className = 'picker-opt'; opt.dataset.val = fontName; opt.style.fontFamily = fontName; opt.textContent = `내 폰트 (${file.name})`;
+                    fontOptions.appendChild(opt);
+
+                    currentFontVal = fontName;
+                    fontTrigger.textContent = opt.textContent; fontTrigger.style.fontFamily = fontName;
+                    fontOptions.classList.remove('open');
+                    
+                    setupFontPicker(); updateUI(); showToast('폰트가 적용되었습니다.');
+                } catch (err) { showToast('폰트를 불러올 수 없습니다.'); }
             };
             reader.readAsDataURL(file);
         });
 
+
+        /* -------------------------------------------------------------
+           프리셋 로직
+        ------------------------------------------------------------- */
         function initPresetButtons() {
             let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
             document.querySelectorAll('.preset-btn').forEach(btn => {
                 const slot = btn.getAttribute('data-slot');
-                if (presets[slot]) { btn.classList.add('has-data'); btn.setAttribute('title', presets[slot].desc || `슬롯 ${slot} 환경 설정셋`); } 
-                else { btn.classList.remove('has-data'); btn.setAttribute('title', '비어있음'); }
-                if (slot === currentActiveSlot) btn.classList.add('active'); else btn.classList.remove('active');
+                if (presets[slot]) {
+                    btn.classList.add('has-data');
+                    btn.setAttribute('title', presets[slot].desc || `저장된 프리셋 ${slot}`);
+                } else {
+                    btn.classList.remove('has-data');
+                    btn.setAttribute('title', '비어있음');
+                }
+                if (slot === currentActiveSlot) btn.classList.add('active');
+                else btn.classList.remove('active');
             });
         }
 
         function selectPresetSlot(slot) { currentActiveSlot = slot; initPresetButtons(); }
 
+        function getCurrentConfig() {
+            return {
+                text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
+                bgImg: currentBgImageDataUrl, bgScale: bgScale, bgOffsetX: bgOffsetX, bgOffsetY: bgOffsetY,
+                textOffsetX: textOffsetX, textOffsetY: textOffsetY, 
+                bgColor: DOM.bgColor.value, dim: DOM.dim.value, paraGap: DOM.paraGap.value,
+                isHtmlMode: DOM.htmlToggle.checked, 
+                marginTop: DOM.marginTop.value, marginBottom: DOM.marginBottom.value, 
+                marginLeft: DOM.marginLeft.value, marginRight: DOM.marginRight.value,
+                htmlScale: DOM.htmlScale.value,
+                font: currentFontVal, color: DOM.color.value, size: DOM.size.value,
+                pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value,
+                forceCenter: DOM.forceCenter.checked, charWrap: DOM.charWrap.checked,
+                wmChar: DOM.wmChar.value, wmCreator: DOM.wmCreator.value, wmSize: DOM.wmSize.value, wmColor: DOM.wmColor.value,
+                wmJustify: DOM.wmJustify.value, wmAlign: DOM.wmAlign.value, wmX: DOM.wmX.value, wmY: DOM.wmY.value,
+                ovImg: currentOvImageDataUrl, ovMaskW: DOM.ovMaskW.value, ovMaskH: DOM.ovMaskH.value, ovMaskR: DOM.ovMaskR.value, 
+                ovScale: DOM.ovScale.value, ovJustify: DOM.ovJustify.value, ovAlign: DOM.ovAlign.value, ovOffsetX: ovOffsetX, ovOffsetY: ovOffsetY,
+                tsColor: DOM.tsColor.value, tsOpacity: DOM.tsOpacity.value, tsBlur: DOM.tsBlur.value, tsY: DOM.tsY.value
+            };
+        }
+
         function savePreset() {
             try {
-                let presets = JSON.parse(localStorage.getItem('archive_presets')) || {}; let config = getCurrentConfig();
+                let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
+                let config = getCurrentConfig();
                 delete config.text; delete config.bgImg; delete config.ovImg;
-                let desc = prompt('이 프리셋 슬롯의 요약 가이드를 남겨주세요:', presets[currentActiveSlot]?.desc || `마스터 세팅 ${currentActiveSlot}`);
-                if (desc === null) return;
-                presets[currentActiveSlot] = { config: config, desc: desc }; localStorage.setItem('archive_presets', JSON.stringify(presets));
-                initPresetButtons(); showToast(`슬롯 ${currentActiveSlot}번 프리셋 저장을 이행했습니다.`);
-            } catch (err) { showToast('저장 한도 용량 오버 에러가 발견되었습니다.'); }
+                
+                let desc = prompt('이 프리셋의 설명을 입력해주세요 (마우스 오버 시 표시):', presets[currentActiveSlot]?.desc || `프리셋 ${currentActiveSlot}`);
+                if (desc === null) return; 
+                
+                presets[currentActiveSlot] = { config: config, desc: desc };
+                localStorage.setItem('archive_presets', JSON.stringify(presets));
+                initPresetButtons(); 
+                showToast(`슬롯 ${currentActiveSlot}에 저장되었습니다.`);
+            } catch (err) { showToast('저장 공간 용량 초과 오류가 발생했습니다.'); }
         }
 
-        function loadPreset() {
-            let presets = JSON.parse(localStorage.getItem('archive_presets')) || {}; if (!presets[currentActiveSlot]) return showToast('슬롯이 비어있습니다.');
-            let config = presets[currentActiveSlot].config || presets[currentActiveSlot]; applyConfig(config, false);
-            showToast(`슬롯 ${currentActiveSlot}번 환경 설정을 호출했습니다.`);
+        async function loadPreset() {
+            let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
+            if (!presets[currentActiveSlot]) return showToast('저장된 프리셋이 없습니다.');
+            let config = presets[currentActiveSlot].config || presets[currentActiveSlot];
+            await applyConfig(config, false); 
+            showToast(`슬롯 ${currentActiveSlot} 프리셋을 불러왔습니다.`);
         }
 
-        // 💡 찌그러짐 원천 봉쇄 비동기 이미지 동기화 프로미스 빌더 적용단
-        function loadImgPromise(imgElement, srcUrl) {
-            return new Promise((resolve) => {
-                if (!srcUrl) { imgElement.src = ''; resolve({w: 0, h: 0}); return; }
-                imgElement.onload = () => { resolve({w: imgElement.width, h: imgElement.height}); };
-                imgElement.onerror = () => { resolve({w: 0, h: 0}); };
-                imgElement.src = srcUrl;
-            });
-        }
-
+        // 💡 버그수술: Promise 기반 동기화 이미지 적용 (배경 찌그러짐 원천 차단)
         async function applyConfig(config, isFromArchive = false) {
             if (isFromArchive && config.text !== undefined) DOM.text.value = config.text;
             DOM.width.value = config.width || 700; DOM.height.value = config.height || 700;
@@ -1270,28 +1729,26 @@
             textOffsetX = config.textOffsetX || 0; textOffsetY = config.textOffsetY || 0;
             ovOffsetX = config.ovOffsetX || 0; ovOffsetY = config.ovOffsetY || 0;
             
-            DOM.bgColor.value = config.bgColor || '#ffffff'; DOM.dim.value = config.dim || 0; DOM.paraGap.value = config.paraGap || 5;
+            DOM.bgColor.value = config.bgColor || '#ffffff'; DOM.dim.value = config.dim || 0; DOM.paraGap.value = config.paraGap || 5; 
             DOM.marginTop.value = config.marginTop || 0; DOM.marginBottom.value = config.marginBottom || 0;
             DOM.marginLeft.value = config.marginLeft || 0; DOM.marginRight.value = config.marginRight || 0;
-            DOM.htmlScale.value = config.htmlScale || 1.0; DOM.color.value = config.color || '#222222'; DOM.size.value = config.size || 24;
+            DOM.htmlScale.value = config.htmlScale || 1.0;
+            DOM.color.value = config.color || '#222222'; DOM.size.value = config.size || 24;
             DOM.pad.value = config.pad || 15; DOM.lh.value = config.lh || 1.2; DOM.align.value = config.align || 'center';
-            DOM.htmlToggle.checked = !!config.isHtmlMode; DOM.charWrap.checked = !!config.charWrap;
+            DOM.htmlToggle.checked = !!config.isHtmlMode;
             
-            if(config.toolbarHover !== undefined) DOM.toolbarHover.checked = config.toolbarHover;
-            toggleHoverToolbarActive();
-
-            document.getElementById('text-shadow-color').value = config.textShadowColor || '#86807a';
-            document.getElementById('text-shadow-blur').value = config.textShadowBlur || 0;
-            document.getElementById('text-shadow-y').value = config.textShadowY || 0;
-
+            DOM.forceCenter.checked = !!config.forceCenter;
+            DOM.charWrap.checked = !!config.charWrap;
             DOM.wmChar.value = config.wmChar || ''; DOM.wmCreator.value = config.wmCreator || '';
             DOM.wmSize.value = config.wmSize || 14; DOM.wmColor.value = config.wmColor || '#ffffff';
             DOM.wmJustify.value = config.wmJustify || 'center'; DOM.wmAlign.value = config.wmAlign || 'flex-end';
             DOM.wmX.value = config.wmX || 0; DOM.wmY.value = config.wmY || 0;
 
-            DOM.ovMaskW.value = config.ovMaskW || 300; DOM.ovMaskH.value = config.ovMaskH || 200;
-            DOM.ovMaskR.value = config.ovMaskR || 12; DOM.ovScale.value = config.ovScale || 1.0;
-            DOM.ovJustify.value = config.ovJustify || 'center'; DOM.ovAlign.value = config.ovAlign || 'center';
+            DOM.ovMaskW.value = config.ovMaskW || 300; DOM.ovMaskH.value = config.ovMaskH || 300; DOM.ovMaskR.value = config.ovMaskR || 0;
+            DOM.ovScale.value = config.ovScale || 1.0; DOM.ovJustify.value = config.ovJustify || 'center'; DOM.ovAlign.value = config.ovAlign || 'center';
+            
+            DOM.tsColor.value = config.tsColor || '#000000'; DOM.tsOpacity.value = config.tsOpacity || 0;
+            DOM.tsBlur.value = config.tsBlur || 5; DOM.tsY.value = config.tsY || 2;
 
             if (config.font) {
                 currentFontVal = config.font; fontTrigger.style.fontFamily = currentFontVal;
@@ -1299,38 +1756,37 @@
                 if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
             }
 
-            // 💡 버그 전면 박멸: 동기식 비동기 래핑 비순차적 크래시 붕괴 타파
-            currentBgImageDataUrl = config.bgImg || '';
-            currentOvImageDataUrl = config.ovImg || '';
+            const bgPromise = new Promise(resolve => {
+                if (config.bgImg) {
+                    currentBgImageDataUrl = config.bgImg;
+                    const tempImg = new Image();
+                    tempImg.onload = () => {
+                        originalBgWidth = tempImg.width; originalBgHeight = tempImg.height;
+                        DOM.bgImage.src = currentBgImageDataUrl; resolve();
+                    };
+                    tempImg.onerror = resolve;
+                    tempImg.src = currentBgImageDataUrl;
+                } else {
+                    currentBgImageDataUrl = ''; DOM.bgImage.src = ''; originalBgWidth = 0; originalBgHeight = 0; resolve();
+                }
+            });
 
-            const bgRes = await loadImgPromise(DOM.bgImage, currentBgImageDataUrl);
-            originalBgWidth = bgRes.w; originalBgHeight = bgRes.h;
+            const ovPromise = new Promise(resolve => {
+                if (config.ovImg) {
+                    currentOvImageDataUrl = config.ovImg;
+                    document.getElementById('overlay-img-content').src = currentOvImageDataUrl;
+                    document.getElementById('overlay-img-content').style.display = 'block';
+                    resolve();
+                } else {
+                    currentOvImageDataUrl = '';
+                    document.getElementById('overlay-img-content').src = '';
+                    document.getElementById('overlay-img-content').style.display = 'none';
+                    resolve();
+                }
+            });
 
-            const ovRes = await loadImgPromise(document.getElementById('overlay-img-content'), currentOvImageDataUrl);
-            originalOvWidth = ovRes.w; originalOvHeight = ovRes.h;
-            if(currentOvImageDataUrl) document.getElementById('overlay-img-content').style.display = 'block';
-
-            updateUI();
-        }
-
-        // 💡 오토 세이브 캐싱 스토리지 자동 기입 연산식
-        function autoSaveStateToCache() {
-            if(isCapturing) return;
-            const state = getCurrentConfig();
-            localStorage.setItem('archive_autosave_live_cache', JSON.stringify(state));
-        }
-
-        function restoreStateFromCache() {
-            const cache = localStorage.getItem('archive_autosave_live_cache');
-            if(cache) {
-                try { applyConfig(JSON.parse(cache), true); } catch(e){}
-            } else {
-                // 초기 캐시 없을 시 기본값 병합 호출
-                const defs = getMergedConfig();
-                applyConfig(defs, false);
-                DOM.scale.value = defs.savedZoomScale || 0.5;
-                updateScale();
-            }
+            await Promise.all([bgPromise, ovPromise]);
+            updateUI(); // 모든 이미지 크기 비율 계산이 끝난 후 딱 1번만 렌더링
         }
 
         function switchTab(tabName) {
@@ -1340,173 +1796,308 @@
             document.getElementById(tabName + '-page').classList.add('active');
             if(tabName === 'archive') loadGallery();
         }
-        function openModal() { document.getElementById('modal-tags').value = ''; document.getElementById('modal-memo').value = ''; document.getElementById('save-modal').style.display = 'flex'; }
+        function openModal() {
+            document.getElementById('modal-tags').value = ''; document.getElementById('modal-memo').value = '';
+            document.getElementById('save-modal').style.display = 'flex';
+        }
         function closeModal() { document.getElementById('save-modal').style.display = 'none'; }
-        function showToast(msg) { const toast = document.getElementById('toast'); toast.textContent = msg; toast.classList.add('show'); clearTimeout(toastTimeout); toastTimeout = setTimeout(() => hideToast(), 2000); }
+        
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg; toast.classList.add('show');
+            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => hideToast(), 2000);
+        }
         function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
         /* -------------------------------------------------------------
-           폰트 프리임베딩 리소스 빌더
+           💡 html-to-image 전용: 폰트 다운로드 렉 차단 (Pre-Embedding 로직)
         ------------------------------------------------------------- */
         const preloadedFontsCSS = {};
+
         async function ensureFontLoaded(fontFamilyStr) {
             if (preloadedFontsCSS[fontFamilyStr]) return preloadedFontsCSS[fontFamilyStr];
+            
             let cssUrl = '';
             if (fontFamilyStr.includes('Noto Serif KR')) cssUrl = 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&display=swap';
             else if (fontFamilyStr.includes('Noto Sans KR')) cssUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap';
             else if (fontFamilyStr.includes('Gowun Dodum')) cssUrl = 'https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap';
             else if (fontFamilyStr.includes('Nanum Myeongjo')) cssUrl = 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap';
             else if (fontFamilyStr.includes('Pretendard')) cssUrl = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css';
+            
             if (!cssUrl) return '';
+
             try {
-                const res = await fetch(cssUrl); const cssText = await res.text();
+                const res = await fetch(cssUrl);
+                const cssText = await res.text();
+                
                 const urlRegex = /url\((?:['"]?)(https:\/\/[^'")]+\.woff2)(?:['"]?)\)/g;
-                let finalCss = cssText; let match; const fetchPromises = [];
+                let finalCss = cssText;
+                let match;
+                const fetchPromises = [];
+                
                 while ((match = urlRegex.exec(cssText)) !== null && fetchPromises.length < 10) {
                     const url = match[1];
                     fetchPromises.push(
                         fetch(url).then(r => r.blob()).then(blob => new Promise(resolve => {
-                            const reader = new FileReader(); reader.onload = () => resolve({ url, base64: reader.result }); reader.readAsDataURL(blob);
+                            const reader = new FileReader();
+                            reader.onload = () => resolve({ url, base64: reader.result });
+                            reader.readAsDataURL(blob);
                         })).catch(() => null)
                     );
                 }
+                
                 const results = await Promise.all(fetchPromises);
-                for (const item of results) { if (item) finalCss = finalCss.replace(new RegExp(item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), item.base64); }
-                preloadedFontsCSS[fontFamilyStr] = finalCss; return finalCss;
-            } catch(e) { return ''; }
+                for (const item of results) {
+                    if (item) finalCss = finalCss.replace(new RegExp(item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), item.base64);
+                }
+                
+                preloadedFontsCSS[fontFamilyStr] = finalCss;
+                return finalCss;
+            } catch(e) {
+                return '';
+            }
         }
 
         /* -------------------------------------------------------------
-           💡 샌드박스 캡처 엔진 (html-to-image 원본 무버그 빌더)
+           💡 html-to-image 캡처 엔진 
         ------------------------------------------------------------- */
         function captureInSandbox(scaleRatio, isPng) {
             return new Promise(async (resolve, reject) => {
                 try {
                     const sourceEl = document.getElementById('card-preview');
-                    const w = parseFloat(DOM.width.value) || 700; const h = parseFloat(DOM.height.value) || 700;
+                    const w = parseFloat(DOM.width.value) || 700;
+                    const h = parseFloat(DOM.height.value) || 700;
+
                     const iframe = document.createElement('iframe');
                     iframe.style.position = 'fixed'; iframe.style.top = '-9999px'; iframe.style.left = '-9999px';
                     iframe.style.width = w + 'px'; iframe.style.height = h + 'px'; iframe.style.border = 'none';
                     document.body.appendChild(iframe);
+
                     const idoc = iframe.contentDocument || iframe.contentWindow.document;
 
-                    let styles = ''; document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
+                    // 테일윈드 자동 생성 클래스까지 100% 복사
+                    let styles = '';
+                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
+
                     const cloneEl = sourceEl.cloneNode(true);
                     
+                    // 버그수술 1: 닫힌 아코디언 내용 제거
                     cloneEl.querySelectorAll('details:not([open])').forEach(d => {
-                        Array.from(d.childNodes).forEach(node => { if (node.tagName && node.tagName.toLowerCase() !== 'summary') d.removeChild(node); });
+                        Array.from(d.childNodes).forEach(node => {
+                            if (node.tagName && node.tagName.toLowerCase() === 'summary') return;
+                            d.removeChild(node);
+                        });
                     });
-                    cloneEl.querySelectorAll('img').forEach(img => { const src = img.getAttribute('src'); if (!src || src.trim() === '') img.parentNode.removeChild(img); });
-                    
-                    // 가이드라인 오버레이 사본 격리 소거
-                    const cloneGuide = cloneEl.querySelector('#ui-guide-lines');
-                    if(cloneGuide) cloneGuide.parentNode.removeChild(cloneGuide);
 
-                    cloneEl.style.transform = 'none'; cloneEl.style.boxShadow = 'none';
-                    idoc.open(); idoc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">${styles}<style>body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head><body>${cloneEl.outerHTML}</body></html>`); idoc.close();
+                    // 💡 버그수술 2: 텅 빈 이미지 태그 강제 삭제 (html-to-image 404 에러 원천 차단)
+                    cloneEl.querySelectorAll('img').forEach(img => {
+                        const src = img.getAttribute('src');
+                        if (!src || src.trim() === '') img.parentNode.removeChild(img);
+                    });
+
+                    // 💡 버그수술 3: 가이드라인 완전 소거
+                    const guide = cloneEl.querySelector('#guide-overlay');
+                    if (guide) guide.parentNode.removeChild(guide);
+
+                    cloneEl.style.transform = 'none';
+                    cloneEl.style.boxShadow = 'none';
+
+                    idoc.open();
+                    idoc.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            ${styles}
+                            <style> body { margin: 0; padding: 0; background: transparent; overflow: hidden; } </style>
+                        </head>
+                        <body> ${cloneEl.outerHTML} </body>
+                        </html>
+                    `);
+                    idoc.close();
 
                     let embeddedFontCss = '';
                     if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) {
                         embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`;
-                    } else { embeddedFontCss = await ensureFontLoaded(currentFontVal); }
+                    } else {
+                        embeddedFontCss = await ensureFontLoaded(currentFontVal);
+                    }
 
                     setTimeout(async () => {
                         try {
                             const targetEl = idoc.getElementById('card-preview');
+
                             const options = {
-                                pixelRatio: scaleRatio, backgroundColor: DOM.bgColor.value || '#ffffff', fontEmbedCSS: embeddedFontCss, skipFonts: true,
+                                pixelRatio: scaleRatio,
+                                backgroundColor: DOM.bgColor.value || '#ffffff',
+                                fontEmbedCSS: embeddedFontCss,
+                                skipFonts: true, // 불필요한 폰트 네트워크 로드 차단
                                 style: { transform: 'scale(1)', transformOrigin: 'top left' }
                             };
-                            const dataUrl = isPng ? await htmlToImage.toPng(targetEl, options) : await htmlToImage.toJpeg(targetEl, options);
-                            document.body.removeChild(iframe); resolve(dataUrl);
-                        } catch (err) { document.body.removeChild(iframe); reject(err); }
-                    }, 600);
-                } catch (e) { reject(e); }
+
+                            const dataUrl = isPng 
+                                ? await htmlToImage.toPng(targetEl, options) 
+                                : await htmlToImage.toJpeg(targetEl, options);
+                                
+                            document.body.removeChild(iframe); 
+                            resolve(dataUrl);
+                        } catch (err) {
+                            document.body.removeChild(iframe);
+                            reject(err);
+                        }
+                    }, 600); 
+                } catch (e) {
+                    reject(e);
+                }
             });
         }
 
         async function downloadCard() {
-            if (isCapturing) return; isCapturing = true; showToast('고화질 캡처본을 생성 중입니다...');
-            const currentScale = DOM.scale.value; DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            if (isCapturing) return;
+            isCapturing = true; showToast('캡처를 준비 중입니다. 잠시만 기다려주세요...');
+            const currentScale = DOM.scale.value;
+            DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            
             try {
-                const dataUrl = await captureInSandbox(1, true);
-                const link = document.createElement('a'); link.download = `archive_render_${Date.now()}.png`; link.href = dataUrl; link.click();
-                showToast('캡처 이미지 다운로드가 완료되었습니다.');
-            } catch (err) { showToast('이미지 연산 도중 에러가 확인되었습니다.'); console.error(err); } 
-            finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
+                const dataUrl = await captureInSandbox(1, true); 
+                const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`; link.href = dataUrl; link.click();
+                showToast('다운로드가 완료되었습니다!');
+            } catch (err) {
+                showToast('캡처 중 오류가 발생했습니다.'); console.error(err);
+            } finally {
+                DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false;
+            }
         }
 
         async function copyToClipboard() {
-            if (isCapturing) return; isCapturing = true; showToast('클립보드 고화질 이미지 복사 연산을 준비 중입니다...');
-            const currentScale = DOM.scale.value; DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            if (isCapturing) return;
+            isCapturing = true; showToast('클립보드에 복사 중입니다. 잠시만 기다려주세요...');
+            const currentScale = DOM.scale.value;
+            DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            
             try {
-                const dataUrl = await captureInSandbox(1, true); const res = await fetch(dataUrl); const blob = await res.blob();
+                const dataUrl = await captureInSandbox(1, true); 
+                const res = await fetch(dataUrl); const blob = await res.blob();
                 if (navigator.clipboard && navigator.clipboard.write) {
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); showToast('클립보드에 발췌 카드가 복사되었습니다!');
-                } else { showToast('현 브라우저 환경은 클립보드 직기입 API를 차단하고 있습니다.'); }
-            } catch (err) { showToast('복사 연산 도중 에러가 식별되었습니다.'); console.error(err); } 
-            finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    showToast('클립보드에 이미지가 복사되었습니다!');
+                } else { showToast('이 브라우저에서는 클립보드 복사 기능을 지원하지 않습니다.'); }
+            } catch (err) {
+                showToast('클립보드 복사 중 오류가 발생했습니다.'); console.error(err);
+            } finally {
+                DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false;
+            }
         }
 
-        let db; const request = indexedDB.open("AIArchiveDB", 2);
+        /* -------------------------------------------------------------
+           IndexedDB 저장 및 아카이브 렌더링
+        ------------------------------------------------------------- */
+        let db;
+        const request = indexedDB.open("AIArchiveDB", 2); 
         request.onupgradeneeded = e => { db = e.target.result; if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' }); };
-        request.onsuccess = e => { db = e.target.result; restoreStateFromCache(); }; // 최초 데이터 베이스 접속 후 캐시 복구 트래킹 서열 지정
+        request.onsuccess = e => db = e.target.result;
 
         async function saveToIndexedDB() {
-            if (isCapturing) return; isCapturing = true; showToast('아카이브 IndexedDB 컴파일을 이행 중입니다...');
-            const tags = document.getElementById('modal-tags').value; const memo = document.getElementById('modal-memo').value; const configData = getCurrentConfig();
-            const currentScale = DOM.scale.value; DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            if (isCapturing) return;
+            isCapturing = true; showToast('데이터를 저장 중입니다. 잠시만 기다려주세요...');
+            const tags = document.getElementById('modal-tags').value; const memo = document.getElementById('modal-memo').value;
+            const configData = getCurrentConfig(); 
+            const currentScale = DOM.scale.value;
+            DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
+            
             try {
-                const imgData = await captureInSandbox(1, false);
+                const imgData = await captureInSandbox(1, false); 
                 const newItem = { id: Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
                 const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').add(newItem);
-                tx.oncomplete = () => { closeModal(); showToast('세팅 구조 및 렌더링 데이터가 아카이브에 영구 기록되었습니다.'); loadGallery(); };
-            } catch (err) { showToast('컴파일 도중 트랙 크래시가 확인되었습니다.'); console.error(err); } 
-            finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
+                tx.oncomplete = () => { closeModal(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!'); loadGallery(); };
+            } catch (err) { showToast('이미지 처리 중 오류가 발생해 저장하지 못했습니다.'); console.error(err);
+            } finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
         }
 
-        let loadedItems = [];
+        let loadedItems = []; 
+
         function loadGallery() {
-            if(!db) return; const grid = document.getElementById('gallery-grid'); const keyword = document.getElementById('search-input').value.toLowerCase(); const sortOrder = document.getElementById('sort-select').value; grid.innerHTML = ''; loadedItems = [];
+            if(!db) return;
+            const grid = document.getElementById('gallery-grid');
+            const keyword = document.getElementById('search-input').value.toLowerCase();
+            const sortOrder = document.getElementById('sort-select').value;
+            grid.innerHTML = ''; loadedItems = [];
             const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
             req.onsuccess = function(e) {
                 let album = e.target.result;
                 if (keyword) album = album.filter(item => (item.tags||'').toLowerCase().includes(keyword) || (item.memo||'').toLowerCase().includes(keyword));
-                album.sort((a, b) => sortOrder === 'asc' ? a.id - b.id : b.id - a.id); loadedItems = album;
-                if(album.length === 0) { grid.innerHTML = `<div class="empty-state"><p>저장된 발췌 카드가 존재하지 않습니다.</p></div>`; return; }
+                album.sort((a, b) => sortOrder === 'asc' ? a.id - b.id : b.id - a.id);
+                loadedItems = album;
+                if(album.length === 0) {
+                    grid.innerHTML = `<div class="empty-state">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                        <p>저장된 기록이 없습니다</p><span>발췌기에서 카드를 만들고 아카이브에 저장해보세요.</span></div>`;
+                    return;
+                }
                 album.forEach(item => {
-                    const div = document.createElement('div'); div.className = 'gallery-item'; const tagList = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean); const tagsHtml = tagList.length ? tagList.map(t => `<span class="tag-chip">#${t}</span>`).join('') : '<span class="tag-chip tag-chip-empty">태그 없음</span>';
-                    div.innerHTML = `<img src="${item.image}"><div class="item-overlay"><div class="overlay-info"><div class="overlay-tags">${tagsHtml}</div><div class="overlay-memo">${item.memo || ''}</div></div><div class="overlay-actions"><button class="btn-overlay-save" onclick="downloadFromArchive(${item.id})">다운</button><button class="btn-overlay-edit" onclick="editFromArchive(${item.id})">불러오기</button><button class="btn-overlay-delete" onclick="deleteFromIndexedDB(${item.id})">소거</button></div></div>`;
+                    const div = document.createElement('div'); div.className = 'gallery-item';
+                    const tagList = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+                    const tagsHtml = tagList.length ? tagList.map(t => `<span class="tag-chip">#${t}</span>`).join('') : '<span class="tag-chip tag-chip-empty">태그 없음</span>';
+                    div.innerHTML = `
+                        <img src="${item.image}" alt="Archive Card">
+                        <div class="item-overlay">
+                            <div class="overlay-info"><div class="overlay-tags">${tagsHtml}</div><div class="overlay-memo">${item.memo || '메모 없음'}</div><div class="overlay-date">${item.date || ''}</div></div>
+                            <div class="overlay-actions">
+                                <button class="btn-overlay-save" onclick="downloadFromArchive(${item.id})">저장</button>
+                                <button class="btn-overlay-edit" onclick="editFromArchive(${item.id})">수정</button>
+                                <button class="btn-overlay-delete" onclick="deleteFromIndexedDB(${item.id})">삭제</button>
+                            </div>
+                        </div>`;
                     grid.appendChild(div);
                 });
             };
         }
 
-        function downloadFromArchive(id) { const item = loadedItems.find(i => i.id === id); if(item) { const link = document.createElement('a'); link.download = `archive_vault_${id}.png`; link.href = item.image; link.click(); } }
-        function editFromArchive(id) { const item = loadedItems.find(i => i.id === id); if(item && item.config) { switchTab('extractor'); setTimeout(() => { applyConfig(item.config, true); showToast('아카이브 마스크 메타 세팅을 원형 복구했습니다.'); }, 10); } }
-        function deleteFromIndexedDB(id) { if(confirm('이 레코드를 영구히 격리 삭제합니까?')) { const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').delete(id); tx.oncomplete = () => loadGallery(); } }
+        function downloadFromArchive(id) { const item = loadedItems.find(i => i.id === id); if(item) { const link = document.createElement('a'); link.download = `archive_saved_${id}.png`; link.href = item.image; link.click(); } }
+        
+        async function editFromArchive(id) { 
+            const item = loadedItems.find(i => i.id === id); 
+            if(item && item.config) { 
+                switchTab('extractor'); 
+                await applyConfig(item.config, true); 
+                showToast('저장된 세팅값을 발췌기로 불러왔습니다.'); 
+            } else { showToast('구버전 데이터라 수정할 수 없습니다.'); } 
+        }
 
+        function deleteFromIndexedDB(id) { if(confirm('이 기록을 삭제하시겠습니까?')) { const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').delete(id); tx.oncomplete = () => loadGallery(); } }
+
+        /* -------------------------------------------------------------
+           백업 (Export) 및 복구 (Import) 
+        ------------------------------------------------------------- */
         async function exportData() {
             try {
-                const presets = JSON.parse(localStorage.getItem('archive_presets')) || {}; const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
+                const presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
+                const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
                 req.onsuccess = function(e) {
-                    const archive = e.target.result; const exportObj = { presets: presets, archive: archive }; const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
-                    const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", `archive_master_backup_${Date.now()}.json`); document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove(); showToast('백업 아카이브 원형 패키징 파일 전송을 완료했습니다.');
+                    const archive = e.target.result; const exportObj = { presets: presets, archive: archive };
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+                    const downloadAnchorNode = document.createElement('a');
+                    downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", `archive_backup_${Date.now()}.json`);
+                    document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
+                    showToast('모든 데이터가 안전하게 백업 파일로 저장되었습니다.');
                 };
-            } catch (err) { showToast('백업 패키징 도중 예외 에러가 확인되었습니다.'); }
+            } catch (err) { showToast('데이터 백업 중 오류가 발생했습니다.'); }
         }
 
         function importData(event) {
-            const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
                     if (data.presets) { localStorage.setItem('archive_presets', JSON.stringify(data.presets)); initPresetButtons(); }
                     if (data.archive && Array.isArray(data.archive)) {
-                        const tx = db.transaction(['cards'], 'readwrite'); const store = tx.objectStore('cards'); data.archive.forEach(item => { store.put(item); });
-                        tx.oncomplete = () => { loadGallery(); showToast('외부 데이터 스토리지 무결성 무오류 복구를 통과했습니다.'); event.target.value = ''; };
-                    }
-                } catch (err) { showToast('해독이 거부된 파일 세그먼트 형식입니다.'); }
+                        const tx = db.transaction(['cards'], 'readwrite'); const store = tx.objectStore('cards');
+                        data.archive.forEach(item => { store.put(item); });
+                        tx.oncomplete = () => { loadGallery(); showToast('데이터가 성공적으로 복구되었습니다!'); event.target.value = ''; };
+                    } else { showToast('유효하지 않은 백업 파일 포맷입니다.'); }
+                } catch (err) { showToast('파일을 읽는 중 오류가 발생했습니다. 올바른 백업 파일인지 확인하세요.'); }
             };
             reader.readAsText(file);
         }
