@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 (v4.0 에디터 마스터)</title>
+    <title>AI 대화 아카이브 프로 (v3.1 마스터 안정화)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -294,11 +294,17 @@
         }
         .floating-actions .btn svg { vertical-align: middle; }
 
-        .hover-zone-tr { position: absolute; top: 0; right: 0; width: 330px; height: 110px; z-index: 90; }
+        .hover-zone-tr { position: absolute; top: 0; right: 0; width: 190px; height: 110px; z-index: 90; }
         .hover-zone-br { position: absolute; bottom: 0; right: 0; width: 320px; height: 130px; z-index: 90; }
 
-        .hover-zone-tr:hover ~ .floating-zoom, .floating-zoom:hover { opacity: 1; pointer-events: auto; }
-        .hover-zone-br:hover ~ .floating-actions, .floating-actions:hover { opacity: 1; pointer-events: auto; }
+        .hover-zone-tr:hover ~ .floating-zoom,
+        .floating-zoom:hover {
+            opacity: 1; pointer-events: auto;
+        }
+        .hover-zone-br:hover ~ .floating-actions,
+        .floating-actions:hover {
+            opacity: 1; pointer-events: auto;
+        }
 
         .preview-area {
             flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center; 
@@ -312,12 +318,16 @@
             box-shadow: 0 22px 44px rgba(28,27,26,0.16), 0 3px 10px rgba(28,27,26,0.08); transform-origin: top left; overflow: hidden; 
         }
 
-        /* 💡 Z-index 정렬 (0 ~ 4) */
+        #card-preview.force-overflow-hidden * {
+            overflow: hidden !important; overflow-x: hidden !important; overflow-y: hidden !important;
+        }
+        
+        /* Z-index 층 정렬 */
         #card-bg-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; }
         #card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none; }
-        #overlay-img-wrapper { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; }
-        #watermark-wrapper { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; justify-content: center; align-items: center; }
-        .card-content { position: absolute; top: 50%; left: 50%; z-index: 4; width: 100%; pointer-events: none; }
+        #overlay-img-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; justify-content: center; align-items: center; }
+        #watermark-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end; }
+        .card-content { position: relative; z-index: 4; width: 100%; pointer-events: none; }
         
         #card-bg-image { position: absolute; transform-origin: center; pointer-events: none; display: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
@@ -535,9 +545,8 @@
                         </div>
                         <div class="control-group" style="margin:0;">
                             <label>마우스 드래그</label>
-                            <button type="button" class="btn btn-sm" id="btn-text-drag" onclick="toggleDragMode('text')" style="width: 100%; height: 34px; padding:0; display:flex; justify-content:center; align-items:center; gap:4px;">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                텍스트
+                            <button type="button" class="btn btn-sm" id="btn-text-drag" onclick="toggleDragMode('text')" style="width: 100%; height: 34px; padding:0;">
+                                켜기
                             </button>
                         </div>
                     </div>
@@ -566,13 +575,15 @@
                     </div>
                     <div class="flex-group">
                         <div class="control-group" style="margin:0; flex: 1.2;"><label>콘텐츠 크기</label><div class="num-ctrl"><button type="button" onclick="adjustNum('html-scale', -1, 0.1)">-</button><input type="number" id="html-scale" value="1.0" step="0.1"><button type="button" onclick="adjustNum('html-scale', 1, 0.1)">+</button></div></div>
-                        <div class="control-group" style="margin:0; flex: 1;"><label>위치 이동</label><button type="button" class="btn btn-sm" id="btn-text-drag-html" onclick="toggleDragMode('text')" style="width: 100%; height: 34px; padding:0; display:flex; justify-content:center; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>켜기</button></div>
+                        <div class="control-group" style="margin:0; flex: 1;"><label>위치 이동</label>
+                            <button type="button" class="btn btn-sm" id="btn-text-drag-html" onclick="toggleDragMode('text')" style="width: 100%; height: 34px; padding:0;">켜기</button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
-                        <div class="ctrl-eyebrow" style="margin:0;">오버레이 이미지 (마스크 / 필터)</div>
+                        <div class="ctrl-eyebrow" style="margin:0;">오버레이 이미지 (크롭 / 필터)</div>
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
@@ -594,15 +605,15 @@
 
                         <div class="flex-group" style="margin-bottom: 12px;">
                             <div class="control-group" style="margin:0;">
-                                <label>마스크 가로 (px)</label>
+                                <label>마스크 가로</label>
                                 <input type="number" id="ov-mask-w" value="300" oninput="updateUI()">
                             </div>
                             <div class="control-group" style="margin:0;">
-                                <label>마스크 세로 (px)</label>
+                                <label>마스크 세로</label>
                                 <input type="number" id="ov-mask-h" value="300" oninput="updateUI()">
                             </div>
                             <div class="control-group" style="margin:0;">
-                                <label>둥글기 (px)</label>
+                                <label>둥글기</label>
                                 <input type="number" id="ov-mask-r" value="0" oninput="updateUI()">
                             </div>
                         </div>
@@ -626,9 +637,7 @@
                             </div>
                             <div class="control-group" style="margin:0;">
                                 <label>마우스 드래그</label>
-                                <button type="button" class="btn btn-sm" id="btn-ov-mask-drag" onclick="toggleDragMode('ovMask')" style="width: 100%; height: 34px; padding:0;">
-                                    틀 이동
-                                </button>
+                                <button type="button" class="btn btn-sm" id="btn-ov-mask-drag" onclick="toggleDragMode('ovMask')" style="width: 100%; height: 34px; padding:0;">틀 이동</button>
                             </div>
                         </div>
 
@@ -651,7 +660,7 @@
                             </div>
                         </div>
                         <div class="flex-group" style="margin-top: 12px;">
-                            <div class="control-group" style="margin:0; flex:1.2;">
+                            <div class="control-group" style="margin:0;">
                                 <label>내부 이미지 배율</label>
                                 <div class="num-ctrl">
                                     <button type="button" onclick="adjustNum('ov-scale', -1, 0.1)">-</button>
@@ -661,9 +670,7 @@
                             </div>
                             <div class="control-group" style="margin:0;">
                                 <label>마우스 드래그</label>
-                                <button type="button" class="btn btn-sm" id="btn-ov-img-drag" onclick="toggleDragMode('ovImg')" style="width: 100%; height: 34px; padding:0;">
-                                    내부 사진만 이동
-                                </button>
+                                <button type="button" class="btn btn-sm" id="btn-ov-img-drag" onclick="toggleDragMode('ovImg')" style="width: 100%; height: 34px; padding:0;">내부 이동</button>
                             </div>
                         </div>
                     </div>
@@ -700,7 +707,7 @@
                             </div>
                             <div class="control-group" style="margin:0;">
                                 <label>마우스 드래그</label>
-                                <button type="button" class="btn btn-sm" id="btn-wm-drag" onclick="toggleDragMode('wm')" style="width: 100%; height: 34px; padding:0;">드래그 켜기</button>
+                                <button type="button" class="btn btn-sm" id="btn-wm-drag" onclick="toggleDragMode('wm')" style="width: 100%; height: 34px; padding:0;">켜기</button>
                             </div>
                         </div>
                     </div>
@@ -712,6 +719,7 @@
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
+                        
                         <div class="control-group" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line);">
                             <label style="margin-bottom: 8px;">텍스트 모드에서 글자를 드래그한 후 누르세요.</label>
                             <div class="flex-group" style="align-items: center; gap: 8px;">
@@ -751,6 +759,7 @@
                             <p style="font-size: 0.7rem; color: var(--ink-soft); margin-top: 6px; margin-bottom: 0;">HTML 코드 최상위 태그의 위치 고정(position/margin 등)만 무력화해서 가운데로 오게 합니다.</p>
                             <p id="position-warning-detail" style="font-size: 0.72rem; margin-top: 8px; margin-bottom: 0; font-weight: 600;"></p>
                         </div>
+                        
                     </div>
                 </div>
 
@@ -773,8 +782,8 @@
 
                         <div class="control-group" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed var(--line);">
                             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                <button class="btn btn-primary" onclick="saveTypoDefault()" style="flex: 1; padding: 6px;" title="현재의 폰트, 여백, 정렬, 텍스트 위치를 기본값으로 저장합니다.">타이포 기본값 저장</button>
-                                <button class="btn btn-primary" onclick="saveBgDefault()" style="flex: 1; padding: 6px;" title="현재의 배경, 오버레이, 워터마크, 배율 등을 기본값으로 저장합니다.">배경영역 기본값 저장</button>
+                                <button class="btn btn-primary" onclick="saveTypoDefault()" style="flex: 1; padding: 6px;" title="현재의 폰트, 여백, 정렬 상태를 기본값으로 저장합니다. 새로고침해도 이 값이 적용됩니다.">타이포 기본값 저장</button>
+                                <button class="btn btn-primary" onclick="saveBgDefault()" style="flex: 1; padding: 6px;" title="현재의 배경, 배율, 부가기능 상태를 기본값으로 저장합니다. 미리보기 배율도 포함됩니다.">배경영역 기본값 저장</button>
                             </div>
                         </div>
 
@@ -798,11 +807,19 @@
                         
                         <div class="toolbar-item">
                             <label>가로 (px)</label>
-                            <div class="num-ctrl" style="height: 26px;"><button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">-</button><input type="number" id="card-width" value="700" style="width: 45px;"><button type="button" onclick="adjustNum('card-width', 1, 50)" style="padding:0 6px;">+</button></div>
+                            <div class="num-ctrl" style="height: 26px;">
+                                <button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">-</button>
+                                <input type="number" id="card-width" value="700" style="width: 45px;">
+                                <button type="button" onclick="adjustNum('card-width', 1, 50)" style="padding:0 6px;">+</button>
+                            </div>
                         </div>
                         <div class="toolbar-item">
                             <label>세로 (px)</label>
-                            <div class="num-ctrl" style="height: 26px;"><button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">-</button><input type="number" id="card-height" value="700" style="width: 45px;"><button type="button" onclick="adjustNum('card-height', 1, 50)" style="padding:0 6px;">+</button></div>
+                            <div class="num-ctrl" style="height: 26px;">
+                                <button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">-</button>
+                                <input type="number" id="card-height" value="700" style="width: 45px;">
+                                <button type="button" onclick="adjustNum('card-height', 1, 50)" style="padding:0 6px;">+</button>
+                            </div>
                         </div>
                         <div class="toolbar-item">
                             <label>단색 배경</label>
@@ -888,7 +905,7 @@
                                     </div>
                                 </div>
 
-                                <div id="watermark-wrapper" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; display: flex; justify-content: center; align-items: center;">
+                                <div id="watermark-wrapper" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; box-sizing: border-box; display: flex; justify-content: center; align-items: flex-end;">
                                     <div id="watermark-transform" style="transform: translate(0px, 0px);">
                                         <div id="watermark-content" style="pointer-events: auto; font-family: inherit; font-size: 14px; color: #fff; white-space: nowrap;"></div>
                                     </div>
@@ -963,7 +980,7 @@
         let originalBgWidth = 0;
         let originalBgHeight = 0;
         
-        // 💡 상호 배타적 토글 제어를 위한 상태 변수
+        // 상호 배타적 토글 제어를 위한 상태 변수
         let dragMode = null; // 'none', 'bg', 'text', 'ovMask', 'ovImg', 'wm'
         
         let isDragging = false;
@@ -972,7 +989,7 @@
         let bgScale = 1.0;
         let bgOffsetX = 0, bgOffsetY = 0;
         
-        // 💡 ESC 취소를 위한 임시 기억소
+        // ESC 취소를 위한 임시 기억소
         let origX = 0, origY = 0;
         let startMouseX = 0, startMouseY = 0;
         
@@ -991,6 +1008,7 @@
             htmlScale: document.getElementById('html-scale'), 
             
             textX: document.getElementById('text-x'), textY: document.getElementById('text-y'),
+            textDragBtn: document.getElementById('btn-text-drag'), textDragBtnHtml: document.getElementById('btn-text-drag-html'),
             
             preview: document.getElementById('card-preview'), bgImage: document.getElementById('card-bg-image'),
             previewWrapper: document.getElementById('card-preview-wrapper'), overlay: document.getElementById('card-overlay'),
@@ -1010,15 +1028,7 @@
             tsColor: document.getElementById('ts-color'), tsOpacity: document.getElementById('ts-opacity'),
             tsBlur: document.getElementById('ts-blur'), tsY: document.getElementById('ts-y'),
 
-            forceCenter: document.getElementById('force-center-toggle'), charWrap: document.getElementById('char-wrap-toggle'),
-            
-            // 스마트 토글 버튼들
-            btnTextDrag: document.getElementById('btn-text-drag'),
-            btnTextDragHtml: document.getElementById('btn-text-drag-html'),
-            btnBgDrag: document.getElementById('btn-bg-drag'),
-            btnOvMaskDrag: document.getElementById('btn-ov-mask-drag'),
-            btnOvImgDrag: document.getElementById('btn-ov-img-drag'),
-            btnWmDrag: document.getElementById('btn-wm-drag')
+            forceCenter: document.getElementById('force-center-toggle'), charWrap: document.getElementById('char-wrap-toggle')
         };
 
         function hexToRgbStr(hex) {
@@ -1071,7 +1081,6 @@
                 DOM.pText.style.textAlign = DOM.align.value;
                 DOM.pText.style.wordBreak = DOM.charWrap.checked ? 'break-all' : 'keep-all';
                 
-                // 💡 텍스트 하단 그림자 반영
                 if (parseFloat(DOM.tsOpacity.value) > 0) {
                     const tsRgb = hexToRgbStr(DOM.tsColor.value);
                     DOM.pText.style.textShadow = `0px ${DOM.tsY.value}px ${DOM.tsBlur.value}px rgba(${tsRgb}, ${DOM.tsOpacity.value})`;
@@ -1086,10 +1095,10 @@
                 DOM.pText.innerHTML = lines.map(line => `<div style="margin-bottom: ${gap}px">${line || '<br>'}</div>`).join('');
             }
             
-            // 💡 텍스트 좌표 정상화 (정중앙 0,0 기준, 위로 갈수록 +Y 이므로 -Y를 해줌)
-            DOM.contentWrapper.style.transform = `translate(calc(-50% + ${DOM.textX.value}px), calc(-50% - ${DOM.textY.value}px))`;
+            // 텍스트 좌표 정상화 (정중앙 0,0 기준)
+            DOM.contentWrapper.style.transform = `translate(calc(-50% + ${DOM.textX.value}px), calc(-50% + ${-DOM.textY.value}px))`;
             
-            // 💡 오버레이 크롭 마스크 설정 반영
+            // 오버레이 크롭 마스크 및 필터 적용
             const ovWrapper = document.getElementById('overlay-img-wrapper');
             const ovMask = document.getElementById('overlay-mask');
             const ovTransform = document.getElementById('overlay-img-transform');
@@ -1100,7 +1109,7 @@
             ovMask.style.borderRadius = DOM.ovMaskR.value + 'px';
             
             // 틀 자체 이동 (중앙 영점)
-            ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% - ${DOM.ovY.value}px))`;
+            ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
             
             // 필터 적용
             if(parseFloat(DOM.ovFOpacity.value) > 0) {
@@ -1110,10 +1119,9 @@
             }
 
             // 내부 이미지 이동 (틀 정중앙 영점 기준)
-            ovTransform.style.transform = `translate(calc(-50% + ${DOM.ovInX.value}px), calc(-50% - ${DOM.ovInY.value}px)) scale(${DOM.ovScale.value})`;
+            ovTransform.style.transform = `translate(calc(-50% + ${DOM.ovInX.value}px), calc(-50% + ${-DOM.ovInY.value}px)) scale(${DOM.ovScale.value})`;
 
-            // 💡 워터마크 설정 반영
-            const wmWrapper = document.getElementById('watermark-wrapper');
+            // 워터마크 좌표 정상화 (정중앙 0,0 기준)
             const wmTransform = document.getElementById('watermark-transform');
             const wmContent = document.getElementById('watermark-content');
             
@@ -1128,7 +1136,7 @@
             wmContent.style.fontSize = DOM.wmSize.value + 'px';
             wmContent.style.color = DOM.wmColor.value;
             
-            // 워터마크 위치 (중앙 영점)
+            // 좌표계 정상화 (오른쪽이 +x, 위쪽이 +y)
             wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${-DOM.wmY.value}px)`;
 
             updateBgLayer();
@@ -1184,23 +1192,31 @@
             }
         }
 
-        DOM.htmlToggle.addEventListener('change', () => { userManuallyToggledHtml = true; updateUI(); });
+        DOM.htmlToggle.addEventListener('change', () => {
+            userManuallyToggledHtml = true;
+            updateUI();
+        });
 
         DOM.text.addEventListener('input', (e) => {
             const val = e.target.value;
             if (!DOM.htmlToggle.checked && !userManuallyToggledHtml && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
-                DOM.htmlToggle.checked = true; showToast('HTML 뷰어 모드로 자동 전환되었습니다.');
+                DOM.htmlToggle.checked = true;
+                showToast('HTML 뷰어 모드로 자동 전환되었습니다.');
             }
             updateUI();
         });
 
         function wrapText(startTag, endTag) {
-            const ta = DOM.text; const start = ta.selectionStart; const end = ta.selectionEnd;
+            const ta = DOM.text;
+            const start = ta.selectionStart; const end = ta.selectionEnd;
             const sel = ta.value.substring(start, end);
-            ta.setRangeText(startTag + sel + endTag, start, end, 'end'); updateUI();
+            ta.setRangeText(startTag + sel + endTag, start, end, 'end');
+            updateUI();
         }
         function insertText(str) {
-            const ta = DOM.text; ta.setRangeText(str, ta.selectionStart, ta.selectionEnd, 'end'); updateUI();
+            const ta = DOM.text;
+            ta.setRangeText(str, ta.selectionStart, ta.selectionEnd, 'end');
+            updateUI();
         }
 
         function openFullscreen() {
@@ -1221,8 +1237,12 @@
             clearTimeout(autoSaveTimer);
             autoSaveTimer = setTimeout(() => {
                 const config = getCurrentConfig();
-                try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } 
-                catch(e) { delete config.bgImg; delete config.ovImg; try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } catch(e){} }
+                try {
+                    localStorage.setItem('archive_autosave', JSON.stringify(config));
+                } catch(e) {
+                    delete config.bgImg; delete config.ovImg;
+                    try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } catch(e){}
+                }
             }, 1000);
         }
 
@@ -1310,7 +1330,7 @@
         }
 
         /* -------------------------------------------------------------
-           배경 & 오버레이 위치 제어
+           배경 제어 함수
         ------------------------------------------------------------- */
         function updateBgLayer() {
             if (!currentBgImageDataUrl || !originalBgWidth || !originalBgHeight) {
@@ -1357,7 +1377,7 @@
         inputs.forEach(el => el.addEventListener('input', updateUI));
         DOM.ovFColor.addEventListener('input', updateUI);
         
-        // 💡 여백 및 간격 조절 시 점선 가이드라인 표시
+        // 여백 및 간격 조절 시 점선 가이드라인 표시
         let guideTimer;
         function showVisualGuide() {
             if(DOM.htmlToggle.checked) return;
@@ -1444,17 +1464,18 @@
             updateUI(); 
         }
 
-        // 💡 스마트 토글 시스템
+        // 스마트 토글 시스템
         function toggleDragMode(mode) {
             const btns = {
-                'bg': DOM.btnBgDrag,
-                'text': DOM.btnTextDrag,
-                'text-html': DOM.btnTextDragHtml,
-                'ovMask': DOM.btnOvMaskDrag,
-                'ovImg': DOM.btnOvImgDrag,
-                'wm': DOM.btnWmDrag
+                'bg': document.getElementById('btn-bg-drag'),
+                'text': DOM.textDragBtn,
+                'text-html': DOM.textDragBtnHtml,
+                'ovMask': document.getElementById('btn-ov-mask-drag'),
+                'ovImg': document.getElementById('btn-ov-img-drag'),
+                'wm': document.getElementById('btn-wm-drag')
             };
 
+            // 기존 불 들어온 버튼들 끄기
             Object.values(btns).forEach(b => b && b.classList.remove('drag-active'));
             
             if (dragMode === mode) {
@@ -1469,17 +1490,17 @@
                 DOM.preview.style.cursor = 'move';
                 
                 const msgs = {
-                    'bg': '배경을 드래그하거나 휠로 배율을 조절하세요. (ESC 취소)',
-                    'text': '마우스 드래그로 텍스트 위치를 조절하세요. (ESC 취소)',
-                    'ovMask': '마스크 틀(액자) 자체를 이동합니다. (ESC 취소)',
-                    'ovImg': '마스크 틀 안의 사진만 자르기 이동합니다. (ESC 취소)',
+                    'bg': '배경을 움직이거나 휠로 크기를 조절하세요. (ESC 취소)',
+                    'text': '마우스 드래그로 요소 위치를 조절하세요. (ESC 취소)',
+                    'ovMask': '마스크 틀 자체를 이동합니다. (ESC 취소)',
+                    'ovImg': '마스크 틀 안의 이미지만 자르기 이동합니다. (ESC 취소)',
                     'wm': '워터마크 위치를 이동합니다. (ESC 취소)'
                 };
                 showToast(msgs[mode]);
             }
         }
 
-        // 💡 ESC 취소 로직
+        // ESC 취소 로직
         function cancelDrag() {
             if(!isDragging) return;
             isDragging = false;
@@ -1504,6 +1525,7 @@
             startMouseX = e.clientX; startMouseY = e.clientY; 
             e.preventDefault(); 
             
+            // 원래 위치 기억
             if(dragMode === 'bg') { origX = bgOffsetX; origY = bgOffsetY; }
             else if(dragMode === 'text') { origX = parseFloat(DOM.textX.value)||0; origY = parseFloat(DOM.textY.value)||0; }
             else if(dragMode === 'ovMask') { origX = parseFloat(DOM.ovX.value)||0; origY = parseFloat(DOM.ovY.value)||0; }
@@ -1515,31 +1537,32 @@
             if (!isDragging) return;
             const previewScale = parseFloat(DOM.scale.value); 
             
-            // 수학 좌표계: 오른쪽이 양수(+dx), 위쪽이 양수(+dyMath)
             const dx = (e.clientX - startMouseX) / previewScale;
             const dyMath = (startMouseY - e.clientY) / previewScale; 
 
             if (dragMode === 'bg') {
-                // 배경은 예외 (CSS Background Position 특성상 아래가 양수)
                 const bgDx = (e.clientX - startMouseX) / (previewScale * bgScale);
                 const bgDy = (e.clientY - startMouseY) / (previewScale * bgScale);
                 bgOffsetX = origX + bgDx; bgOffsetY = origY + bgDy;
                 updateBgLayer();
             } 
             else if (dragMode === 'text') {
-                DOM.textX.value = Math.round(origX + dx); DOM.textY.value = Math.round(origY + dyMath); updateUI();
+                DOM.textX.value = Math.round(origX + dx); DOM.textY.value = Math.round(origY + dyMath);
+                updateUI();
             }
             else if (dragMode === 'ovMask') {
-                DOM.ovX.value = Math.round(origX + dx); DOM.ovY.value = Math.round(origY + dyMath); updateUI();
+                DOM.ovX.value = Math.round(origX + dx); DOM.ovY.value = Math.round(origY + dyMath);
+                updateUI();
             }
             else if (dragMode === 'ovImg') {
-                // 내부 이미지는 배율이 들어간 상태이므로 배율만큼 나눠서 역산
                 const innerDx = dx / parseFloat(DOM.ovScale.value || 1);
                 const innerDyMath = dyMath / parseFloat(DOM.ovScale.value || 1);
-                DOM.ovInX.value = Math.round(origX + innerDx); DOM.ovInY.value = Math.round(origY + innerDyMath); updateUI();
+                DOM.ovInX.value = Math.round(origX + innerDx); DOM.ovInY.value = Math.round(origY + innerDyMath);
+                updateUI();
             }
             else if (dragMode === 'wm') {
-                DOM.wmX.value = Math.round(origX + dx); DOM.wmY.value = Math.round(origY + dyMath); updateUI();
+                DOM.wmX.value = Math.round(origX + dx); DOM.wmY.value = Math.round(origY + dyMath);
+                updateUI();
             }
         });
 
@@ -1715,7 +1738,6 @@
             showToast(`슬롯 ${currentActiveSlot} 프리셋을 불러왔습니다.`);
         }
 
-        // 💡 비동기 프로미스 기반 환경 복구 (아카이브 이미지 찌그러짐 차단)
         async function applyConfig(config, isFromArchive = false) {
             if (isFromArchive && config.text !== undefined) DOM.text.value = config.text;
             DOM.width.value = config.width || 700; DOM.height.value = config.height || 700;
@@ -1807,7 +1829,7 @@
         function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
         /* -------------------------------------------------------------
-           💡 html-to-image 전용: 폰트 다운로드 렉 차단 (Pre-Embedding 로직)
+           💡 html-to-image 전용: 폰트 다운로드 렉 차단
         ------------------------------------------------------------- */
         const preloadedFontsCSS = {};
 
@@ -1872,7 +1894,6 @@
 
                     const idoc = iframe.contentDocument || iframe.contentWindow.document;
 
-                    // 테일윈드 복사
                     let styles = '';
                     document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
 
@@ -1885,13 +1906,11 @@
                         });
                     });
 
-                    // 빈 이미지 404 차단
                     cloneEl.querySelectorAll('img').forEach(img => {
                         const src = img.getAttribute('src');
                         if (!src || src.trim() === '') img.parentNode.removeChild(img);
                     });
 
-                    // 가이드라인 캡처 제외
                     const guide = cloneEl.querySelector('#guide-overlay');
                     if (guide) guide.parentNode.removeChild(guide);
 
