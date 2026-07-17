@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로 (v3.1 마스터 안정화)</title>
+    <title>AI 대화 아카이브 (안정화)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -1010,6 +1010,9 @@
             textX: document.getElementById('text-x'), textY: document.getElementById('text-y'),
             textDragBtn: document.getElementById('btn-text-drag'), textDragBtnHtml: document.getElementById('btn-text-drag-html'),
             
+            sectionTypography: document.getElementById('section-typography'),
+            sectionHtmlLayout: document.getElementById('section-html-layout'),
+            
             preview: document.getElementById('card-preview'), bgImage: document.getElementById('card-bg-image'),
             previewWrapper: document.getElementById('card-preview-wrapper'), overlay: document.getElementById('card-overlay'),
             contentWrapper: document.getElementById('card-content'), pText: document.getElementById('preview-text'), 
@@ -1429,6 +1432,7 @@
                     const tempImg = new Image();
                     tempImg.onload = () => {
                         originalBgWidth = tempImg.width; originalBgHeight = tempImg.height;
+                        DOM.bgImage.src = currentBgImageDataUrl;
                         resetBgPos(); updateUI();
                     };
                     tempImg.src = currentBgImageDataUrl;
