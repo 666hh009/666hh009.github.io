@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로 (v3.1 마스터 안정화)</title>
+    <title>AI 대화 아카이브</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -248,10 +248,7 @@
         .collapsible-content { display: none; margin-top: 10px; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* =========================================
-           통일된 설정 행 (ledger row) 시스템
-           — 타이포그래피 등 레일 섹션 전반에서 사용
-        ========================================= */
+        /* 통일된 설정 행 (ledger row) 시스템 */
         .row {
             display: flex; align-items: center; justify-content: space-between;
             min-height: 40px; padding: 8px 2px; gap: 14px;
@@ -320,12 +317,14 @@
         .file-name-tag { font-size: 0.72rem; color: var(--ink-faint); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .preview-container { flex: 7; display: flex; flex-direction: column; min-width: 0; }
+        
+        /* 💡 툴바 레이아웃 1줄로 통합 */
         .preview-toolbar { 
             display: flex; justify-content: space-between; align-items: flex-end; 
             padding: 12px 20px; margin-bottom: 16px; background: var(--paper); border: 1px solid var(--line); 
             border-radius: var(--radius-md); box-shadow: var(--shadow-soft); flex-wrap: wrap; gap: 15px;
         }
-        .toolbar-group { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .toolbar-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%; }
         .toolbar-divider { width: 1px; height: 26px; background: var(--line); margin: 0 4px; }
         .toolbar-item { display: flex; flex-direction: column; gap: 5px; }
         .toolbar-item label { font-size: 0.68rem; color: var(--ink-soft); font-weight: 700; margin: 0; }
@@ -395,7 +394,7 @@
         #card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none; }
         #overlay-img-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; justify-content: center; align-items: center; }
         #watermark-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end; }
-        .card-content { position: relative; z-index: 4; width: 100%; pointer-events: none; }
+        .card-content { position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 4; width: 100%; pointer-events: none; }
         
         #card-bg-image { position: absolute; transform-origin: center; pointer-events: none; display: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
@@ -573,7 +572,6 @@
                         </div>
                     </div>
 
-                    <!-- 정렬 / 줄바꿈 단위 / 텍스트 이동 — 아이콘만으로 한 줄에 -->
                     <div class="row">
                         <div class="segmented" id="align-segmented" title="정렬">
                             <button type="button" data-align="left" onclick="shellSetAlign('left')" title="왼쪽 정렬">
@@ -741,13 +739,13 @@
                         </div>
                         <div class="row">
                             <span class="row-label">글자 색상</span>
-                            <span class="swatch" style="background:#ffffff;"><input type="color" id="wm-color" value="#ffffff" oninput="updateUI()"></span>
+                            <span class="swatch" style="background:#000000;"><input type="color" id="wm-color" value="#000000" oninput="updateUI()"></span>
                         </div>
                         <div class="row">
                             <span class="row-label">위치 (X · Y)</span>
                             <div class="row-control">
                                 <div class="stepper"><button type="button" onclick="adjustNum('wm-x', -5, 5)">−</button><input type="number" id="wm-x" value="0"><button type="button" onclick="adjustNum('wm-x', 5, 5)">+</button></div>
-                                <div class="stepper"><button type="button" onclick="adjustNum('wm-y', -5, 5)">−</button><input type="number" id="wm-y" value="-200"><button type="button" onclick="adjustNum('wm-y', 5, 5)">+</button></div>
+                                <div class="stepper"><button type="button" onclick="adjustNum('wm-y', -5, 5)">−</button><input type="number" id="wm-y" value="0"><button type="button" onclick="adjustNum('wm-y', 5, 5)">+</button></div>
                             </div>
                         </div>
                         <div class="row">
@@ -766,7 +764,7 @@
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
-
+                        
                         <div class="section-note" style="margin: 0 0 8px;">텍스트 모드에서 글자를 드래그한 후 누르세요.</div>
                         <div class="row" style="padding-bottom: 14px; margin-bottom: 12px; border-bottom: 1px dashed var(--line);">
                             <span class="swatch" style="background:#a3e635;"><input type="color" id="hl-color" value="#a3e635"></span>
@@ -806,7 +804,7 @@
 
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
-                        <div class="ctrl-eyebrow" style="margin:0;">시스템 및 초기화 설정</div>
+                        <div class="ctrl-eyebrow" style="margin:0;">⚙️ 시스템 및 초기화 설정</div>
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
@@ -838,12 +836,11 @@
             <div class="preview-container">
                 
                 <div class="preview-toolbar">
-                    <div class="toolbar-group" style="flex:1;">
-                        
+                    <div class="toolbar-group" style="flex:1; width: 100%;">
                         <div class="toolbar-item">
                             <label>가로 (px)</label>
                             <div class="num-ctrl" style="height: 26px;">
-                                <button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">-</button>
+                                <button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">−</button>
                                 <input type="number" id="card-width" value="700" style="width: 45px;">
                                 <button type="button" onclick="adjustNum('card-width', 1, 50)" style="padding:0 6px;">+</button>
                             </div>
@@ -851,7 +848,7 @@
                         <div class="toolbar-item">
                             <label>세로 (px)</label>
                             <div class="num-ctrl" style="height: 26px;">
-                                <button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">-</button>
+                                <button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">−</button>
                                 <input type="number" id="card-height" value="700" style="width: 45px;">
                                 <button type="button" onclick="adjustNum('card-height', 1, 50)" style="padding:0 6px;">+</button>
                             </div>
@@ -866,26 +863,29 @@
                         <div class="toolbar-item">
                             <label>배경 이미지</label>
                             <div style="display: flex; gap: 6px; align-items: center;">
-                                <input type="file" id="input-bg" accept="image/*">
-                                <button class="action-btn" onclick="removeBgImage()" style="height:26px; padding: 0 10px;">삭제</button>
+                                <input type="file" id="input-bg" accept="image/*" style="width:140px;">
+                                <button class="action-btn" onclick="removeBgImage()" style="height:26px; padding: 0 8px;">삭제</button>
                             </div>
                         </div>
                         
                         <div class="toolbar-divider"></div>
+
+                        <div class="toolbar-item">
+                            <label>배경 이동</label>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="action-btn" id="btn-bg-drag" onclick="toggleDragMode('bg')" style="height: 26px; padding: 0 8px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                    켜기
+                                </button>
+                                <button class="action-btn" onclick="resetBgPos()" style="height: 26px; padding: 0 8px;" title="배경 위치/배율 리셋">↺</button>
+                            </div>
+                        </div>
+
+                        <div class="toolbar-divider"></div>
                         
                         <div class="toolbar-item">
                             <label>어둡기 (Dim)</label>
-                            <input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 130px;">
-                        </div>
-                    </div>
-                    
-                    <div style="margin-left: auto; align-self: flex-end;">
-                        <div style="display: flex; gap: 6px;">
-                            <button class="action-btn" id="btn-bg-drag" onclick="toggleDragMode('bg')" style="height: 26px;">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                배경 이동
-                            </button>
-                            <button class="action-btn" onclick="resetBgPos()" style="height: 26px; padding: 0 8px;" title="배경 위치/배율 리셋">↺</button>
+                            <input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 80px;">
                         </div>
                     </div>
                 </div>
@@ -925,31 +925,40 @@
                         <div id="card-preview-wrapper">
                             <div id="card-preview">
                                 
+                                <!-- 배경 (0) -->
                                 <div id="card-bg-mask" style="position: absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; z-index:0;">
                                     <img id="card-bg-image" style="position: absolute; transform-origin: center; pointer-events: none; display: none;">
                                 </div>
                                 
+                                <!-- 어둡기 필터 (1) -->
                                 <div id="card-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; z-index:1; pointer-events: none;"></div>
                                 
+                                <!-- 💡 오버레이 크롭 마스크 래퍼 (2) -->
+                                <!-- 캔버스 정중앙을 0,0 영점으로 삼아 X, Y 이동 연산 -->
                                 <div id="overlay-img-wrapper" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; display: flex; justify-content: center; align-items: center;">
                                     <div id="overlay-mask" style="position: relative; width: 300px; height: 300px; border-radius: 0px; overflow: hidden; pointer-events: none;">
+                                        <!-- 오버레이 전용 컬러 필터막 (이미지 위에 씌워짐) -->
                                         <div id="overlay-filter" style="position: absolute; top:0; left:0; width:100%; height:100%; background: transparent; z-index: 2; pointer-events: none;"></div>
+                                        <!-- 내부 이미지 위치 (마스크 정중앙 0,0 기준) -->
                                         <div id="overlay-img-transform" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%) scale(1); z-index: 1; pointer-events: none;">
                                             <img id="overlay-img-content" src="" style="max-width: none; pointer-events: auto; display: none;">
                                         </div>
                                     </div>
                                 </div>
 
+                                <!-- 워터마크 (3) -->
                                 <div id="watermark-wrapper" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; box-sizing: border-box; display: flex; justify-content: center; align-items: flex-end;">
                                     <div id="watermark-transform" style="transform: translate(0px, 0px);">
                                         <div id="watermark-content" style="pointer-events: auto; font-family: inherit; font-size: 14px; color: #fff; white-space: nowrap;"></div>
                                     </div>
                                 </div>
                                 
+                                <!-- 콘텐츠 & 텍스트 (4) -->
                                 <div class="card-content" id="card-content" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 4; width: 100%; pointer-events: none;">
                                     <div id="preview-text" style="text-align: center; word-break: keep-all; width: 100%; pointer-events: auto;"></div>
                                 </div>
                                 
+                                <!-- 💡 시각적 가이드 오버레이 (5, 캡처에 안 찍힘) -->
                                 <div id="guide-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease;">
                                     <div id="guide-box" style="width:100%; height:100%; border: 2px dashed #ff4757; box-sizing:border-box; background-clip: content-box; background-color: rgba(255,71,87,0.08);"></div>
                                 </div>
@@ -1015,8 +1024,7 @@
         let originalBgWidth = 0;
         let originalBgHeight = 0;
         
-        // 상호 배타적 토글 제어를 위한 상태 변수
-        let dragMode = null; // 'none', 'bg', 'text', 'ovMask', 'ovImg', 'wm'
+        let dragMode = null; 
         
         let isDragging = false;
         let isCapturing = false; 
@@ -1024,10 +1032,10 @@
         let bgScale = 1.0;
         let bgOffsetX = 0, bgOffsetY = 0;
         
-        // ESC 취소를 위한 임시 기억소
         let origX = 0, origY = 0;
         let startMouseX = 0, startMouseY = 0;
         
+        let currentActiveSlot = '1'; 
         let userManuallyToggledHtml = false;
 
         const DOM = {
@@ -1043,9 +1051,6 @@
             
             textX: document.getElementById('text-x'), textY: document.getElementById('text-y'),
             textDragBtn: document.getElementById('btn-text-drag'), textDragBtnHtml: document.getElementById('btn-text-drag-html'),
-            
-            sectionTypography: document.getElementById('section-typography'),
-            sectionHtmlLayout: document.getElementById('section-html-layout'),
             
             preview: document.getElementById('card-preview'), bgImage: document.getElementById('card-bg-image'),
             previewWrapper: document.getElementById('card-preview-wrapper'), overlay: document.getElementById('card-overlay'),
@@ -1088,7 +1093,6 @@
             DOM.preview.style.backgroundColor = DOM.bgColor.value;
             DOM.overlay.style.background = `rgba(0, 0, 0, ${DOM.dim.value})`;
 
-            // 아이콘 컨트롤 ↔ 숨겨진 원본 입력값 동기화 (프리셋/기본값 복원 등 다른 경로로 값이 바뀌어도 항상 맞춰줌)
             document.querySelectorAll('#align-segmented button').forEach(b => b.classList.toggle('active', b.dataset.align === DOM.align.value));
             document.getElementById('wrap-word-btn').classList.toggle('active', !DOM.charWrap.checked);
             document.getElementById('wrap-char-btn').classList.toggle('active', DOM.charWrap.checked);
@@ -1101,6 +1105,9 @@
             
             const isHtmlMode = DOM.htmlToggle.checked;
             
+            DOM.preview.style.padding = '0px'; 
+            DOM.contentWrapper.style.boxSizing = 'border-box';
+            
             if (isHtmlMode) {
                 DOM.sectionTypography.style.display = 'none';
                 DOM.sectionHtmlLayout.style.display = 'block';
@@ -1109,7 +1116,7 @@
                 const pb = DOM.marginBottom.value || 0;
                 const pl = DOM.marginLeft.value || 0;
                 const pr = DOM.marginRight.value || 0;
-                DOM.preview.style.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
+                DOM.contentWrapper.style.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
 
                 DOM.contentWrapper.style.fontFamily = '';
                 DOM.contentWrapper.style.color = '';
@@ -1129,7 +1136,7 @@
                 DOM.sectionTypography.style.display = 'block';
                 DOM.sectionHtmlLayout.style.display = 'none';
 
-                DOM.preview.style.padding = DOM.pad.value + 'px';
+                DOM.contentWrapper.style.padding = DOM.pad.value + 'px';
                 
                 DOM.contentWrapper.style.fontFamily = currentFontVal;
                 DOM.contentWrapper.style.color = DOM.color.value;
@@ -1152,10 +1159,8 @@
                 DOM.pText.innerHTML = lines.map(line => `<div style="margin-bottom: ${gap}px">${line || '<br>'}</div>`).join('');
             }
             
-            // 텍스트 좌표 정상화 (정중앙 0,0 기준)
             DOM.contentWrapper.style.transform = `translate(calc(-50% + ${DOM.textX.value}px), calc(-50% + ${-DOM.textY.value}px))`;
             
-            // 오버레이 크롭 마스크 및 필터 적용
             const ovWrapper = document.getElementById('overlay-img-wrapper');
             const ovMask = document.getElementById('overlay-mask');
             const ovTransform = document.getElementById('overlay-img-transform');
@@ -1165,20 +1170,16 @@
             ovMask.style.height = DOM.ovMaskH.value + 'px';
             ovMask.style.borderRadius = DOM.ovMaskR.value + 'px';
             
-            // 틀 자체 이동 (중앙 영점)
             ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
             
-            // 필터 적용
             if(parseFloat(DOM.ovFOpacity.value) > 0) {
                 ovFilter.style.background = `rgba(${hexToRgbStr(DOM.ovFColor.value)}, ${DOM.ovFOpacity.value})`;
             } else {
                 ovFilter.style.background = 'transparent';
             }
 
-            // 내부 이미지 이동 (틀 정중앙 영점 기준)
             ovTransform.style.transform = `translate(calc(-50% + ${DOM.ovInX.value}px), calc(-50% + ${-DOM.ovInY.value}px)) scale(${DOM.ovScale.value})`;
 
-            // 워터마크 좌표 정상화 (정중앙 0,0 기준)
             const wmTransform = document.getElementById('watermark-transform');
             const wmContent = document.getElementById('watermark-content');
             
@@ -1193,17 +1194,13 @@
             wmContent.style.fontSize = DOM.wmSize.value + 'px';
             wmContent.style.color = DOM.wmColor.value;
             
-            // 좌표계 정상화 (오른쪽이 +x, 위쪽이 +y)
             wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${-DOM.wmY.value}px)`;
 
             updateBgLayer();
             updateScale(); 
-            scheduleAutoSave(); // 자동 저장 트리거
+            scheduleAutoSave(); 
         }
 
-        /* -------------------------------------------------------------
-           HTML 최상위 태그 위치 강제 코드 감지 및 해제
-        ------------------------------------------------------------- */
         function handleForcedPosition() {
             const detailEl = document.getElementById('position-warning-detail');
 
@@ -1286,9 +1283,6 @@
             document.removeEventListener('click', closeFullscreen);
         }
 
-        /* -------------------------------------------------------------
-           자동 저장, 기본값, 초기화 로직
-        ------------------------------------------------------------- */
         let autoSaveTimer;
         function scheduleAutoSave() {
             clearTimeout(autoSaveTimer);
@@ -1362,8 +1356,8 @@
             DOM.forceCenter.checked = defs.forceCenter || false;
 
             DOM.wmChar.value = defs.wmChar || ''; DOM.wmCreator.value = defs.wmCreator || '';
-            DOM.wmSize.value = defs.wmSize || 14; DOM.wmColor.value = defs.wmColor || '#ffffff';
-            DOM.wmX.value = defs.wmX || 0; DOM.wmY.value = defs.wmY || -200;
+            DOM.wmSize.value = defs.wmSize || 14; DOM.wmColor.value = defs.wmColor || '#000000';
+            DOM.wmX.value = defs.wmX || 0; DOM.wmY.value = defs.wmY || 0;
 
             DOM.ovMaskW.value = defs.ovMaskW || 300; DOM.ovMaskH.value = defs.ovMaskH || 300; DOM.ovMaskR.value = defs.ovMaskR || 0;
             DOM.ovScale.value = defs.ovScale || 1.0; 
@@ -1386,9 +1380,6 @@
             resetTypography(); resetBackground(); 
         }
 
-        /* -------------------------------------------------------------
-           배경 제어 함수
-        ------------------------------------------------------------- */
         function updateBgLayer() {
             if (!currentBgImageDataUrl || !originalBgWidth || !originalBgHeight) {
                 DOM.bgImage.style.display = 'none'; return;
@@ -1434,7 +1425,6 @@
         inputs.forEach(el => el.addEventListener('input', updateUI));
         DOM.ovFColor.addEventListener('input', updateUI);
         
-        // 여백 및 간격 조절 시 점선 가이드라인 표시
         let guideTimer;
         function showVisualGuide() {
             if(DOM.htmlToggle.checked) return;
@@ -1473,9 +1463,6 @@
             DOM.scrollArea.style.alignItems = (DOM.height.value * ratio) < DOM.scrollArea.clientHeight ? 'center' : 'flex-start';
         }
 
-        /* -------------------------------------------------------------
-           💡 상호 배타적 토글 & 수학 좌표 드래그 로직 (ESC 취소 적용)
-        ------------------------------------------------------------- */
         DOM.bgImg.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -1521,7 +1508,6 @@
             updateUI(); 
         }
 
-        // 스마트 토글 시스템
         function toggleDragMode(mode) {
             const btns = {
                 'bg': document.getElementById('btn-bg-drag'),
@@ -1532,7 +1518,6 @@
                 'wm': document.getElementById('btn-wm-drag')
             };
 
-            // 기존 불 들어온 버튼들 끄기
             Object.values(btns).forEach(b => b && b.classList.remove('drag-active'));
             
             if (dragMode === mode) {
@@ -1557,7 +1542,6 @@
             }
         }
 
-        // ESC 취소 로직
         function cancelDrag() {
             if(!isDragging) return;
             isDragging = false;
@@ -1582,7 +1566,6 @@
             startMouseX = e.clientX; startMouseY = e.clientY; 
             e.preventDefault(); 
             
-            // 원래 위치 기억
             if(dragMode === 'bg') { origX = bgOffsetX; origY = bgOffsetY; }
             else if(dragMode === 'text') { origX = parseFloat(DOM.textX.value)||0; origY = parseFloat(DOM.textY.value)||0; }
             else if(dragMode === 'ovMask') { origX = parseFloat(DOM.ovX.value)||0; origY = parseFloat(DOM.ovY.value)||0; }
@@ -1633,10 +1616,6 @@
             updateBgLayer();
         }, { passive: false });
 
-
-        /* -------------------------------------------------------------
-           아코디언 및 형광펜 
-        ------------------------------------------------------------- */
         function toggleSection(headerEl) {
             const content = headerEl.nextElementSibling;
             const icon = headerEl.querySelector('.collapsible-icon');
@@ -1671,9 +1650,6 @@
             updateUI(); showToast('형광펜이 모두 지워졌습니다.');
         }
 
-        /* -------------------------------------------------------------
-           폰트 선택 로직
-        ------------------------------------------------------------- */
         const fontPicker = document.getElementById('font-picker-wrapper');
         const fontTrigger = document.getElementById('font-picker-trigger');
         const fontOptions = document.getElementById('font-picker-options');
@@ -1727,10 +1703,6 @@
             reader.readAsDataURL(file);
         });
 
-
-        /* -------------------------------------------------------------
-           프리셋 로직
-        ------------------------------------------------------------- */
         function getCurrentConfig() {
             return {
                 text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
@@ -1773,8 +1745,8 @@
             DOM.forceCenter.checked = !!config.forceCenter;
             DOM.charWrap.checked = !!config.charWrap;
             DOM.wmChar.value = config.wmChar || ''; DOM.wmCreator.value = config.wmCreator || '';
-            DOM.wmSize.value = config.wmSize || 14; DOM.wmColor.value = config.wmColor || '#ffffff';
-            DOM.wmX.value = config.wmX || 0; DOM.wmY.value = config.wmY || -200; 
+            DOM.wmSize.value = config.wmSize || 14; DOM.wmColor.value = config.wmColor || '#000000';
+            DOM.wmX.value = config.wmX || 0; DOM.wmY.value = config.wmY || 0; 
 
             DOM.ovMaskW.value = config.ovMaskW || 300; DOM.ovMaskH.value = config.ovMaskH || 300; DOM.ovMaskR.value = config.ovMaskR || 0;
             DOM.ovScale.value = config.ovScale || 1.0; 
@@ -1843,9 +1815,6 @@
         }
         function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
-        /* -------------------------------------------------------------
-           💡 html-to-image 전용: 폰트 다운로드 렉 차단
-        ------------------------------------------------------------- */
         const preloadedFontsCSS = {};
 
         async function ensureFontLoaded(fontFamilyStr) {
@@ -1892,9 +1861,6 @@
             }
         }
 
-        /* -------------------------------------------------------------
-           💡 html-to-image 캡처 엔진 
-        ------------------------------------------------------------- */
         function captureInSandbox(scaleRatio, isPng) {
             return new Promise(async (resolve, reject) => {
                 try {
@@ -2019,9 +1985,6 @@
             }
         }
 
-        /* -------------------------------------------------------------
-           IndexedDB 저장 및 아카이브 렌더링
-        ------------------------------------------------------------- */
         let db;
         const request = indexedDB.open("AIArchiveDB", 2); 
         request.onupgradeneeded = e => { db = e.target.result; if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' }); };
@@ -2096,9 +2059,6 @@
 
         function deleteFromIndexedDB(id) { if(confirm('이 기록을 삭제하시겠습니까?')) { const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').delete(id); tx.oncomplete = () => loadGallery(); } }
 
-        /* -------------------------------------------------------------
-           백업 (Export) 및 복구 (Import) 
-        ------------------------------------------------------------- */
         async function exportData() {
             try {
                 const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
