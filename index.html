@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 v3.3</title>
+    <title>AI 대화 아카이브 프로 (v3.4)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -1118,8 +1118,8 @@
                 DOM.contentWrapper.style.color = '';
                 DOM.pText.style.fontSize = '';
                 DOM.pText.style.lineHeight = ''; 
-                DOM.pText.style.textAlign = ''; 
-                DOM.pText.style.wordBreak = '';
+                DOM.pText.style.textAlign = 'left';
+                DOM.pText.style.wordBreak = 'normal';
                 DOM.pText.style.textShadow = 'none';
                 
                 const hScale = parseFloat(DOM.htmlScale.value) || 1.0;
@@ -1956,29 +1956,44 @@
                         embeddedFontCss = await ensureFontLoaded(currentFontVal);
                     }
 
-                    setTimeout(async () => {
-                        try {
-                            const targetEl = idoc.getElementById('card-preview');
-
-                            const options = {
-                                pixelRatio: scaleRatio,
-                                backgroundColor: DOM.bgColor.value || '#ffffff',
-                                fontEmbedCSS: embeddedFontCss,
-                                skipFonts: true, 
-                                style: { transform: 'scale(1)', transformOrigin: 'top left' }
-                            };
-
-                            const dataUrl = isPng 
-                                ? await htmlToImage.toPng(targetEl, options) 
-                                : await htmlToImage.toJpeg(targetEl, options);
-                                
-                            document.body.removeChild(iframe); 
-                            resolve(dataUrl);
-                        } catch (err) {
-                            document.body.removeChild(iframe);
-                            reject(err);
+                    // iframe은 별도의 document라서 폰트를 처음부터 다시 로드해야 한다.
+                    // 예전에는 무조건 600ms만 기다리고 캡처했는데, 그 사이 폰트가 아직
+                    // 안 끝났으면(특히 HTML 뷰어 모드에서 쓰는, 타이포그래피 설정과
+                    // 무관한 폰트들) 대체 폰트로 찍히면서 줄바꿈이 어긋났다.
+                    // 이제 iframe 자신의 fonts.ready를 실제로 기다린다.
+                    try {
+                        if (idoc.fonts && idoc.fonts.ready) {
+                            await Promise.race([
+                                idoc.fonts.ready,
+                                new Promise(r => setTimeout(r, 2500)) // 폰트 API가 비정상 대기할 경우의 안전장치
+                            ]);
                         }
-                    }, 600); 
+                    } catch (e) { /* fonts API 미지원 브라우저 등은 무시하고 진행 */ }
+
+                    // 폰트 적용 후 실제 레이아웃이 한 프레임 반영될 시간을 짧게 확보
+                    await new Promise(r => setTimeout(r, 120));
+
+                    try {
+                        const targetEl = idoc.getElementById('card-preview');
+
+                        const options = {
+                            pixelRatio: scaleRatio,
+                            backgroundColor: DOM.bgColor.value || '#ffffff',
+                            fontEmbedCSS: embeddedFontCss,
+                            skipFonts: true, 
+                            style: { transform: 'scale(1)', transformOrigin: 'top left' }
+                        };
+
+                        const dataUrl = isPng 
+                            ? await htmlToImage.toPng(targetEl, options) 
+                            : await htmlToImage.toJpeg(targetEl, options);
+                            
+                        document.body.removeChild(iframe); 
+                        resolve(dataUrl);
+                    } catch (err) {
+                        document.body.removeChild(iframe);
+                        reject(err);
+                    }
                 } catch (e) {
                     reject(e);
                 }
