@@ -1905,128 +1905,133 @@
         /* -------------------------------------------------------------
            💡 html-to-image 캡처 엔진 
         ------------------------------------------------------------- */
-        function captureInSandbox(scaleRatio, isPng) {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    const sourceEl = document.getElementById('card-preview');
-                    const w = parseFloat(DOM.width.value) || 700;
-                    const h = parseFloat(DOM.height.value) || 700;
+       function captureInSandbox(scaleRatio, isPng) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const sourceEl = document.getElementById('card-preview');
+            const w = parseFloat(DOM.width.value) || 700;
+            const h = parseFloat(DOM.height.value) || 700;
 
-                    const iframe = document.createElement('iframe');
-                    iframe.style.position = 'fixed'; iframe.style.top = '-9999px'; iframe.style.left = '-9999px';
-                    iframe.style.width = w + 'px'; iframe.style.height = h + 'px'; iframe.style.border = 'none';
-                    document.body.appendChild(iframe);
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed'; iframe.style.top = '-9999px'; iframe.style.left = '-9999px';
+            iframe.style.width = w + 'px'; iframe.style.height = h + 'px'; iframe.style.border = 'none';
+            document.body.appendChild(iframe);
 
-                    const idoc = iframe.contentDocument || iframe.contentWindow.document;
+            const idoc = iframe.contentDocument || iframe.contentWindow.document;
 
-                    let styles = '';
-                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
+            let styles = '';
+            document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
 
-                    const cloneEl = sourceEl.cloneNode(true);
-                    
-                    cloneEl.querySelectorAll('details:not([open])').forEach(d => {
-                        Array.from(d.childNodes).forEach(node => {
-                            if (node.tagName && node.tagName.toLowerCase() === 'summary') return;
-                            d.removeChild(node);
-                        });
-                    });
-
-                    cloneEl.querySelectorAll('img').forEach(img => {
-                        const src = img.getAttribute('src');
-                        if (!src || src.trim() === '') img.parentNode.removeChild(img);
-                    });
-
-                    const guide = cloneEl.querySelector('#guide-overlay');
-                    if (guide) guide.parentNode.removeChild(guide);
-
-                    cloneEl.style.transform = 'none';
-                    cloneEl.style.boxShadow = 'none';
-
-                    idoc.open();
-                    idoc.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <meta charset="UTF-8">
-                            ${styles}
-                            <style> body { margin: 0; padding: 0; background: transparent; overflow: hidden; } </style>
-                        </head>
-                        <body> ${cloneEl.outerHTML} </body>
-                        </html>
-                    `);
-                    idoc.close();
-
-                    let embeddedFontCss = '';
-                    if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) {
-                        embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`;
-                    } else {
-                        embeddedFontCss = await ensureFontLoaded(currentFontVal);
-                    }
-
-                    // iframe은 별도의 document라서 폰트를 처음부터 다시 로드해야 한다.
-                    // 예전에는 무조건 600ms만 기다리고 캡처했는데, 그 사이 폰트가 아직
-                    // 안 끝났으면(특히 HTML 뷰어 모드에서 쓰는, 타이포그래피 설정과
-                    // 무관한 폰트들) 대체 폰트로 찍히면서 줄바꿈이 어긋났다.
-                    // fonts.ready는 "현재 로딩 중인" 폰트만 기다려주기 때문에, 브라우저가
-                    // 아직 그 폰트가 필요한지조차 파악 못 한 시점에 체크하면 곧바로(0초 만에)
-                    // 풀려버릴 수 있다. 그래서 먼저 강제로 레이아웃을 한 번 읽어서
-                    // "이 폰트가 실제로 쓰인다"는 걸 브라우저가 인지하게 만든 다음 기다린다.
-                    const targetElForReflow = idoc.getElementById('card-preview');
-                    if (targetElForReflow) void targetElForReflow.offsetHeight; // 강제 리플로우
-
-                    // 배경 이미지 등 <img> 요소는 iframe에 다시 그려지면서 처음부터
-                    // 다시 디코딩된다. 이게 끝나기 전에 캡처하면 아직 크기를 완전히
-                    // 못 잡은 상태로 찍혀서 (특히 배경 이미지가) 찌그러져 보일 수 있다.
-                    if (targetElForReflow) {
-                        const imgs = Array.from(targetElForReflow.querySelectorAll('img'));
-                        await Promise.race([
-                            Promise.all(imgs.map(img => {
-                                if (img.complete) return Promise.resolve();
-                                return (img.decode ? img.decode().catch(() => {}) : new Promise(res => { img.onload = res; img.onerror = res; }));
-                            })),
-                            new Promise(r => setTimeout(r, 2000)) // 안전장치
-                        ]);
-                    }
-
-                    try {
-                        if (idoc.fonts && idoc.fonts.ready) {
-                            await Promise.race([
-                                idoc.fonts.ready,
-                                new Promise(r => setTimeout(r, 2500)) // 폰트 API가 비정상 대기할 경우의 안전장치
-                            ]);
-                        }
-                    } catch (e) { /* fonts API 미지원 브라우저 등은 무시하고 진행 */ }
-
-                    // 폰트 적용 후 실제 레이아웃이 한 프레임 반영될 시간을 짧게 확보
-                    await new Promise(r => setTimeout(r, 120));
-
-                    try {
-                        const targetEl = idoc.getElementById('card-preview');
-
-                        const options = {
-                            pixelRatio: scaleRatio,
-                            backgroundColor: DOM.bgColor.value || '#ffffff',
-                            fontEmbedCSS: embeddedFontCss,
-                            skipFonts: false, 
-                            style: { transform: 'scale(1)', transformOrigin: 'top left' }
-                        };
-
-                        const dataUrl = isPng 
-                            ? await htmlToImage.toPng(targetEl, options) 
-                            : await htmlToImage.toJpeg(targetEl, options);
-                            
-                        document.body.removeChild(iframe); 
-                        resolve(dataUrl);
-                    } catch (err) {
-                        document.body.removeChild(iframe);
-                        reject(err);
-                    }
-                } catch (e) {
-                    reject(e);
-                }
+            const cloneEl = sourceEl.cloneNode(true);
+            
+            cloneEl.querySelectorAll('details:not([open])').forEach(d => {
+                Array.from(d.childNodes).forEach(node => {
+                    if (node.tagName && node.tagName.toLowerCase() === 'summary') return;
+                    d.removeChild(node);
+                });
             });
-        }
 
+            cloneEl.querySelectorAll('img').forEach(img => {
+                const src = img.getAttribute('src');
+                if (!src || src.trim() === '') img.parentNode.removeChild(img);
+            });
+
+            const guide = cloneEl.querySelector('#guide-overlay');
+            if (guide) guide.parentNode.removeChild(guide);
+
+            cloneEl.style.transform = 'none';
+            cloneEl.style.boxShadow = 'none';
+
+            idoc.open();
+            // 💡 1차 수정: iframe body에 원본과 동일한 14px 및 Pretendard 속성 강제 주입
+            idoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    ${styles}
+                    <style> 
+                        body { 
+                            margin: 0; padding: 0; background: transparent; overflow: hidden; 
+                            font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+                            font-size: 14px;
+                            color: var(--ink, #16171b);
+                            -webkit-font-smoothing: antialiased;
+                        } 
+                    </style>
+                </head>
+                <body> ${cloneEl.outerHTML} </body>
+                </html>
+            `);
+            idoc.close();
+
+            let embeddedFontCss = '';
+            if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) {
+                embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`;
+            } else {
+                embeddedFontCss = await ensureFontLoaded(currentFontVal);
+            }
+
+            // 💡 2차 수정: HTML 모드일 경우 렌더링 깨짐을 막기 위해 Pretendard 폰트를 안전하게 추가 임베딩
+            if (DOM.htmlToggle.checked) {
+                const pretendardCss = await ensureFontLoaded("'Pretendard', sans-serif");
+                if (!embeddedFontCss.includes('Pretendard')) {
+                    embeddedFontCss += '\n' + pretendardCss;
+                }
+            }
+
+            const targetElForReflow = idoc.getElementById('card-preview');
+            if (targetElForReflow) void targetElForReflow.offsetHeight;
+
+            if (targetElForReflow) {
+                const imgs = Array.from(targetElForReflow.querySelectorAll('img'));
+                await Promise.race([
+                    Promise.all(imgs.map(img => {
+                        if (img.complete) return Promise.resolve();
+                        return (img.decode ? img.decode().catch(() => {}) : new Promise(res => { img.onload = res; img.onerror = res; }));
+                    })),
+                    new Promise(r => setTimeout(r, 2000))
+                ]);
+            }
+
+            try {
+                if (idoc.fonts && idoc.fonts.ready) {
+                    await Promise.race([
+                        idoc.fonts.ready,
+                        new Promise(r => setTimeout(r, 2500))
+                    ]);
+                }
+            } catch (e) { }
+
+            await new Promise(r => setTimeout(r, 120));
+
+            try {
+                const targetEl = idoc.getElementById('card-preview');
+
+                const options = {
+                    pixelRatio: scaleRatio,
+                    backgroundColor: DOM.bgColor.value || '#ffffff',
+                    fontEmbedCSS: embeddedFontCss,
+                    skipFonts: false, 
+                    style: { transform: 'scale(1)', transformOrigin: 'top left' }
+                };
+
+                const dataUrl = isPng 
+                    ? await htmlToImage.toPng(targetEl, options) 
+                    : await htmlToImage.toJpeg(targetEl, options);
+                    
+                document.body.removeChild(iframe); 
+                resolve(dataUrl);
+            } catch (err) {
+                document.body.removeChild(iframe);
+                reject(err);
+            }
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
+        
         async function downloadCard() {
             if (isCapturing) return;
             isCapturing = true; showToast('캡처를 준비 중입니다. 잠시만 기다려주세요...');
