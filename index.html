@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로 (v3.4)</title>
+    <title>AI 대화 아카이브 프로 (v.안정화)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -1086,6 +1086,7 @@
         }
 
         function updateUI() {
+          try {
             DOM.preview.style.width = DOM.width.value + 'px';
             DOM.preview.style.height = DOM.height.value + 'px';
             DOM.preview.style.backgroundColor = DOM.bgColor.value;
@@ -1195,6 +1196,7 @@
             wmContent.textContent = wmText;
             wmContent.style.fontSize = DOM.wmSize.value + 'px';
             wmContent.style.color = DOM.wmColor.value;
+            wmContent.style.fontFamily = currentFontVal;
             
             // 좌표계 정상화 (오른쪽이 +x, 위쪽이 +y)
             wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${-DOM.wmY.value}px)`;
@@ -1202,6 +1204,10 @@
             updateBgLayer();
             updateScale(); 
             scheduleAutoSave(); // 자동 저장 트리거
+          } catch (err) {
+            console.error('updateUI 오류:', err);
+            showToast('⚠️ 화면 갱신 중 오류가 발생했습니다. F12 콘솔의 빨간 메시지를 확인해주세요.');
+          }
         }
 
         /* -------------------------------------------------------------
@@ -1330,8 +1336,8 @@
             showToast('배경 및 부가기능이 기본값으로 저장되었습니다.');
         }
 
-        function resetTypography() {
-            if(!confirm('타이포그래피 설정을 저장된 기본값(없으면 공장초기화)으로 되돌리시겠습니까?')) return;
+        function resetTypography(skipConfirm = false) {
+            if(!skipConfirm && !confirm('타이포그래피 설정을 저장된 기본값(없으면 공장초기화)으로 되돌리시겠습니까?')) return;
             let defs = JSON.parse(localStorage.getItem('archive_default_typo')) || {};
             
             DOM.color.value = defs.color || '#222222'; DOM.size.value = defs.size || 24;
@@ -1351,11 +1357,11 @@
             DOM.htmlScale.value = defs.htmlScale || 1.0;
             DOM.textX.value = defs.textX || 0; DOM.textY.value = defs.textY || 0;
             
-            updateUI(); showToast('타이포그래피 설정이 초기화되었습니다.');
+            updateUI(); if (!skipConfirm) showToast('타이포그래피 설정이 초기화되었습니다.');
         }
 
-        function resetBackground() {
-            if(!confirm('배경 및 부가기능 설정을 저장된 기본값(없으면 공장초기화)으로 되돌리시겠습니까?')) return;
+        function resetBackground(skipConfirm = false) {
+            if(!skipConfirm && !confirm('배경 및 부가기능 설정을 저장된 기본값(없으면 공장초기화)으로 되돌리시겠습니까?')) return;
             let defs = JSON.parse(localStorage.getItem('archive_default_bg')) || {};
             
             DOM.width.value = defs.width || 700; DOM.height.value = defs.height || 700;
@@ -1379,14 +1385,15 @@
 
             if(defs.previewScale) { DOM.scale.value = defs.previewScale; updateScale(); }
             
-            updateUI(); showToast('배경 및 부가 설정이 초기화되었습니다.');
+            updateUI(); if (!skipConfirm) showToast('배경 및 부가 설정이 초기화되었습니다.');
         }
         
         function resetAllSettings() { 
             if(!confirm('모든 값을 공장 초기화하시겠습니까? (저장된 기본값도 무시됩니다)')) return;
             localStorage.removeItem('archive_default_typo');
             localStorage.removeItem('archive_default_bg');
-            resetTypography(); resetBackground(); 
+            resetTypography(true); resetBackground(true); 
+            showToast('모든 설정이 공장 초기화되었습니다.');
         }
 
         /* -------------------------------------------------------------
@@ -1960,7 +1967,27 @@
                     // 예전에는 무조건 600ms만 기다리고 캡처했는데, 그 사이 폰트가 아직
                     // 안 끝났으면(특히 HTML 뷰어 모드에서 쓰는, 타이포그래피 설정과
                     // 무관한 폰트들) 대체 폰트로 찍히면서 줄바꿈이 어긋났다.
-                    // 이제 iframe 자신의 fonts.ready를 실제로 기다린다.
+                    // fonts.ready는 "현재 로딩 중인" 폰트만 기다려주기 때문에, 브라우저가
+                    // 아직 그 폰트가 필요한지조차 파악 못 한 시점에 체크하면 곧바로(0초 만에)
+                    // 풀려버릴 수 있다. 그래서 먼저 강제로 레이아웃을 한 번 읽어서
+                    // "이 폰트가 실제로 쓰인다"는 걸 브라우저가 인지하게 만든 다음 기다린다.
+                    const targetElForReflow = idoc.getElementById('card-preview');
+                    if (targetElForReflow) void targetElForReflow.offsetHeight; // 강제 리플로우
+
+                    // 배경 이미지 등 <img> 요소는 iframe에 다시 그려지면서 처음부터
+                    // 다시 디코딩된다. 이게 끝나기 전에 캡처하면 아직 크기를 완전히
+                    // 못 잡은 상태로 찍혀서 (특히 배경 이미지가) 찌그러져 보일 수 있다.
+                    if (targetElForReflow) {
+                        const imgs = Array.from(targetElForReflow.querySelectorAll('img'));
+                        await Promise.race([
+                            Promise.all(imgs.map(img => {
+                                if (img.complete) return Promise.resolve();
+                                return (img.decode ? img.decode().catch(() => {}) : new Promise(res => { img.onload = res; img.onerror = res; }));
+                            })),
+                            new Promise(r => setTimeout(r, 2000)) // 안전장치
+                        ]);
+                    }
+
                     try {
                         if (idoc.fonts && idoc.fonts.ready) {
                             await Promise.race([
@@ -2007,7 +2034,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const dataUrl = await captureInSandbox(1, true); 
+                const dataUrl = await captureInSandbox(2, true); 
                 const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`; link.href = dataUrl; link.click();
                 showToast('다운로드가 완료되었습니다!');
             } catch (err) {
@@ -2024,7 +2051,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const dataUrl = await captureInSandbox(1, true); 
+                const dataUrl = await captureInSandbox(2, true); 
                 const res = await fetch(dataUrl); const blob = await res.blob();
                 if (navigator.clipboard && navigator.clipboard.write) {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
@@ -2054,7 +2081,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const imgData = await captureInSandbox(1, false); 
+                const imgData = await captureInSandbox(2, false); 
                 const newItem = { id: Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
                 const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').add(newItem);
                 tx.oncomplete = () => { closeModal(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!'); loadGallery(); };
