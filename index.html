@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로 (v3.2 렌더링 완벽 동기화)</title>
+    <title>AI 대화 아카이브 프로 (v3.1 마스터 안정화)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -248,7 +248,10 @@
         .collapsible-content { display: none; margin-top: 10px; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 통일된 설정 행 (ledger row) 시스템 */
+        /* =========================================
+           통일된 설정 행 (ledger row) 시스템
+           — 타이포그래피 등 레일 섹션 전반에서 사용
+        ========================================= */
         .row {
             display: flex; align-items: center; justify-content: space-between;
             min-height: 40px; padding: 8px 2px; gap: 14px;
@@ -322,12 +325,12 @@
             padding: 12px 20px; margin-bottom: 16px; background: var(--paper); border: 1px solid var(--line); 
             border-radius: var(--radius-md); box-shadow: var(--shadow-soft); flex-wrap: wrap; gap: 15px;
         }
-        .toolbar-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%; }
+        .toolbar-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .toolbar-divider { width: 1px; height: 26px; background: var(--line); margin: 0 4px; }
         .toolbar-item { display: flex; flex-direction: column; gap: 5px; }
         .toolbar-item label { font-size: 0.68rem; color: var(--ink-soft); font-weight: 700; margin: 0; }
         .toolbar-item input[type="color"] { width: 44px; height: 26px; padding: 0; }
-        .toolbar-item input[type="file"] { width: 160px; font-size: 0.7rem; padding: 2px; }
+        .toolbar-item input[type="file"] { width: 108px; font-size: 0.68rem; padding: 2px; }
         .toolbar-item input[type="range"] { width: 80px; margin-top: 6px; }
         .toolbar-item .btn-sm { padding: 4px 10px; font-size: 0.75rem; height: 26px; }
 
@@ -387,24 +390,12 @@
             overflow: hidden !important; overflow-x: hidden !important; overflow-y: hidden !important;
         }
         
-        /* 💡 레이어 정렬 및 내부 여백(패딩) 버그 완전 해결 */
+        /* Z-index 층 정렬 */
         #card-bg-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; }
         #card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; pointer-events: none; }
         #overlay-img-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; justify-content: center; align-items: center; }
         #watermark-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: 20px; justify-content: center; align-items: flex-end; }
-        
-        /* 💡 핵심: 높이 100%와 플렉스를 줘서 HTML 내부의 절대 좌표(bottom 등)가 카드를 기준 삼도록 교정 */
-        .card-content { 
-            position: relative; 
-            z-index: 4; 
-            width: 100%; 
-            height: 100%; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            pointer-events: none; 
-            box-sizing: border-box; 
-        }
+        .card-content { position: relative; z-index: 4; width: 100%; pointer-events: none; }
         
         #card-bg-image { position: absolute; transform-origin: center; pointer-events: none; display: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
@@ -582,6 +573,7 @@
                         </div>
                     </div>
 
+                    <!-- 정렬 / 줄바꿈 단위 / 텍스트 이동 — 아이콘만으로 한 줄에 -->
                     <div class="row">
                         <div class="segmented" id="align-segmented" title="정렬">
                             <button type="button" data-align="left" onclick="shellSetAlign('left')" title="왼쪽 정렬">
@@ -774,7 +766,7 @@
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
-                        
+
                         <div class="section-note" style="margin: 0 0 8px;">텍스트 모드에서 글자를 드래그한 후 누르세요.</div>
                         <div class="row" style="padding-bottom: 14px; margin-bottom: 12px; border-bottom: 1px dashed var(--line);">
                             <span class="swatch" style="background:#a3e635;"><input type="color" id="hl-color" value="#a3e635"></span>
@@ -814,7 +806,7 @@
 
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
-                        <div class="ctrl-eyebrow" style="margin:0;">⚙️ 시스템 및 초기화 설정</div>
+                        <div class="ctrl-eyebrow" style="margin:0;">시스템 및 초기화 설정</div>
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
@@ -846,12 +838,12 @@
             <div class="preview-container">
                 
                 <div class="preview-toolbar">
-                    <div class="toolbar-group" style="flex:1; width: 100%;">
+                    <div class="toolbar-group" style="flex:1;">
                         
                         <div class="toolbar-item">
                             <label>가로 (px)</label>
                             <div class="num-ctrl" style="height: 26px;">
-                                <button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">−</button>
+                                <button type="button" onclick="adjustNum('card-width', -1, 50)" style="padding:0 6px;">-</button>
                                 <input type="number" id="card-width" value="700" style="width: 45px;">
                                 <button type="button" onclick="adjustNum('card-width', 1, 50)" style="padding:0 6px;">+</button>
                             </div>
@@ -859,12 +851,11 @@
                         <div class="toolbar-item">
                             <label>세로 (px)</label>
                             <div class="num-ctrl" style="height: 26px;">
-                                <button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">−</button>
+                                <button type="button" onclick="adjustNum('card-height', -1, 50)" style="padding:0 6px;">-</button>
                                 <input type="number" id="card-height" value="700" style="width: 45px;">
                                 <button type="button" onclick="adjustNum('card-height', 1, 50)" style="padding:0 6px;">+</button>
                             </div>
                         </div>
-                        <div class="toolbar-divider"></div>
                         <div class="toolbar-item">
                             <label>단색 배경</label>
                             <span class="swatch" style="background:#ffffff; width:26px; height:26px;"><input type="color" id="bg-color" value="#ffffff"></span>
@@ -875,8 +866,8 @@
                         <div class="toolbar-item">
                             <label>배경 이미지</label>
                             <div style="display: flex; gap: 6px; align-items: center;">
-                                <input type="file" id="input-bg" accept="image/*" style="width:140px;">
-                                <button class="action-btn" onclick="removeBgImage()" style="height:26px; padding: 0 8px;">삭제</button>
+                                <input type="file" id="input-bg" accept="image/*">
+                                <button class="action-btn" onclick="removeBgImage()" style="height:26px; padding: 0 10px;">삭제</button>
                             </div>
                         </div>
 
@@ -885,8 +876,8 @@
                         <div class="toolbar-item">
                             <label>&nbsp;</label>
                             <div style="display: flex; gap: 6px;">
-                                <button class="action-btn" id="btn-bg-drag" onclick="toggleDragMode('bg')" style="height: 26px; padding: 0 8px;">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                <button class="action-btn" id="btn-bg-drag" onclick="toggleDragMode('bg')" style="height: 26px;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
                                     배경 이동
                                 </button>
                                 <button class="action-btn" onclick="resetBgPos()" style="height: 26px; padding: 0 8px;" title="배경 위치/배율 초기화">↺ 초기화</button>
@@ -897,7 +888,7 @@
                         
                         <div class="toolbar-item">
                             <label>어둡기 (Dim)</label>
-                            <input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 80px;">
+                            <input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 110px;">
                         </div>
                     </div>
                 </div>
@@ -958,7 +949,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="card-content" id="card-content" style="position: relative; z-index: 4; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; pointer-events: none; box-sizing: border-box;">
+                                <div class="card-content" id="card-content" style="z-index: 4; width: 100%; pointer-events: none;">
                                     <div id="preview-text" style="text-align: center; word-break: keep-all; width: 100%; pointer-events: auto;"></div>
                                 </div>
                                 
@@ -1021,20 +1012,25 @@
 
     <script>
         let currentFontVal = "'Noto Serif KR', serif";
+        
         let currentBgImageDataUrl = '';
         let currentOvImageDataUrl = '';
         let originalBgWidth = 0;
         let originalBgHeight = 0;
         
-        let dragMode = null; 
+        // 상호 배타적 토글 제어를 위한 상태 변수
+        let dragMode = null; // 'none', 'bg', 'text', 'ovMask', 'ovImg', 'wm'
+        
         let isDragging = false;
         let isCapturing = false; 
         
         let bgScale = 1.0;
         let bgOffsetX = 0, bgOffsetY = 0;
+        
+        // ESC 취소를 위한 임시 기억소
         let origX = 0, origY = 0;
         let startMouseX = 0, startMouseY = 0;
-        let currentActiveSlot = '1'; 
+        
         let userManuallyToggledHtml = false;
 
         const DOM = {
@@ -1043,25 +1039,35 @@
             customFont: document.getElementById('input-custom-font'), color: document.getElementById('input-color'),
             size: document.getElementById('input-size'), pad: document.getElementById('input-padding'), lh: document.getElementById('input-lineheight'), align: document.getElementById('input-align'),
             paraGap: document.getElementById('input-para-gap'), htmlToggle: document.getElementById('html-mode-toggle'),
+            
             marginTop: document.getElementById('margin-top'), marginBottom: document.getElementById('margin-bottom'),
             marginLeft: document.getElementById('margin-left'), marginRight: document.getElementById('margin-right'),
-            htmlScale: document.getElementById('html-scale'), textX: document.getElementById('text-x'), textY: document.getElementById('text-y'),
+            htmlScale: document.getElementById('html-scale'), 
+            
+            textX: document.getElementById('text-x'), textY: document.getElementById('text-y'),
             textDragBtn: document.getElementById('btn-text-drag'), textDragBtnHtml: document.getElementById('btn-text-drag-html'),
-            sectionTypography: document.getElementById('section-typography'), sectionHtmlLayout: document.getElementById('section-html-layout'),
+            
+            sectionTypography: document.getElementById('section-typography'),
+            sectionHtmlLayout: document.getElementById('section-html-layout'),
+            
             preview: document.getElementById('card-preview'), bgImage: document.getElementById('card-bg-image'),
             previewWrapper: document.getElementById('card-preview-wrapper'), overlay: document.getElementById('card-overlay'),
             contentWrapper: document.getElementById('card-content'), pText: document.getElementById('preview-text'), 
             scale: document.getElementById('preview-scale'), scaleVal: document.getElementById('scale-value'), scrollArea: document.getElementById('preview-scroll-area'),
+            
             wmChar: document.getElementById('wm-char'), wmCreator: document.getElementById('wm-creator'),
             wmSize: document.getElementById('wm-size'), wmColor: document.getElementById('wm-color'),
             wmX: document.getElementById('wm-x'), wmY: document.getElementById('wm-y'),
+            
             ovUpload: document.getElementById('ov-upload'), ovScale: document.getElementById('ov-scale'),
             ovMaskW: document.getElementById('ov-mask-w'), ovMaskH: document.getElementById('ov-mask-h'), ovMaskR: document.getElementById('ov-mask-r'),
             ovX: document.getElementById('ov-x'), ovY: document.getElementById('ov-y'),
             ovInX: document.getElementById('ov-in-x'), ovInY: document.getElementById('ov-in-y'),
             ovFColor: document.getElementById('ov-filter-color'), ovFOpacity: document.getElementById('ov-filter-opacity'),
+            
             tsColor: document.getElementById('ts-color'), tsOpacity: document.getElementById('ts-opacity'),
             tsBlur: document.getElementById('ts-blur'), tsY: document.getElementById('ts-y'),
+
             forceCenter: document.getElementById('force-center-toggle'), charWrap: document.getElementById('char-wrap-toggle')
         };
 
@@ -1070,16 +1076,23 @@
             return `${r}, ${g}, ${b}`;
         }
 
-        function shellSetAlign(val) { DOM.align.value = val; updateUI(); }
-        function shellSetWrap(isChar) { DOM.charWrap.checked = isChar; updateUI(); }
+        function shellSetAlign(val) {
+            DOM.align.value = val;
+            updateUI();
+        }
+        function shellSetWrap(isChar) {
+            DOM.charWrap.checked = isChar;
+            updateUI();
+        }
 
         function updateUI() {
           try {
-            DOM.preview.style.width = (DOM.width.value || 700) + 'px';
-            DOM.preview.style.height = (DOM.height.value || 700) + 'px';
-            DOM.preview.style.backgroundColor = DOM.bgColor.value || '#ffffff';
-            DOM.overlay.style.background = `rgba(0, 0, 0, ${DOM.dim.value || 0})`;
+            DOM.preview.style.width = DOM.width.value + 'px';
+            DOM.preview.style.height = DOM.height.value + 'px';
+            DOM.preview.style.backgroundColor = DOM.bgColor.value;
+            DOM.overlay.style.background = `rgba(0, 0, 0, ${DOM.dim.value})`;
 
+            // 아이콘 컨트롤 ↔ 숨겨진 원본 입력값 동기화 (프리셋/기본값 복원 등 다른 경로로 값이 바뀌어도 항상 맞춰줌)
             document.querySelectorAll('#align-segmented button').forEach(b => b.classList.toggle('active', b.dataset.align === DOM.align.value));
             document.getElementById('wrap-word-btn').classList.toggle('active', !DOM.charWrap.checked);
             document.getElementById('wrap-char-btn').classList.toggle('active', DOM.charWrap.checked);
@@ -1096,13 +1109,18 @@
                 DOM.sectionTypography.style.display = 'none';
                 DOM.sectionHtmlLayout.style.display = 'block';
 
-                const pt = DOM.marginTop.value || 0; const pb = DOM.marginBottom.value || 0;
-                const pl = DOM.marginLeft.value || 0; const pr = DOM.marginRight.value || 0;
-                DOM.contentWrapper.style.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
+                const pt = DOM.marginTop.value || 0;
+                const pb = DOM.marginBottom.value || 0;
+                const pl = DOM.marginLeft.value || 0;
+                const pr = DOM.marginRight.value || 0;
+                DOM.preview.style.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
 
-                DOM.contentWrapper.style.fontFamily = ''; DOM.contentWrapper.style.color = '';
-                DOM.pText.style.fontSize = ''; DOM.pText.style.lineHeight = ''; 
-                DOM.pText.style.textAlign = 'left'; DOM.pText.style.wordBreak = 'normal';
+                DOM.contentWrapper.style.fontFamily = '';
+                DOM.contentWrapper.style.color = '';
+                DOM.pText.style.fontSize = '';
+                DOM.pText.style.lineHeight = ''; 
+                DOM.pText.style.textAlign = 'left';
+                DOM.pText.style.wordBreak = 'normal';
                 DOM.pText.style.textShadow = 'none';
                 
                 const hScale = parseFloat(DOM.htmlScale.value) || 1.0;
@@ -1115,84 +1133,99 @@
                 DOM.sectionTypography.style.display = 'block';
                 DOM.sectionHtmlLayout.style.display = 'none';
 
-                DOM.contentWrapper.style.padding = (DOM.pad.value || 15) + 'px';
+                DOM.preview.style.padding = DOM.pad.value + 'px';
                 
                 DOM.contentWrapper.style.fontFamily = currentFontVal;
-                DOM.contentWrapper.style.color = DOM.color.value || '#222222';
-                DOM.pText.style.fontSize = (DOM.size.value || 24) + 'px';
-                DOM.pText.style.lineHeight = DOM.lh.value || 1.2;
-                DOM.pText.style.textAlign = DOM.align.value || 'center';
+                DOM.contentWrapper.style.color = DOM.color.value;
+                DOM.pText.style.fontSize = DOM.size.value + 'px';
+                DOM.pText.style.lineHeight = DOM.lh.value;
+                DOM.pText.style.textAlign = DOM.align.value;
                 DOM.pText.style.wordBreak = DOM.charWrap.checked ? 'break-all' : 'keep-all';
                 
-                if (parseFloat(DOM.tsOpacity.value || 0) > 0) {
-                    const tsRgb = hexToRgbStr(DOM.tsColor.value || '#000000');
-                    DOM.pText.style.textShadow = `0px ${DOM.tsY.value || 2}px ${DOM.tsBlur.value || 5}px rgba(${tsRgb}, ${DOM.tsOpacity.value})`;
+                if (parseFloat(DOM.tsOpacity.value) > 0) {
+                    const tsRgb = hexToRgbStr(DOM.tsColor.value);
+                    DOM.pText.style.textShadow = `0px ${DOM.tsY.value}px ${DOM.tsBlur.value}px rgba(${tsRgb}, ${DOM.tsOpacity.value})`;
                 } else {
                     DOM.pText.style.textShadow = 'none';
                 }
 
                 DOM.pText.style.transform = 'none'; 
                 
-                const gap = DOM.paraGap.value || 5;
+                const gap = DOM.paraGap.value;
                 const lines = DOM.text.value.split('\n');
                 DOM.pText.innerHTML = lines.map(line => `<div style="margin-bottom: ${gap}px">${line || '<br>'}</div>`).join('');
             }
             
-            const tx = DOM.textX.value || 0; const ty = DOM.textY.value || 0;
-            DOM.contentWrapper.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${-ty}px))`;
+            // 텍스트 좌표 정상화 (정중앙 0,0 기준)
+            DOM.contentWrapper.style.transform = `translate(${DOM.textX.value}px, ${-DOM.textY.value}px)`;
             
+            // 오버레이 크롭 마스크 및 필터 적용
             const ovWrapper = document.getElementById('overlay-img-wrapper');
             const ovMask = document.getElementById('overlay-mask');
             const ovTransform = document.getElementById('overlay-img-transform');
             const ovFilter = document.getElementById('overlay-filter');
             
-            ovMask.style.width = (DOM.ovMaskW.value || 300) + 'px';
-            ovMask.style.height = (DOM.ovMaskH.value || 300) + 'px';
-            ovMask.style.borderRadius = (DOM.ovMaskR.value || 0) + 'px';
+            ovMask.style.width = DOM.ovMaskW.value + 'px';
+            ovMask.style.height = DOM.ovMaskH.value + 'px';
+            ovMask.style.borderRadius = DOM.ovMaskR.value + 'px';
             
-            const ox = DOM.ovX.value || 0; const oy = DOM.ovY.value || 0;
-            ovWrapper.style.transform = `translate(calc(-50% + ${ox}px), calc(-50% + ${-oy}px))`;
+            // 틀 자체 이동 (중앙 영점)
+            ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
             
-            if(parseFloat(DOM.ovFOpacity.value || 0) > 0) {
-                ovFilter.style.background = `rgba(${hexToRgbStr(DOM.ovFColor.value || '#000000')}, ${DOM.ovFOpacity.value})`;
+            // 필터 적용
+            if(parseFloat(DOM.ovFOpacity.value) > 0) {
+                ovFilter.style.background = `rgba(${hexToRgbStr(DOM.ovFColor.value)}, ${DOM.ovFOpacity.value})`;
             } else {
                 ovFilter.style.background = 'transparent';
             }
 
-            const oix = DOM.ovInX.value || 0; const oiy = DOM.ovInY.value || 0; const os = DOM.ovScale.value || 1.0;
-            ovTransform.style.transform = `translate(calc(-50% + ${oix}px), calc(-50% + ${-oiy}px)) scale(${os})`;
+            // 내부 이미지 이동 (틀 정중앙 영점 기준)
+            ovTransform.style.transform = `translate(calc(-50% + ${DOM.ovInX.value}px), calc(-50% + ${-DOM.ovInY.value}px)) scale(${DOM.ovScale.value})`;
 
+            // 워터마크 좌표 정상화 (정중앙 0,0 기준)
             const wmTransform = document.getElementById('watermark-transform');
             const wmContent = document.getElementById('watermark-content');
             
-            let char = (DOM.wmChar.value || '').trim();
-            let creator = (DOM.wmCreator.value || '').trim();
+            let char = DOM.wmChar.value.trim();
+            let creator = DOM.wmCreator.value.trim();
             let wmText = '';
             if(char && creator) wmText = char + ' | ' + creator;
             else if(char) wmText = char;
             else if(creator) wmText = creator;
 
             wmContent.textContent = wmText;
-            wmContent.style.fontSize = (DOM.wmSize.value || 14) + 'px';
-            wmContent.style.color = DOM.wmColor.value || '#000000';
+            wmContent.style.fontSize = DOM.wmSize.value + 'px';
+            wmContent.style.color = DOM.wmColor.value;
             wmContent.style.fontFamily = currentFontVal;
             
-            const wmx = DOM.wmX.value || 0; const wmy = DOM.wmY.value || 0;
-            wmTransform.style.transform = `translate(${wmx}px, ${-wmy}px)`;
+            // 좌표계 정상화 (오른쪽이 +x, 위쪽이 +y)
+            wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${-DOM.wmY.value}px)`;
 
             updateBgLayer();
             updateScale(); 
-            scheduleAutoSave(); 
+            scheduleAutoSave(); // 자동 저장 트리거
           } catch (err) {
             console.error('updateUI 오류:', err);
+            showToast('⚠️ 화면 갱신 중 오류가 발생했습니다. F12 콘솔의 빨간 메시지를 확인해주세요.');
           }
         }
 
+        /* -------------------------------------------------------------
+           HTML 최상위 태그 위치 강제 코드 감지 및 해제
+        ------------------------------------------------------------- */
         function handleForcedPosition() {
             const detailEl = document.getElementById('position-warning-detail');
-            if (!DOM.htmlToggle.checked) { detailEl.textContent = ''; return; }
+
+            if (!DOM.htmlToggle.checked) {
+                detailEl.textContent = '';
+                return;
+            }
+
             const outer = DOM.pText.firstElementChild;
-            if (!outer) { detailEl.textContent = ''; return; }
+            if (!outer) {
+                detailEl.textContent = '';
+                return;
+            }
 
             const style = outer.getAttribute('style') || '';
             const found = [];
@@ -1225,7 +1258,11 @@
             }
         }
 
-        DOM.htmlToggle.addEventListener('change', () => { userManuallyToggledHtml = true; updateUI(); });
+        DOM.htmlToggle.addEventListener('change', () => {
+            userManuallyToggledHtml = true;
+            updateUI();
+        });
+
         DOM.text.addEventListener('input', (e) => {
             const val = e.target.value;
             if (!DOM.htmlToggle.checked && !userManuallyToggledHtml && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
@@ -1258,13 +1295,20 @@
             document.removeEventListener('click', closeFullscreen);
         }
 
+        /* -------------------------------------------------------------
+           자동 저장, 기본값, 초기화 로직
+        ------------------------------------------------------------- */
         let autoSaveTimer;
         function scheduleAutoSave() {
             clearTimeout(autoSaveTimer);
             autoSaveTimer = setTimeout(() => {
                 const config = getCurrentConfig();
-                try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } 
-                catch(e) { delete config.bgImg; delete config.ovImg; try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } catch(e){} }
+                try {
+                    localStorage.setItem('archive_autosave', JSON.stringify(config));
+                } catch(e) {
+                    delete config.bgImg; delete config.ovImg;
+                    try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } catch(e){}
+                }
             }, 1000);
         }
 
@@ -1352,6 +1396,9 @@
             showToast('모든 설정이 공장 초기화되었습니다.');
         }
 
+        /* -------------------------------------------------------------
+           배경 제어 함수
+        ------------------------------------------------------------- */
         function updateBgLayer() {
             if (!currentBgImageDataUrl || !originalBgWidth || !originalBgHeight) {
                 DOM.bgImage.style.display = 'none'; return;
@@ -1380,7 +1427,6 @@
 
         function adjustNum(id, delta, step = 1) {
             const input = document.getElementById(id);
-            if(!input) return;
             let val = parseFloat(input.value) || 0;
             val += delta * step;
             if (step < 1) val = parseFloat(val.toFixed(1)); 
@@ -1395,9 +1441,10 @@
             DOM.ovMaskW, DOM.ovMaskH, DOM.ovMaskR, DOM.ovScale, DOM.ovX, DOM.ovY, DOM.ovInX, DOM.ovInY, DOM.ovFOpacity,
             DOM.tsColor, DOM.tsOpacity, DOM.tsBlur, DOM.tsY
         ];
-        inputs.forEach(el => { if(el) el.addEventListener('input', updateUI); });
-        if(DOM.ovFColor) DOM.ovFColor.addEventListener('input', updateUI);
+        inputs.forEach(el => el.addEventListener('input', updateUI));
+        DOM.ovFColor.addEventListener('input', updateUI);
         
+        // 여백 및 간격 조절 시 점선 가이드라인 표시
         let guideTimer;
         function showVisualGuide() {
             if(DOM.htmlToggle.checked) return;
@@ -1408,7 +1455,7 @@
             clearTimeout(guideTimer);
             guideTimer = setTimeout(() => { overlay.style.opacity = '0'; }, 1000);
         }
-        [DOM.pad, DOM.lh, DOM.paraGap].forEach(el => { if(el) el.addEventListener('input', showVisualGuide); });
+        [DOM.pad, DOM.lh, DOM.paraGap].forEach(el => el.addEventListener('input', showVisualGuide));
 
         window.onload = () => {
             setupFontPicker();
@@ -1419,7 +1466,11 @@
             }
 
             const saved = localStorage.getItem('archive_autosave');
-            if(saved) { applyConfig(JSON.parse(saved), true); } else { updateUI(); }
+            if(saved) {
+                applyConfig(JSON.parse(saved), true); 
+            } else {
+                updateUI();
+            }
         };
 
         DOM.scale.addEventListener('input', updateScale);
@@ -1432,6 +1483,9 @@
             DOM.scrollArea.style.alignItems = (DOM.height.value * ratio) < DOM.scrollArea.clientHeight ? 'center' : 'flex-start';
         }
 
+        /* -------------------------------------------------------------
+           💡 상호 배타적 토글 & 수학 좌표 드래그 로직 (ESC 취소 적용)
+        ------------------------------------------------------------- */
         DOM.bgImg.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -1477,6 +1531,7 @@
             updateUI(); 
         }
 
+        // 스마트 토글 시스템
         function toggleDragMode(mode) {
             const btns = {
                 'bg': document.getElementById('btn-bg-drag'),
@@ -1487,6 +1542,7 @@
                 'wm': document.getElementById('btn-wm-drag')
             };
 
+            // 기존 불 들어온 버튼들 끄기
             Object.values(btns).forEach(b => b && b.classList.remove('drag-active'));
             
             if (dragMode === mode) {
@@ -1511,6 +1567,7 @@
             }
         }
 
+        // ESC 취소 로직
         function cancelDrag() {
             if(!isDragging) return;
             isDragging = false;
@@ -1522,7 +1579,9 @@
             showToast('이동이 취소되었습니다.');
         }
 
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && isDragging) cancelDrag(); });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && isDragging) cancelDrag();
+        });
 
         DOM.preview.addEventListener('mousedown', (e) => {
             if (!dragMode) return;
@@ -1533,6 +1592,7 @@
             startMouseX = e.clientX; startMouseY = e.clientY; 
             e.preventDefault(); 
             
+            // 원래 위치 기억
             if(dragMode === 'bg') { origX = bgOffsetX; origY = bgOffsetY; }
             else if(dragMode === 'text') { origX = parseFloat(DOM.textX.value)||0; origY = parseFloat(DOM.textY.value)||0; }
             else if(dragMode === 'ovMask') { origX = parseFloat(DOM.ovX.value)||0; origY = parseFloat(DOM.ovY.value)||0; }
@@ -1583,6 +1643,10 @@
             updateBgLayer();
         }, { passive: false });
 
+
+        /* -------------------------------------------------------------
+           아코디언 및 형광펜 
+        ------------------------------------------------------------- */
         function toggleSection(headerEl) {
             const content = headerEl.nextElementSibling;
             const icon = headerEl.querySelector('.collapsible-icon');
@@ -1597,7 +1661,8 @@
 
         function applyHighlight() {
             const textarea = DOM.text;
-            const start = textarea.selectionStart; const end = textarea.selectionEnd;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
             if (start === end) return showToast('입력창에서 칠할 글자를 먼저 드래그하세요.');
 
             const selectedText = textarea.value.substring(start, end);
@@ -1616,12 +1681,18 @@
             updateUI(); showToast('형광펜이 모두 지워졌습니다.');
         }
 
+        /* -------------------------------------------------------------
+           폰트 선택 로직
+        ------------------------------------------------------------- */
         const fontPicker = document.getElementById('font-picker-wrapper');
         const fontTrigger = document.getElementById('font-picker-trigger');
         const fontOptions = document.getElementById('font-picker-options');
 
         fontTrigger.addEventListener('click', () => fontOptions.classList.toggle('open'));
-        document.addEventListener('click', (e) => { if (!fontPicker.contains(e.target)) fontOptions.classList.remove('open'); });
+
+        document.addEventListener('click', (e) => {
+            if (!fontPicker.contains(e.target)) fontOptions.classList.remove('open');
+        });
 
         function setupFontPicker() {
             document.querySelectorAll('.picker-opt').forEach(opt => {
@@ -1642,9 +1713,11 @@
         DOM.customFont.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 window.currentCustomFontBase64 = ev.target.result; 
+                
                 const fontName = 'Custom_' + Date.now();
                 const fontUrl = URL.createObjectURL(file);
                 const font = new FontFace(fontName, `url(${fontUrl})`);
@@ -1664,6 +1737,10 @@
             reader.readAsDataURL(file);
         });
 
+
+        /* -------------------------------------------------------------
+           프리셋 로직
+        ------------------------------------------------------------- */
         function getCurrentConfig() {
             return {
                 text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
@@ -1684,30 +1761,6 @@
                 ovFColor: DOM.ovFColor.value, ovFOpacity: DOM.ovFOpacity.value,
                 tsColor: DOM.tsColor.value, tsOpacity: DOM.tsOpacity.value, tsBlur: DOM.tsBlur.value, tsY: DOM.tsY.value
             };
-        }
-
-        function savePreset() {
-            try {
-                let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
-                let config = getCurrentConfig();
-                delete config.text; delete config.bgImg; delete config.ovImg;
-                
-                let desc = prompt('이 프리셋의 설명을 입력해주세요 (마우스 오버 시 표시):', presets[currentActiveSlot]?.desc || `프리셋 ${currentActiveSlot}`);
-                if (desc === null) return; 
-                
-                presets[currentActiveSlot] = { config: config, desc: desc };
-                localStorage.setItem('archive_presets', JSON.stringify(presets));
-                initPresetButtons(); 
-                showToast(`슬롯 ${currentActiveSlot}에 저장되었습니다.`);
-            } catch (err) { showToast('저장 공간 용량 초과 오류가 발생했습니다.'); }
-        }
-
-        async function loadPreset() {
-            let presets = JSON.parse(localStorage.getItem('archive_presets')) || {};
-            if (!presets[currentActiveSlot]) return showToast('저장된 프리셋이 없습니다.');
-            let config = presets[currentActiveSlot].config || presets[currentActiveSlot];
-            await applyConfig(config, false); 
-            showToast(`슬롯 ${currentActiveSlot} 프리셋을 불러왔습니다.`);
         }
 
         async function applyConfig(config, isFromArchive = false) {
@@ -1800,9 +1853,11 @@
         }
         function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
+        /* -------------------------------------------------------------
+           💡 html-to-image 전용: 폰트 다운로드 렉 차단
+        ------------------------------------------------------------- */
         const preloadedFontsCSS = {};
 
-        // 커스텀 폰트를 제외한 일반 웹 폰트들을 캡처 엔진이 무시하지 못하도록 Base64로 강제 주입하는 로직
         async function ensureFontLoaded(fontFamilyStr) {
             if (preloadedFontsCSS[fontFamilyStr]) return preloadedFontsCSS[fontFamilyStr];
             
@@ -1847,11 +1902,26 @@
             }
         }
 
-        /* 💡 캡처 시 유령 창(iframe)을 없애고 메인 브라우저 화면의 래퍼(div)를 사용하여 100% 동일한 렌더링 유지 */
+        /* -------------------------------------------------------------
+           💡 html-to-image 캡처 엔진 
+        ------------------------------------------------------------- */
         function captureInSandbox(scaleRatio, isPng) {
             return new Promise(async (resolve, reject) => {
                 try {
                     const sourceEl = document.getElementById('card-preview');
+                    const w = parseFloat(DOM.width.value) || 700;
+                    const h = parseFloat(DOM.height.value) || 700;
+
+                    const iframe = document.createElement('iframe');
+                    iframe.style.position = 'fixed'; iframe.style.top = '-9999px'; iframe.style.left = '-9999px';
+                    iframe.style.width = w + 'px'; iframe.style.height = h + 'px'; iframe.style.border = 'none';
+                    document.body.appendChild(iframe);
+
+                    const idoc = iframe.contentDocument || iframe.contentWindow.document;
+
+                    let styles = '';
+                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
+
                     const cloneEl = sourceEl.cloneNode(true);
                     
                     cloneEl.querySelectorAll('details:not([open])').forEach(d => {
@@ -1872,45 +1942,107 @@
                     cloneEl.style.transform = 'none';
                     cloneEl.style.boxShadow = 'none';
 
-                    // 메인 문서 내에 숨김 래퍼를 생성하여 CSS 환경(테일윈드, 브라우저 상속 등) 100% 동기화
-                    const hiddenWrapper = document.createElement('div');
-                    hiddenWrapper.style.position = 'fixed';
-                    hiddenWrapper.style.top = '-9999px';
-                    hiddenWrapper.style.left = '-9999px';
-                    hiddenWrapper.style.zIndex = '-9999';
-                    
-                    // 원본과 동일한 크기 부여
-                    hiddenWrapper.style.width = sourceEl.offsetWidth + 'px';
-                    hiddenWrapper.style.height = sourceEl.offsetHeight + 'px';
-                    
-                    hiddenWrapper.appendChild(cloneEl);
-                    document.body.appendChild(hiddenWrapper);
+                    idoc.open();
+                    idoc.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            ${styles}
+                            <style> body { margin: 0; padding: 0; background: transparent; overflow: hidden; } </style>
+                        </head>
+                        <body> ${cloneEl.outerHTML} </body>
+                        </html>
+                    `);
+                    idoc.close();
 
-                    // 커스텀 폰트를 업로드한 경우에만 수동 임베딩
-                    let customFontCss = '';
+                    let embeddedFontCss = '';
                     if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) {
-                        customFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`;
+                        embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`;
                     }
 
-                    // 렌더링 안정화 대기
-                    await new Promise(r => setTimeout(r, 150));
+                    // 본문 폰트(타이포그래피 설정) 하나만 챙기던 것을, 실제로 카드 안에서
+                    // 쓰이는 모든 폰트(붙여넣은 HTML이 자체적으로 지정한 font-family 포함)를
+                    // 전부 스캔해서 임베드하도록 확장. HTML 뷰어 모드에서 Pretendard 등
+                    // 페이지 기본 폰트를 쓰는 경우가 지금까지 통째로 빠져있었다.
+                    const KNOWN_WEB_FONTS = ['Noto Serif KR', 'Noto Sans KR', 'Gowun Dodum', 'Nanum Myeongjo', 'Pretendard'];
+                    const fontsInUse = new Set();
+                    if (!currentFontVal.startsWith('Custom_')) fontsInUse.add(currentFontVal);
+                    try {
+                        const allNodes = [sourceEl, ...sourceEl.querySelectorAll('*')];
+                        allNodes.forEach(node => {
+                            const ff = getComputedStyle(node).fontFamily;
+                            if (ff) fontsInUse.add(ff);
+                        });
+                    } catch (e) { /* 스캔 실패 시 기존 폰트만으로 진행 */ }
 
-                    const options = {
-                        pixelRatio: scaleRatio,
-                        backgroundColor: DOM.bgColor.value || '#ffffff',
-                        fontEmbedCSS: customFontCss,
-                        style: { transform: 'scale(1)', transformOrigin: 'top left' }
-                    };
+                    const fontCssParts = await Promise.all(
+                        Array.from(fontsInUse).flatMap(ffValue =>
+                            KNOWN_WEB_FONTS.filter(known => ffValue.includes(known)).map(known => ensureFontLoaded(known))
+                        )
+                    );
+                    embeddedFontCss += fontCssParts.filter(Boolean).join('\n');
 
-                    const dataUrl = isPng 
-                        ? await htmlToImage.toPng(cloneEl, options) 
-                        : await htmlToImage.toJpeg(cloneEl, options);
-                        
-                    document.body.removeChild(hiddenWrapper); 
-                    resolve(dataUrl);
-                } catch (err) {
-                    console.error('캡처 오류:', err);
-                    reject(err);
+                    // iframe은 별도의 document라서 폰트를 처음부터 다시 로드해야 한다.
+                    // 예전에는 무조건 600ms만 기다리고 캡처했는데, 그 사이 폰트가 아직
+                    // 안 끝났으면(특히 HTML 뷰어 모드에서 쓰는, 타이포그래피 설정과
+                    // 무관한 폰트들) 대체 폰트로 찍히면서 줄바꿈이 어긋났다.
+                    // fonts.ready는 "현재 로딩 중인" 폰트만 기다려주기 때문에, 브라우저가
+                    // 아직 그 폰트가 필요한지조차 파악 못 한 시점에 체크하면 곧바로(0초 만에)
+                    // 풀려버릴 수 있다. 그래서 먼저 강제로 레이아웃을 한 번 읽어서
+                    // "이 폰트가 실제로 쓰인다"는 걸 브라우저가 인지하게 만든 다음 기다린다.
+                    const targetElForReflow = idoc.getElementById('card-preview');
+                    if (targetElForReflow) void targetElForReflow.offsetHeight; // 강제 리플로우
+
+                    // 배경 이미지 등 <img> 요소는 iframe에 다시 그려지면서 처음부터
+                    // 다시 디코딩된다. 이게 끝나기 전에 캡처하면 아직 크기를 완전히
+                    // 못 잡은 상태로 찍혀서 (특히 배경 이미지가) 찌그러져 보일 수 있다.
+                    if (targetElForReflow) {
+                        const imgs = Array.from(targetElForReflow.querySelectorAll('img'));
+                        await Promise.race([
+                            Promise.all(imgs.map(img => {
+                                if (img.complete) return Promise.resolve();
+                                return (img.decode ? img.decode().catch(() => {}) : new Promise(res => { img.onload = res; img.onerror = res; }));
+                            })),
+                            new Promise(r => setTimeout(r, 2000)) // 안전장치
+                        ]);
+                    }
+
+                    try {
+                        if (idoc.fonts && idoc.fonts.ready) {
+                            await Promise.race([
+                                idoc.fonts.ready,
+                                new Promise(r => setTimeout(r, 2500)) // 폰트 API가 비정상 대기할 경우의 안전장치
+                            ]);
+                        }
+                    } catch (e) { /* fonts API 미지원 브라우저 등은 무시하고 진행 */ }
+
+                    // 폰트 적용 후 실제 레이아웃이 한 프레임 반영될 시간을 짧게 확보
+                    await new Promise(r => setTimeout(r, 120));
+
+                    try {
+                        const targetEl = idoc.getElementById('card-preview');
+
+                        const options = {
+                            pixelRatio: scaleRatio,
+                            backgroundColor: DOM.bgColor.value || '#ffffff',
+                            fontEmbedCSS: embeddedFontCss,
+                            skipFonts: false, 
+                            style: { transform: 'scale(1)', transformOrigin: 'top left' }
+                        };
+
+                        const dataUrl = isPng 
+                            ? await htmlToImage.toPng(targetEl, options) 
+                            : await htmlToImage.toJpeg(targetEl, options);
+                            
+                        document.body.removeChild(iframe); 
+                        resolve(dataUrl);
+                    } catch (err) {
+                        document.body.removeChild(iframe);
+                        reject(err);
+                    }
+                } catch (e) {
+                    reject(e);
                 }
             });
         }
@@ -1952,6 +2084,9 @@
             }
         }
 
+        /* -------------------------------------------------------------
+           IndexedDB 저장 및 아카이브 렌더링
+        ------------------------------------------------------------- */
         let db;
         const request = indexedDB.open("AIArchiveDB", 2); 
         request.onupgradeneeded = e => { db = e.target.result; if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' }); };
@@ -2026,6 +2161,9 @@
 
         function deleteFromIndexedDB(id) { if(confirm('이 기록을 삭제하시겠습니까?')) { const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').delete(id); tx.oncomplete = () => loadGallery(); } }
 
+        /* -------------------------------------------------------------
+           백업 (Export) 및 복구 (Import) 
+        ------------------------------------------------------------- */
         async function exportData() {
             try {
                 const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
