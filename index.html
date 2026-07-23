@@ -9,7 +9,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.7.0/dist/index.js"></script>
 
     <style>
         :root {
@@ -1905,6 +1905,85 @@
         /* -------------------------------------------------------------
            💡 html-to-image 캡처 엔진 
         ------------------------------------------------------------- */
+        /* -------------------------------------------------------------
+           🩹 캡쳐 전용 우회 처리: white-space:pre-line(+pre-wrap/pre) + <br>
+           조합이 있는 요소를, 같은 화면 결과를 내는 더 안전한 구조(줄마다
+           별도 div, white-space:normal)로 바꿔치기한다. 미리보기 화면의
+           실제 DOM은 절대 건드리지 않고, 캡쳐용 iframe 사본에만 적용된다.
+        ------------------------------------------------------------- */
+        function neutralizeProblematicLineBreaks(idoc) {
+            const root = idoc.getElementById('card-preview');
+            if (!root) return;
+            const win = idoc.defaultView;
+            const targets = [root, ...root.querySelectorAll('*')];
+
+            targets.forEach(el => {
+                if (!el.innerHTML || el.innerHTML.indexOf('<br') === -1) return;
+                let ws;
+                try { ws = win.getComputedStyle(el).whiteSpace; }
+                catch (e) { return; }
+                if (ws !== 'pre-line' && ws !== 'pre-wrap' && ws !== 'pre') return;
+
+                const parts = el.innerHTML.split(/<br\s*\/?>/i);
+                if (parts.length < 2) return;
+
+                el.innerHTML = parts.map(p => `<div style="white-space:normal;">${p}</div>`).join('');
+                el.style.whiteSpace = 'normal';
+            });
+        }
+
+        /* -------------------------------------------------------------
+           🩹 캡쳐 전용 우회 처리 (핵심 안전장치): 미리보기에서 한 줄이었던
+           텍스트는 캡쳐 결과물에서도 반드시 한 줄이어야 한다는 규칙을
+           강제한다. 정확히 "왜" 특정 조합에서 라이브러리가 줄바꿈을
+           다르게 계산하는지와 무관하게, 결과 자체가 항상 미리보기와
+           같도록 보장하는 방식이다.
+           - sourceEl(실제 화면)과 cloneEl(캡쳐용 사본)은 cloneNode(true)
+             직후엔 구조가 완전히 동일하므로, 두 트리를 나란히 순회하며
+             "원본에서 한 줄이었던 요소"를 사본에서 white-space:nowrap으로
+             고정한다. <br>로 의도적으로 줄바꿈하는 요소나, 원래도 여러
+             줄인 문단은 건드리지 않는다.
+        ------------------------------------------------------------- */
+        function lockSingleLineElements(sourceRoot, cloneRoot) {
+            const INLINE_TAGS = new Set(['SPAN','B','I','STRONG','EM','MARK','A','U','S','SMALL','SUB','SUP']);
+
+            function isTextLeaf(el) {
+                if (el.innerHTML.indexOf('<br') !== -1) return false; // 의도된 줄바꿈은 보존
+                for (const child of el.children) {
+                    if (!INLINE_TAGS.has(child.tagName)) return false;
+                }
+                return el.textContent.trim() !== '';
+            }
+
+            function getLineCount(el) {
+                const cs = getComputedStyle(el);
+                let lh = parseFloat(cs.lineHeight);
+                if (isNaN(lh)) lh = parseFloat(cs.fontSize) * 1.2;
+                if (!lh || lh <= 0) return 1;
+                const h = el.getBoundingClientRect().height;
+                return Math.max(1, Math.round(h / lh));
+            }
+
+            function walk(srcNode, cloneNode) {
+                if (srcNode.nodeType !== 1) return;
+                if (isTextLeaf(srcNode)) {
+                    try {
+                        if (getLineCount(srcNode) === 1) {
+                            cloneNode.style.whiteSpace = 'nowrap';
+                        }
+                    } catch (e) { /* 측정 실패 시 건드리지 않고 통과 */ }
+                    return; // 텍스트 리프는 더 내려갈 필요 없음
+                }
+                const srcChildren = srcNode.children;
+                const cloneChildren = cloneNode.children;
+                for (let i = 0; i < srcChildren.length; i++) {
+                    if (cloneChildren[i]) walk(srcChildren[i], cloneChildren[i]);
+                }
+            }
+
+            walk(sourceRoot, cloneRoot);
+        }
+
         function captureInSandbox(scaleRatio, isPng) {
             return new Promise(async (resolve, reject) => {
                 try {
@@ -1923,6 +2002,9 @@
                     document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
 
                     const cloneEl = sourceEl.cloneNode(true);
+
+                    try { lockSingleLineElements(sourceEl, cloneEl); }
+                    catch (e) { /* 안전장치 자체가 실패해도 캡쳐는 계속 진행 */ }
                     
                     cloneEl.querySelectorAll('details:not([open])').forEach(d => {
                         Array.from(d.childNodes).forEach(node => {
@@ -1955,6 +2037,12 @@
                         </html>
                     `);
                     idoc.close();
+
+                    // 🩹 우회 처리: white-space:pre-line + <br> 조합이 html-to-image의
+                    // SVG 직렬화 과정에서 문서 전체 텍스트 측정을 미묘하게 틀어지게 만드는
+                    // 버그가 확인되어(캡쳐용 사본에만 적용, 미리보기 화면은 원본 그대로 유지),
+                    // 캡쳐 직전에 더 안전한 구조(줄마다 개별 div)로 자동 치환한다.
+                    neutralizeProblematicLineBreaks(idoc);
 
                     let embeddedFontCss = '';
                     if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) {
@@ -2024,16 +2112,17 @@
                         const targetEl = idoc.getElementById('card-preview');
 
                         const options = {
-                            pixelRatio: scaleRatio,
+                            scale: scaleRatio,
                             backgroundColor: DOM.bgColor.value || '#ffffff',
-                            fontEmbedCSS: embeddedFontCss,
-                            skipFonts: false, 
                             style: { transform: 'scale(1)', transformOrigin: 'top left' }
                         };
+                        if (embeddedFontCss) {
+                            options.font = { cssText: embeddedFontCss };
+                        }
 
                         const dataUrl = isPng 
-                            ? await htmlToImage.toPng(targetEl, options) 
-                            : await htmlToImage.toJpeg(targetEl, options);
+                            ? await modernScreenshot.domToPng(targetEl, options) 
+                            : await modernScreenshot.domToJpeg(targetEl, options);
                             
                         document.body.removeChild(iframe); 
                         resolve(dataUrl);
