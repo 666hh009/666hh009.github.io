@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로 (v3.1 마스터 안정화)</title>
+    <title>AI 대화 아카이브 프로 (클라우드)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -806,6 +806,29 @@
 
                 <div class="ctrl-section">
                     <div class="collapsible-header" onclick="toggleSection(this)">
+                        <div class="ctrl-eyebrow" style="margin:0;">서버 캡쳐 (선택)</div>
+                        <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="section-note" style="margin-bottom:12px;">직접 배포한 서버(Worker) 주소를 넣으면, 다운로드·복사·아카이브 저장이 전부 이 서버를 거쳐서 진짜 브라우저로 캡쳐됩니다. 비워두면 지금처럼 브라우저 자체 캡쳐를 씁니다.</div>
+                        <div class="row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+                            <span class="row-label">Worker 주소</span>
+                            <input type="text" id="capture-server-url" placeholder="https://xxxx.workers.dev" style="width:100%; height:32px; border:1px solid var(--line); border-radius:var(--radius-sm); padding:0 10px; font-size:0.78rem; font-family: var(--mono);">
+                        </div>
+                        <div class="row" style="flex-direction: column; align-items: stretch; gap: 6px; margin-top: 10px;">
+                            <span class="row-label">보안 토큰 (선택)</span>
+                            <input type="text" id="capture-server-secret" placeholder="워커 코드에 넣은 값과 동일하게" style="width:100%; height:32px; border:1px solid var(--line); border-radius:var(--radius-sm); padding:0 10px; font-size:0.78rem; font-family: var(--mono);">
+                        </div>
+                        <div style="display:flex; gap:8px; margin-top:12px;">
+                            <button class="action-btn" onclick="saveCaptureServerSettings()" style="flex:1; justify-content:center;">저장</button>
+                            <button class="action-btn" onclick="testCaptureServer()" style="flex:1; justify-content:center;">연결 테스트</button>
+                        </div>
+                        <p id="capture-server-status" class="section-note" style="margin-top:10px; margin-bottom:0; font-weight:600;"></p>
+                    </div>
+                </div>
+
+                <div class="ctrl-section">
+                    <div class="collapsible-header" onclick="toggleSection(this)">
                         <div class="ctrl-eyebrow" style="margin:0;">시스템 및 초기화 설정</div>
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
@@ -1465,6 +1488,12 @@
                 document.body.classList.add('toolbar-always');
             }
 
+            const savedServerUrl = localStorage.getItem('archive_capture_server_url');
+            const savedServerSecret = localStorage.getItem('archive_capture_server_secret');
+            if (savedServerUrl) document.getElementById('capture-server-url').value = savedServerUrl;
+            if (savedServerSecret) document.getElementById('capture-server-secret').value = savedServerSecret;
+            updateCaptureServerStatusLabel();
+
             const saved = localStorage.getItem('archive_autosave');
             if(saved) {
                 applyConfig(JSON.parse(saved), true); 
@@ -1472,6 +1501,46 @@
                 updateUI();
             }
         };
+
+        function saveCaptureServerSettings() {
+            const url = document.getElementById('capture-server-url').value.trim();
+            const secret = document.getElementById('capture-server-secret').value.trim();
+            if (url) localStorage.setItem('archive_capture_server_url', url);
+            else localStorage.removeItem('archive_capture_server_url');
+            if (secret) localStorage.setItem('archive_capture_server_secret', secret);
+            else localStorage.removeItem('archive_capture_server_secret');
+            updateCaptureServerStatusLabel();
+            showToast(url ? '서버 캡쳐 설정이 저장되었습니다.' : '서버 주소가 비워져 브라우저 자체 캡쳐로 돌아갑니다.');
+        }
+
+        function updateCaptureServerStatusLabel() {
+            const el = document.getElementById('capture-server-status');
+            if (!el) return;
+            const url = localStorage.getItem('archive_capture_server_url');
+            if (url) { el.style.color = 'var(--accent)'; el.textContent = `✓ 서버 캡쳐 사용 중: ${url}`; }
+            else { el.style.color = 'var(--ink-soft)'; el.textContent = '서버 미설정 — 브라우저 자체 캡쳐 사용 중'; }
+        }
+
+        async function testCaptureServer() {
+            const url = document.getElementById('capture-server-url').value.trim();
+            const statusEl = document.getElementById('capture-server-status');
+            if (!url) { showToast('먼저 Worker 주소를 입력해주세요.'); return; }
+            statusEl.style.color = 'var(--ink-soft)';
+            statusEl.textContent = '연결 테스트 중...';
+            try {
+                localStorage.setItem('archive_capture_server_url', url);
+                const secret = document.getElementById('capture-server-secret').value.trim();
+                if (secret) localStorage.setItem('archive_capture_server_secret', secret);
+                const dataUrl = await captureViaServer(1, true);
+                statusEl.style.color = '#2f9e44';
+                statusEl.textContent = '✓ 서버 캡쳐 연결 성공! 실제 다운로드도 이 서버를 사용합니다.';
+                showToast('서버 캡쳐 연결에 성공했습니다.');
+            } catch (err) {
+                statusEl.style.color = 'var(--danger)';
+                statusEl.textContent = '✗ 연결 실패: ' + (err && err.message ? err.message : String(err));
+                showToast('서버 캡쳐 연결에 실패했습니다. 주소/배포 상태를 확인해주세요.');
+            }
+        }
 
         DOM.scale.addEventListener('input', updateScale);
         function updateScale() {
@@ -1984,92 +2053,112 @@
             walk(sourceRoot, cloneRoot);
         }
 
+        /* -------------------------------------------------------------
+           캡쳐용 DOM 준비 (클라이언트 캡쳐 / 서버 캡쳐 공용)
+           - 숨겨진 iframe에 카드 사본을 붙여넣고, 안전장치들을 적용한 뒤
+             그 iframe(및 관련 정보)을 돌려준다. 호출한 쪽에서 다 쓴 뒤
+             반드시 removeChild로 정리해야 한다.
+        ------------------------------------------------------------- */
+        function buildCaptureDom() {
+            const sourceEl = document.getElementById('card-preview');
+            const w = parseFloat(DOM.width.value) || 700;
+            const h = parseFloat(DOM.height.value) || 700;
+
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed'; iframe.style.top = '-9999px'; iframe.style.left = '-9999px';
+            iframe.style.width = w + 'px'; iframe.style.height = h + 'px'; iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+
+            const idoc = iframe.contentDocument || iframe.contentWindow.document;
+
+            let styles = '';
+            document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
+
+            const cloneEl = sourceEl.cloneNode(true);
+
+            try { lockSingleLineElements(sourceEl, cloneEl); }
+            catch (e) { /* 안전장치 자체가 실패해도 캡쳐는 계속 진행 */ }
+            
+            cloneEl.querySelectorAll('details:not([open])').forEach(d => {
+                Array.from(d.childNodes).forEach(node => {
+                    if (node.tagName && node.tagName.toLowerCase() === 'summary') return;
+                    d.removeChild(node);
+                });
+            });
+
+            cloneEl.querySelectorAll('img').forEach(img => {
+                const src = img.getAttribute('src');
+                if (!src || src.trim() === '') img.parentNode.removeChild(img);
+            });
+
+            const guide = cloneEl.querySelector('#guide-overlay');
+            if (guide) guide.parentNode.removeChild(guide);
+
+            cloneEl.style.transform = 'none';
+            cloneEl.style.boxShadow = 'none';
+
+            idoc.open();
+            idoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    ${styles}
+                    <style> body { margin: 0; padding: 0; background: transparent; overflow: hidden; } </style>
+                </head>
+                <body> ${cloneEl.outerHTML} </body>
+                </html>
+            `);
+            idoc.close();
+
+            // 🩹 우회 처리: white-space:pre-line + <br> 조합이 SVG 직렬화 기반
+            // 캡쳐 방식에서 문서 전체 텍스트 측정을 미묘하게 틀어지게 만드는 버그가
+            // 확인되어(캡쳐용 사본에만 적용, 미리보기 화면은 원본 그대로 유지),
+            // 더 안전한 구조(줄마다 개별 div)로 자동 치환한다. (서버 캡쳐 경로에서는
+            // 실제 브라우저가 그대로 렌더링하므로 이론상 불필요하지만, 만일을 대비해
+            // 똑같이 적용해도 결과에 아무 영향 없다.)
+            neutralizeProblematicLineBreaks(idoc);
+
+            return { iframe, idoc, sourceEl, w, h };
+        }
+
+        async function buildEmbeddedFontCss(sourceEl) {
+            let embeddedFontCss = '';
+            if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) {
+                embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`;
+            }
+
+            // 본문 폰트(타이포그래피 설정) 하나만 챙기던 것을, 실제로 카드 안에서
+            // 쓰이는 모든 폰트(붙여넣은 HTML이 자체적으로 지정한 font-family 포함)를
+            // 전부 스캔해서 임베드하도록 확장.
+            const KNOWN_WEB_FONTS = ['Noto Serif KR', 'Noto Sans KR', 'Gowun Dodum', 'Nanum Myeongjo', 'Pretendard'];
+            const fontsInUse = new Set();
+            if (!currentFontVal.startsWith('Custom_')) fontsInUse.add(currentFontVal);
+            try {
+                const allNodes = [sourceEl, ...sourceEl.querySelectorAll('*')];
+                allNodes.forEach(node => {
+                    const ff = getComputedStyle(node).fontFamily;
+                    if (ff) fontsInUse.add(ff);
+                });
+            } catch (e) { /* 스캔 실패 시 기존 폰트만으로 진행 */ }
+
+            const fontCssParts = await Promise.all(
+                Array.from(fontsInUse).flatMap(ffValue =>
+                    KNOWN_WEB_FONTS.filter(known => ffValue.includes(known)).map(known => ensureFontLoaded(known))
+                )
+            );
+            embeddedFontCss += fontCssParts.filter(Boolean).join('\n');
+            return embeddedFontCss;
+        }
+
         function captureInSandbox(scaleRatio, isPng) {
             return new Promise(async (resolve, reject) => {
+                let built = null;
                 try {
-                    const sourceEl = document.getElementById('card-preview');
-                    const w = parseFloat(DOM.width.value) || 700;
-                    const h = parseFloat(DOM.height.value) || 700;
+                    built = buildCaptureDom();
+                    const { iframe, idoc, sourceEl, w, h } = built;
 
-                    const iframe = document.createElement('iframe');
-                    iframe.style.position = 'fixed'; iframe.style.top = '-9999px'; iframe.style.left = '-9999px';
-                    iframe.style.width = w + 'px'; iframe.style.height = h + 'px'; iframe.style.border = 'none';
-                    document.body.appendChild(iframe);
-
-                    const idoc = iframe.contentDocument || iframe.contentWindow.document;
-
-                    let styles = '';
-                    document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => styles += s.outerHTML);
-
-                    const cloneEl = sourceEl.cloneNode(true);
-
-                    try { lockSingleLineElements(sourceEl, cloneEl); }
-                    catch (e) { /* 안전장치 자체가 실패해도 캡쳐는 계속 진행 */ }
-                    
-                    cloneEl.querySelectorAll('details:not([open])').forEach(d => {
-                        Array.from(d.childNodes).forEach(node => {
-                            if (node.tagName && node.tagName.toLowerCase() === 'summary') return;
-                            d.removeChild(node);
-                        });
-                    });
-
-                    cloneEl.querySelectorAll('img').forEach(img => {
-                        const src = img.getAttribute('src');
-                        if (!src || src.trim() === '') img.parentNode.removeChild(img);
-                    });
-
-                    const guide = cloneEl.querySelector('#guide-overlay');
-                    if (guide) guide.parentNode.removeChild(guide);
-
-                    cloneEl.style.transform = 'none';
-                    cloneEl.style.boxShadow = 'none';
-
-                    idoc.open();
-                    idoc.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <meta charset="UTF-8">
-                            ${styles}
-                            <style> body { margin: 0; padding: 0; background: transparent; overflow: hidden; } </style>
-                        </head>
-                        <body> ${cloneEl.outerHTML} </body>
-                        </html>
-                    `);
-                    idoc.close();
-
-                    // 🩹 우회 처리: white-space:pre-line + <br> 조합이 html-to-image의
-                    // SVG 직렬화 과정에서 문서 전체 텍스트 측정을 미묘하게 틀어지게 만드는
-                    // 버그가 확인되어(캡쳐용 사본에만 적용, 미리보기 화면은 원본 그대로 유지),
-                    // 캡쳐 직전에 더 안전한 구조(줄마다 개별 div)로 자동 치환한다.
-                    neutralizeProblematicLineBreaks(idoc);
-
-                    let embeddedFontCss = '';
-                    if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) {
-                        embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`;
-                    }
-
-                    // 본문 폰트(타이포그래피 설정) 하나만 챙기던 것을, 실제로 카드 안에서
-                    // 쓰이는 모든 폰트(붙여넣은 HTML이 자체적으로 지정한 font-family 포함)를
-                    // 전부 스캔해서 임베드하도록 확장. HTML 뷰어 모드에서 Pretendard 등
-                    // 페이지 기본 폰트를 쓰는 경우가 지금까지 통째로 빠져있었다.
-                    const KNOWN_WEB_FONTS = ['Noto Serif KR', 'Noto Sans KR', 'Gowun Dodum', 'Nanum Myeongjo', 'Pretendard'];
-                    const fontsInUse = new Set();
-                    if (!currentFontVal.startsWith('Custom_')) fontsInUse.add(currentFontVal);
-                    try {
-                        const allNodes = [sourceEl, ...sourceEl.querySelectorAll('*')];
-                        allNodes.forEach(node => {
-                            const ff = getComputedStyle(node).fontFamily;
-                            if (ff) fontsInUse.add(ff);
-                        });
-                    } catch (e) { /* 스캔 실패 시 기존 폰트만으로 진행 */ }
-
-                    const fontCssParts = await Promise.all(
-                        Array.from(fontsInUse).flatMap(ffValue =>
-                            KNOWN_WEB_FONTS.filter(known => ffValue.includes(known)).map(known => ensureFontLoaded(known))
-                        )
-                    );
-                    embeddedFontCss += fontCssParts.filter(Boolean).join('\n');
+                    const embeddedFontCss = await buildEmbeddedFontCss(sourceEl);
 
                     // iframe은 별도의 document라서 폰트를 처음부터 다시 로드해야 한다.
                     // 예전에는 무조건 600ms만 기다리고 캡처했는데, 그 사이 폰트가 아직
@@ -2108,32 +2197,100 @@
                     // 폰트 적용 후 실제 레이아웃이 한 프레임 반영될 시간을 짧게 확보
                     await new Promise(r => setTimeout(r, 120));
 
-                    try {
-                        const targetEl = idoc.getElementById('card-preview');
+                    const targetEl = idoc.getElementById('card-preview');
 
-                        const options = {
-                            scale: scaleRatio,
-                            backgroundColor: DOM.bgColor.value || '#ffffff',
-                            style: { transform: 'scale(1)', transformOrigin: 'top left' }
-                        };
-                        if (embeddedFontCss) {
-                            options.font = { cssText: embeddedFontCss };
-                        }
-
-                        const dataUrl = isPng 
-                            ? await modernScreenshot.domToPng(targetEl, options) 
-                            : await modernScreenshot.domToJpeg(targetEl, options);
-                            
-                        document.body.removeChild(iframe); 
-                        resolve(dataUrl);
-                    } catch (err) {
-                        document.body.removeChild(iframe);
-                        reject(err);
+                    const options = {
+                        scale: scaleRatio,
+                        backgroundColor: DOM.bgColor.value || '#ffffff',
+                        style: { transform: 'scale(1)', transformOrigin: 'top left' }
+                    };
+                    if (embeddedFontCss) {
+                        options.font = { cssText: embeddedFontCss };
                     }
-                } catch (e) {
-                    reject(e);
+
+                    const dataUrl = isPng 
+                        ? await modernScreenshot.domToPng(targetEl, options) 
+                        : await modernScreenshot.domToJpeg(targetEl, options);
+                        
+                    document.body.removeChild(iframe); 
+                    resolve(dataUrl);
+                } catch (err) {
+                    if (built && built.iframe && built.iframe.parentNode) document.body.removeChild(built.iframe);
+                    reject(err);
                 }
             });
+        }
+
+        /* -------------------------------------------------------------
+           서버(헤드리스 브라우저) 캡쳐 경로
+           - 진짜 브라우저가 그대로 렌더링해서 찍기 때문에, 클라이언트
+             SVG 직렬화 방식에서 겪었던 렌더링 버그가 원천적으로 없다.
+           - 서버 주소가 설정 안 되어 있으면 에러를 던져서, 호출부가
+             클라이언트 캡쳐로 자동 대체하도록 한다.
+        ------------------------------------------------------------- */
+        async function captureViaServer(scaleRatio, isPng) {
+            const serverUrl = localStorage.getItem('archive_capture_server_url');
+            if (!serverUrl) throw new Error('SERVER_NOT_CONFIGURED');
+
+            const secret = localStorage.getItem('archive_capture_server_secret') || '';
+
+            let built = null;
+            try {
+                built = buildCaptureDom();
+                const { iframe, idoc, w, h } = built;
+                const fullHtml = '<!DOCTYPE html>' + idoc.documentElement.outerHTML;
+                document.body.removeChild(iframe);
+                built = null;
+
+                const resp = await fetch(serverUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(secret ? { 'X-Capture-Secret': secret } : {})
+                    },
+                    body: JSON.stringify({
+                        html: fullHtml,
+                        width: w,
+                        height: h,
+                        scale: scaleRatio,
+                        format: isPng ? 'png' : 'jpeg'
+                    })
+                });
+
+                if (!resp.ok) {
+                    const errText = await resp.text().catch(() => '');
+                    throw new Error(`서버 캡쳐 실패 (${resp.status}): ${errText || '알 수 없는 오류'}`);
+                }
+
+                const blob = await resp.blob();
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (err) {
+                if (built && built.iframe && built.iframe.parentNode) document.body.removeChild(built.iframe);
+                throw err;
+            }
+        }
+
+        /* -------------------------------------------------------------
+           캡쳐 진입점: 서버가 설정되어 있으면 서버로, 아니면(또는 서버
+           호출이 실패하면) 기존 클라이언트 방식으로 자동 대체한다.
+        ------------------------------------------------------------- */
+        async function captureImage(scaleRatio, isPng) {
+            const serverUrl = localStorage.getItem('archive_capture_server_url');
+            if (serverUrl) {
+                try {
+                    return await captureViaServer(scaleRatio, isPng);
+                } catch (err) {
+                    console.warn('서버 캡쳐 실패, 클라이언트 캡쳐로 대체합니다:', err);
+                    showToast('⚠️ 서버 캡쳐 실패 — 브라우저 자체 캡쳐로 대신 진행합니다.');
+                    return await captureInSandbox(scaleRatio, isPng);
+                }
+            }
+            return await captureInSandbox(scaleRatio, isPng);
         }
 
         async function downloadCard() {
@@ -2143,7 +2300,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const dataUrl = await captureInSandbox(2, true); 
+                const dataUrl = await captureImage(2, true); 
                 const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`; link.href = dataUrl; link.click();
                 showToast('다운로드가 완료되었습니다!');
             } catch (err) {
@@ -2160,7 +2317,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const dataUrl = await captureInSandbox(2, true); 
+                const dataUrl = await captureImage(2, true); 
                 const res = await fetch(dataUrl); const blob = await res.blob();
                 if (navigator.clipboard && navigator.clipboard.write) {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
@@ -2190,7 +2347,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const imgData = await captureInSandbox(2, false); 
+                const imgData = await captureImage(2, false); 
                 const newItem = { id: Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
                 const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').add(newItem);
                 tx.oncomplete = () => { closeModal(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!'); loadGallery(); };
