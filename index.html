@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로 (클라우드)</title>
+    <title>AI 대화 아카이브 프로 (v4)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -556,6 +556,24 @@
                     </div>
 
                     <div class="row">
+                        <span class="row-label">자간</span>
+                        <div class="stepper">
+                            <button type="button" onclick="adjustNum('input-letterspacing', -1, 0.5)">−</button>
+                            <input type="number" id="input-letterspacing" value="0" step="0.5" oninput="updateUI()">
+                            <button type="button" onclick="adjustNum('input-letterspacing', 1, 0.5)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <span class="row-label">장평</span>
+                        <div class="stepper">
+                            <button type="button" onclick="adjustNum('input-hscale', -1, 5)">−</button>
+                            <input type="number" id="input-hscale" value="100" step="5" oninput="updateUI()">
+                            <button type="button" onclick="adjustNum('input-hscale', 1, 5)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <span class="row-label">문단 간격</span>
                         <div class="stepper">
                             <button type="button" onclick="adjustNum('input-para-gap', -1, 5)">−</button>
@@ -1062,6 +1080,7 @@
             customFont: document.getElementById('input-custom-font'), color: document.getElementById('input-color'),
             size: document.getElementById('input-size'), pad: document.getElementById('input-padding'), lh: document.getElementById('input-lineheight'), align: document.getElementById('input-align'),
             paraGap: document.getElementById('input-para-gap'), htmlToggle: document.getElementById('html-mode-toggle'),
+            letterSpacing: document.getElementById('input-letterspacing'), hScale2: document.getElementById('input-hscale'),
             
             marginTop: document.getElementById('margin-top'), marginBottom: document.getElementById('margin-bottom'),
             marginLeft: document.getElementById('margin-left'), marginRight: document.getElementById('margin-right'),
@@ -1145,6 +1164,7 @@
                 DOM.pText.style.textAlign = 'left';
                 DOM.pText.style.wordBreak = 'normal';
                 DOM.pText.style.textShadow = 'none';
+                DOM.pText.style.letterSpacing = '';
                 
                 const hScale = parseFloat(DOM.htmlScale.value) || 1.0;
                 DOM.pText.style.transform = `scale(${hScale})`;
@@ -1164,6 +1184,15 @@
                 DOM.pText.style.lineHeight = DOM.lh.value;
                 DOM.pText.style.textAlign = DOM.align.value;
                 DOM.pText.style.wordBreak = DOM.charWrap.checked ? 'break-all' : 'keep-all';
+                DOM.pText.style.letterSpacing = (parseFloat(DOM.letterSpacing.value) || 0) + 'px';
+
+                // 장평(가로 폭 비율) — 글자 높이는 그대로 두고 가로 폭만 늘리거나 줄인다.
+                // 정렬 기준(왼쪽/가운데/오른쪽)에 맞춰 늘어나는 축이 자연스럽게 잡히도록
+                // transform-origin도 정렬값에 맞춰 같이 바꿔준다.
+                const hScale2 = (parseFloat(DOM.hScale2.value) || 100) / 100;
+                const originMap = { left: 'left center', center: 'center center', right: 'right center' };
+                DOM.pText.style.transform = hScale2 !== 1 ? `scaleX(${hScale2})` : 'none';
+                DOM.pText.style.transformOrigin = originMap[DOM.align.value] || 'center center';
                 
                 if (parseFloat(DOM.tsOpacity.value) > 0) {
                     const tsRgb = hexToRgbStr(DOM.tsColor.value);
@@ -1172,8 +1201,6 @@
                     DOM.pText.style.textShadow = 'none';
                 }
 
-                DOM.pText.style.transform = 'none'; 
-                
                 const gap = DOM.paraGap.value;
                 const lines = DOM.text.value.split('\n');
                 DOM.pText.innerHTML = lines.map(line => `<div style="margin-bottom: ${gap}px">${line || '<br>'}</div>`).join('');
@@ -1367,6 +1394,7 @@
             DOM.lh.value = defs.lh || 1.2; DOM.paraGap.value = defs.paraGap || 5;
             DOM.pad.value = defs.pad || 15; DOM.align.value = defs.align || 'center';
             DOM.charWrap.checked = defs.charWrap || false;
+            DOM.letterSpacing.value = defs.letterSpacing || 0; DOM.hScale2.value = defs.hScale2 || 100;
             
             currentFontVal = defs.font || "'Noto Serif KR', serif";
             const fontTrigger = document.getElementById('font-picker-trigger');
@@ -1454,7 +1482,12 @@
             val += delta * step;
             if (step < 1) val = parseFloat(val.toFixed(1)); 
             input.value = val;
-            updateUI(); 
+            // .value를 코드로 바꾸는 것만으로는 'input' 이벤트가 자동으로 발생하지 않는다
+            // (직접 타이핑할 때만 브라우저가 자동으로 쏴줌). 그래서 버튼으로 조절할 때는
+            // updateUI는 실행돼도, 'input' 이벤트에 걸려있는 다른 기능(예: 여백 조절 시
+            // 빨간 점선 가이드 표시)은 지금까지 전혀 반응하지 않았다. 이제 이벤트를
+            // 직접 쏴줘서, 타이핑이든 버튼 클릭이든 항상 똑같이 동작하게 한다.
+            input.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
         const inputs = [
@@ -1462,7 +1495,7 @@
             DOM.marginTop, DOM.marginBottom, DOM.marginLeft, DOM.marginRight, DOM.htmlScale, DOM.textX, DOM.textY,
             DOM.wmChar, DOM.wmCreator, DOM.wmSize, DOM.wmColor, DOM.wmX, DOM.wmY,
             DOM.ovMaskW, DOM.ovMaskH, DOM.ovMaskR, DOM.ovScale, DOM.ovX, DOM.ovY, DOM.ovInX, DOM.ovInY, DOM.ovFOpacity,
-            DOM.tsColor, DOM.tsOpacity, DOM.tsBlur, DOM.tsY
+            DOM.tsColor, DOM.tsOpacity, DOM.tsBlur, DOM.tsY, DOM.letterSpacing, DOM.hScale2
         ];
         inputs.forEach(el => el.addEventListener('input', updateUI));
         DOM.ovFColor.addEventListener('input', updateUI);
@@ -1822,6 +1855,7 @@
                 htmlScale: DOM.htmlScale.value,
                 font: currentFontVal, color: DOM.color.value, size: DOM.size.value,
                 pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value,
+                letterSpacing: DOM.letterSpacing.value, hScale2: DOM.hScale2.value,
                 forceCenter: DOM.forceCenter.checked, charWrap: DOM.charWrap.checked,
                 wmChar: DOM.wmChar.value, wmCreator: DOM.wmCreator.value, wmSize: DOM.wmSize.value, wmColor: DOM.wmColor.value,
                 wmX: DOM.wmX.value, wmY: DOM.wmY.value,
@@ -1847,6 +1881,7 @@
             DOM.htmlScale.value = config.htmlScale || 1.0;
             DOM.color.value = config.color || '#222222'; DOM.size.value = config.size || 24;
             DOM.pad.value = config.pad || 15; DOM.lh.value = config.lh || 1.2; DOM.align.value = config.align || 'center';
+            DOM.letterSpacing.value = config.letterSpacing || 0; DOM.hScale2.value = config.hScale2 || 100;
             DOM.htmlToggle.checked = !!config.isHtmlMode;
             
             DOM.forceCenter.checked = !!config.forceCenter;
@@ -1915,12 +1950,13 @@
         function closeModal() { document.getElementById('save-modal').style.display = 'none'; }
         
         let toastTimeout;
-        function showToast(msg) {
+        function showToast(msg, persistent = false) {
             const toast = document.getElementById('toast');
             toast.textContent = msg; toast.classList.add('show');
-            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => hideToast(), 2000);
+            clearTimeout(toastTimeout);
+            if (!persistent) toastTimeout = setTimeout(() => hideToast(), 2000);
         }
-        function hideToast() { document.getElementById('toast').classList.remove('show'); }
+        function hideToast() { clearTimeout(toastTimeout); document.getElementById('toast').classList.remove('show'); }
 
         /* -------------------------------------------------------------
            💡 html-to-image 전용: 폰트 다운로드 렉 차단
@@ -2286,7 +2322,7 @@
                     return await captureViaServer(scaleRatio, isPng);
                 } catch (err) {
                     console.warn('서버 캡쳐 실패, 클라이언트 캡쳐로 대체합니다:', err);
-                    showToast('⚠️ 서버 캡쳐 실패 — 브라우저 자체 캡쳐로 대신 진행합니다.');
+                    showToast('⚠️ 서버 캡쳐 실패 — 브라우저 자체 캡쳐로 대신 진행합니다.', true);
                     return await captureInSandbox(scaleRatio, isPng);
                 }
             }
@@ -2295,16 +2331,16 @@
 
         async function downloadCard() {
             if (isCapturing) return;
-            isCapturing = true; showToast('캡처를 준비 중입니다. 잠시만 기다려주세요...');
+            isCapturing = true; showToast('📸 캡쳐중입니다... 잠시만 기다려주세요.', true);
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
                 const dataUrl = await captureImage(2, true); 
                 const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`; link.href = dataUrl; link.click();
-                showToast('다운로드가 완료되었습니다!');
+                hideToast(); showToast('다운로드가 완료되었습니다!');
             } catch (err) {
-                showToast('캡처 중 오류가 발생했습니다.'); console.error(err);
+                hideToast(); showToast('캡처 중 오류가 발생했습니다.'); console.error(err);
             } finally {
                 DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false;
             }
@@ -2312,7 +2348,7 @@
 
         async function copyToClipboard() {
             if (isCapturing) return;
-            isCapturing = true; showToast('클립보드에 복사 중입니다. 잠시만 기다려주세요...');
+            isCapturing = true; showToast('📸 캡쳐중입니다... 잠시만 기다려주세요.', true);
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
@@ -2321,10 +2357,10 @@
                 const res = await fetch(dataUrl); const blob = await res.blob();
                 if (navigator.clipboard && navigator.clipboard.write) {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                    showToast('클립보드에 이미지가 복사되었습니다!');
-                } else { showToast('이 브라우저에서는 클립보드 복사 기능을 지원하지 않습니다.'); }
+                    hideToast(); showToast('클립보드에 이미지가 복사되었습니다!');
+                } else { hideToast(); showToast('이 브라우저에서는 클립보드 복사 기능을 지원하지 않습니다.'); }
             } catch (err) {
-                showToast('클립보드 복사 중 오류가 발생했습니다.'); console.error(err);
+                hideToast(); showToast('클립보드 복사 중 오류가 발생했습니다.'); console.error(err);
             } finally {
                 DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false;
             }
@@ -2340,7 +2376,7 @@
 
         async function saveToIndexedDB() {
             if (isCapturing) return;
-            isCapturing = true; showToast('데이터를 저장 중입니다. 잠시만 기다려주세요...');
+            isCapturing = true; showToast('📸 캡쳐중입니다... 잠시만 기다려주세요.', true);
             const tags = document.getElementById('modal-tags').value; const memo = document.getElementById('modal-memo').value;
             const configData = getCurrentConfig(); 
             const currentScale = DOM.scale.value;
@@ -2350,8 +2386,8 @@
                 const imgData = await captureImage(2, false); 
                 const newItem = { id: Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
                 const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').add(newItem);
-                tx.oncomplete = () => { closeModal(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!'); loadGallery(); };
-            } catch (err) { showToast('이미지 처리 중 오류가 발생해 저장하지 못했습니다.'); console.error(err);
+                tx.oncomplete = () => { closeModal(); hideToast(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!'); loadGallery(); };
+            } catch (err) { hideToast(); showToast('이미지 처리 중 오류가 발생해 저장하지 못했습니다.'); console.error(err);
             } finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
         }
 
