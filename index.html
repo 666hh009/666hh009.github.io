@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로 (v4)</title>
+    <title>AI 대화 아카이브(v4.1)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -828,7 +828,14 @@
                         <svg class="collapsible-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
-                        <div class="section-note" style="margin-bottom:12px;">직접 배포한 서버(Worker) 주소를 넣으면, 다운로드·복사·아카이브 저장이 전부 이 서버를 거쳐서 진짜 브라우저로 캡쳐됩니다. 비워두면 지금처럼 브라우저 자체 캡쳐를 씁니다.</div>
+                        <div class="row" style="padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px dashed var(--line);">
+                            <span class="row-label" style="font-weight:700;">서버 캡쳐 사용</span>
+                            <label class="row-switch">
+                                <input type="checkbox" id="capture-server-enabled-toggle" onchange="toggleCaptureServerEnabled()">
+                                <span class="track"></span>
+                            </label>
+                        </div>
+                        <div class="section-note" style="margin-bottom:12px;">주소/토큰은 꺼둬도 계속 저장되어 있습니다. 텍스트만 빠르게 내보낼 땐 꺼서 브라우저 자체 캡쳐(더 빠름)를 쓰고, 정확한 결과물이 필요할 땐 켜주세요.</div>
                         <div class="row" style="flex-direction: column; align-items: stretch; gap: 6px;">
                             <span class="row-label">Worker 주소</span>
                             <input type="text" id="capture-server-url" placeholder="https://xxxx.workers.dev" style="width:100%; height:32px; border:1px solid var(--line); border-radius:var(--radius-sm); padding:0 10px; font-size:0.78rem; font-family: var(--mono);">
@@ -842,6 +849,12 @@
                             <button class="action-btn" onclick="testCaptureServer()" style="flex:1; justify-content:center;">연결 테스트</button>
                         </div>
                         <p id="capture-server-status" class="section-note" style="margin-top:10px; margin-bottom:0; font-weight:600;"></p>
+
+                        <div class="row" style="margin-top:14px; padding-top:12px; border-top: 1px dashed var(--line);">
+                            <span class="row-label">오늘 사용량</span>
+                            <button class="action-btn" onclick="refreshCaptureUsage()" style="height:28px; padding:0 10px; font-size:0.72rem;">새로고침</button>
+                        </div>
+                        <p id="capture-usage-status" class="section-note" style="margin-top:6px; margin-bottom:0;">아직 조회 안 함</p>
                     </div>
                 </div>
 
@@ -997,6 +1010,7 @@
                                 <div id="guide-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease;">
                                     <div id="guide-box" style="width:100%; height:100%; border: 2px dashed #ff4757; box-sizing:border-box; background-clip: content-box; background-color: rgba(255,71,87,0.08);"></div>
                                 </div>
+                                <div id="guide-overlay-text" style="position: absolute; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; box-sizing: border-box;"></div>
                             </div>
                         </div>
                     </div>
@@ -1501,17 +1515,48 @@
         DOM.ovFColor.addEventListener('input', updateUI);
         
         // 여백 및 간격 조절 시 점선 가이드라인 표시
+        // 내부 여백(빨강)은 카드 테두리 기준 박스를, 줄 간격(파랑)/문단 간격(주황)은
+        // 실제 텍스트 영역 기준 박스를 보여줘서 서로 다른 색으로 구분한다.
         let guideTimer;
-        function showVisualGuide() {
-            if(DOM.htmlToggle.checked) return;
-            const overlay = document.getElementById('guide-overlay');
-            const box = document.getElementById('guide-box');
-            box.style.padding = DOM.pad.value + 'px';
-            overlay.style.opacity = '1';
+        function showVisualGuide(type) {
+            if (DOM.htmlToggle.checked) return;
+
+            if (type === 'padding') {
+                const overlay = document.getElementById('guide-overlay');
+                const box = document.getElementById('guide-box');
+                box.style.padding = DOM.pad.value + 'px';
+                overlay.style.opacity = '1';
+                clearTimeout(guideTimer);
+                guideTimer = setTimeout(() => { overlay.style.opacity = '0'; }, 1000);
+                return;
+            }
+
+            const colors = {
+                lineheight: { border: '#4a7fff', bg: 'rgba(74,127,255,0.08)' },
+                paragap: { border: '#ff9f43', bg: 'rgba(255,159,67,0.08)' }
+            };
+            const c = colors[type];
+            if (!c) return;
+
+            const textOverlay = document.getElementById('guide-overlay-text');
+            const textRect = DOM.pText.getBoundingClientRect();
+            const cardRect = DOM.preview.getBoundingClientRect();
+            const scale = parseFloat(DOM.scale.value) || 1;
+
+            textOverlay.style.left = ((textRect.left - cardRect.left) / scale) + 'px';
+            textOverlay.style.top = ((textRect.top - cardRect.top) / scale) + 'px';
+            textOverlay.style.width = (textRect.width / scale) + 'px';
+            textOverlay.style.height = (textRect.height / scale) + 'px';
+            textOverlay.style.border = `2px dashed ${c.border}`;
+            textOverlay.style.backgroundColor = c.bg;
+            textOverlay.style.opacity = '1';
+
             clearTimeout(guideTimer);
-            guideTimer = setTimeout(() => { overlay.style.opacity = '0'; }, 1000);
+            guideTimer = setTimeout(() => { textOverlay.style.opacity = '0'; }, 1000);
         }
-        [DOM.pad, DOM.lh, DOM.paraGap].forEach(el => el.addEventListener('input', showVisualGuide));
+        DOM.pad.addEventListener('input', () => showVisualGuide('padding'));
+        DOM.lh.addEventListener('input', () => showVisualGuide('lineheight'));
+        DOM.paraGap.addEventListener('input', () => showVisualGuide('paragap'));
 
         window.onload = () => {
             setupFontPicker();
@@ -1525,7 +1570,12 @@
             const savedServerSecret = localStorage.getItem('archive_capture_server_secret');
             if (savedServerUrl) document.getElementById('capture-server-url').value = savedServerUrl;
             if (savedServerSecret) document.getElementById('capture-server-secret').value = savedServerSecret;
+
+            const enabledPref = localStorage.getItem('archive_capture_server_enabled');
+            const isEnabled = enabledPref === null ? !!savedServerUrl : enabledPref === 'true';
+            document.getElementById('capture-server-enabled-toggle').checked = isEnabled;
             updateCaptureServerStatusLabel();
+            if (savedServerUrl) refreshCaptureUsage();
 
             const saved = localStorage.getItem('archive_autosave');
             if(saved) {
@@ -1535,13 +1585,31 @@
             }
         };
 
+        function toggleCaptureServerEnabled() {
+            const checked = document.getElementById('capture-server-enabled-toggle').checked;
+            localStorage.setItem('archive_capture_server_enabled', checked ? 'true' : 'false');
+            updateCaptureServerStatusLabel();
+            showToast(checked ? '서버 캡쳐를 켰습니다.' : '서버 캡쳐를 껐습니다 — 브라우저 자체 캡쳐를 씁니다.');
+        }
+
         function saveCaptureServerSettings() {
             const url = document.getElementById('capture-server-url').value.trim();
             const secret = document.getElementById('capture-server-secret').value.trim();
+            const hadUrlBefore = !!localStorage.getItem('archive_capture_server_url');
+            const hadExplicitPref = localStorage.getItem('archive_capture_server_enabled') !== null;
+
             if (url) localStorage.setItem('archive_capture_server_url', url);
             else localStorage.removeItem('archive_capture_server_url');
             if (secret) localStorage.setItem('archive_capture_server_secret', secret);
             else localStorage.removeItem('archive_capture_server_secret');
+
+            // 처음으로 주소를 등록하는 거고, 켜고 끄기를 아직 한 번도 직접
+            // 선택한 적 없다면 편의상 자동으로 켜준다.
+            if (url && !hadUrlBefore && !hadExplicitPref) {
+                document.getElementById('capture-server-enabled-toggle').checked = true;
+                localStorage.setItem('archive_capture_server_enabled', 'true');
+            }
+
             updateCaptureServerStatusLabel();
             showToast(url ? '서버 캡쳐 설정이 저장되었습니다.' : '서버 주소가 비워져 브라우저 자체 캡쳐로 돌아갑니다.');
         }
@@ -1550,8 +1618,10 @@
             const el = document.getElementById('capture-server-status');
             if (!el) return;
             const url = localStorage.getItem('archive_capture_server_url');
-            if (url) { el.style.color = 'var(--accent)'; el.textContent = `✓ 서버 캡쳐 사용 중: ${url}`; }
-            else { el.style.color = 'var(--ink-soft)'; el.textContent = '서버 미설정 — 브라우저 자체 캡쳐 사용 중'; }
+            const enabled = document.getElementById('capture-server-enabled-toggle').checked;
+            if (!url) { el.style.color = 'var(--ink-soft)'; el.textContent = '서버 미설정 — 브라우저 자체 캡쳐 사용 중'; }
+            else if (!enabled) { el.style.color = 'var(--ink-soft)'; el.textContent = `⏸ 서버 캡쳐 꺼짐 (주소는 저장됨) — 브라우저 자체 캡쳐 사용 중`; }
+            else { el.style.color = 'var(--accent)'; el.textContent = `✓ 서버 캡쳐 사용 중: ${url}`; }
         }
 
         async function testCaptureServer() {
@@ -1568,10 +1638,49 @@
                 statusEl.style.color = '#2f9e44';
                 statusEl.textContent = '✓ 서버 캡쳐 연결 성공! 실제 다운로드도 이 서버를 사용합니다.';
                 showToast('서버 캡쳐 연결에 성공했습니다.');
+                refreshCaptureUsage();
             } catch (err) {
                 statusEl.style.color = 'var(--danger)';
                 statusEl.textContent = '✗ 연결 실패: ' + (err && err.message ? err.message : String(err));
                 showToast('서버 캡쳐 연결에 실패했습니다. 주소/배포 상태를 확인해주세요.');
+            }
+        }
+
+        /* -------------------------------------------------------------
+           오늘 서버 사용량 조회
+           - Worker가 Cloudflare 과금 기준과 똑같은 방식(브라우저를 켠
+             순간부터 끈 순간까지)으로 직접 재서 KV에 저장해둔 값을
+             그대로 가져와서 보여준다.
+        ------------------------------------------------------------- */
+        async function refreshCaptureUsage() {
+            const url = localStorage.getItem('archive_capture_server_url');
+            const statusEl = document.getElementById('capture-usage-status');
+            if (!url) { statusEl.textContent = '서버 주소를 먼저 설정해주세요.'; return; }
+
+            const secret = localStorage.getItem('archive_capture_server_secret') || '';
+            statusEl.style.color = 'var(--ink-soft)';
+            statusEl.textContent = '조회 중...';
+            try {
+                const resp = await fetch(url, {
+                    method: 'GET',
+                    headers: secret ? { 'X-Capture-Secret': secret } : {}
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+
+                if (data.error === 'KV_NOT_CONFIGURED') {
+                    statusEl.style.color = 'var(--danger)';
+                    statusEl.textContent = '⚠️ ' + data.message;
+                    return;
+                }
+
+                const min = Math.floor(data.usedMinutes);
+                const sec = Math.round((data.usedMinutes - min) * 60);
+                statusEl.style.color = data.percentUsed >= 90 ? 'var(--danger)' : (data.percentUsed >= 60 ? '#e08e00' : '#2f9e44');
+                statusEl.textContent = `오늘 ${min}분 ${sec}초 사용 / ${data.limitMinutes}분 중 (${data.percentUsed}%) — 약 ${data.remainingMinutes}분 남음`;
+            } catch (err) {
+                statusEl.style.color = 'var(--danger)';
+                statusEl.textContent = '조회 실패: ' + (err && err.message ? err.message : String(err));
             }
         }
 
@@ -2129,6 +2238,8 @@
 
             const guide = cloneEl.querySelector('#guide-overlay');
             if (guide) guide.parentNode.removeChild(guide);
+            const guideText = cloneEl.querySelector('#guide-overlay-text');
+            if (guideText) guideText.parentNode.removeChild(guideText);
 
             cloneEl.style.transform = 'none';
             cloneEl.style.boxShadow = 'none';
@@ -2312,14 +2423,18 @@
         }
 
         /* -------------------------------------------------------------
-           캡쳐 진입점: 서버가 설정되어 있으면 서버로, 아니면(또는 서버
-           호출이 실패하면) 기존 클라이언트 방식으로 자동 대체한다.
+           캡쳐 진입점: 서버가 설정되어 있고 "서버 캡쳐 사용"이 켜져 있으면
+           서버로, 아니면(꺼져있거나, 또는 서버 호출이 실패하면) 기존
+           클라이언트 방식으로 자동 대체한다.
         ------------------------------------------------------------- */
         async function captureImage(scaleRatio, isPng) {
             const serverUrl = localStorage.getItem('archive_capture_server_url');
-            if (serverUrl) {
+            const serverEnabled = localStorage.getItem('archive_capture_server_enabled') === 'true';
+            if (serverUrl && serverEnabled) {
                 try {
-                    return await captureViaServer(scaleRatio, isPng);
+                    const result = await captureViaServer(scaleRatio, isPng);
+                    refreshCaptureUsage(); // 결과를 기다리지 않고 백그라운드로 갱신
+                    return result;
                 } catch (err) {
                     console.warn('서버 캡쳐 실패, 클라이언트 캡쳐로 대체합니다:', err);
                     showToast('⚠️ 서버 캡쳐 실패 — 브라우저 자체 캡쳐로 대신 진행합니다.', true);
@@ -2336,7 +2451,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const dataUrl = await captureImage(2, true); 
+                const dataUrl = await captureImage(1, true); 
                 const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`; link.href = dataUrl; link.click();
                 hideToast(); showToast('다운로드가 완료되었습니다!');
             } catch (err) {
@@ -2353,7 +2468,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const dataUrl = await captureImage(2, true); 
+                const dataUrl = await captureImage(1, true); 
                 const res = await fetch(dataUrl); const blob = await res.blob();
                 if (navigator.clipboard && navigator.clipboard.write) {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
@@ -2383,7 +2498,7 @@
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
-                const imgData = await captureImage(2, false); 
+                const imgData = await captureImage(1, false); 
                 const newItem = { id: Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
                 const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').add(newItem);
                 tx.oncomplete = () => { closeModal(); hideToast(); showToast('값과 렌더링 데이터가 아카이브에 저장되었습니다!'); loadGallery(); };
