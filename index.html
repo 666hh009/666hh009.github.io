@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 )</title>
+    <title>AI 대화 아카이브 프로</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -632,6 +632,7 @@
                                 <input type="number" id="text-y" value="0" oninput="updateUI()">
                                 <button type="button" onclick="adjustNum('text-y', 5, 5)">+</button>
                             </div>
+                            <button class="action-btn" onclick="resetTextOffset()" style="height: 32px; padding: 0 8px;" title="텍스트 위치 초기화">↺ 초기화</button>
                         </div>
                     </div>
                 </div>
@@ -708,6 +709,7 @@
                             <div class="row-control">
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-x', -10, 10)">−</button><input type="number" id="ov-x" value="0"><button type="button" onclick="adjustNum('ov-x', 10, 10)">+</button></div>
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-y', -10, 10)">−</button><input type="number" id="ov-y" value="0"><button type="button" onclick="adjustNum('ov-y', 10, 10)">+</button></div>
+                                <button class="action-btn" onclick="resetOverlayMaskOffset()" style="height: 32px; padding: 0 8px;" title="틀 위치 초기화">↺ 초기화</button>
                             </div>
                         </div>
                         <div class="row" style="padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px dashed var(--line);">
@@ -723,17 +725,14 @@
                             <div class="row-control">
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -10, 10)">−</button><input type="number" id="ov-in-x" value="0"><button type="button" onclick="adjustNum('ov-in-x', 10, 10)">+</button></div>
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -10, 10)">−</button><input type="number" id="ov-in-y" value="0"><button type="button" onclick="adjustNum('ov-in-y', 10, 10)">+</button></div>
+                                <button class="action-btn" onclick="resetOverlayImageOffset()" style="height: 32px; padding: 0 8px;" title="내부 이미지 위치/배율 초기화">↺ 초기화</button>
                             </div>
                         </div>
                         <div class="row">
-                            <span class="row-label">내부 이미지 배율</span>
-                            <div class="stepper"><button type="button" onclick="adjustNum('ov-scale', -1, 0.1)">−</button><input type="number" id="ov-scale" value="1.0" step="0.1"><button type="button" onclick="adjustNum('ov-scale', 1, 0.1)">+</button></div>
-                        </div>
-                        <div class="row">
                             <span class="row-label">내부 이미지 드래그 이동</span>
-                            <button type="button" class="action-btn" id="btn-ov-img-drag" onclick="toggleDragMode('ovImg')" title="드래그로 내부 이미지 위치 이동">
+                            <button type="button" class="action-btn" id="btn-ov-img-drag" onclick="toggleDragMode('ovImg')" title="드래그로 위치를, 휠로 크기를 조절하세요">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                이동
+                                이동 · 휠로 확대
                             </button>
                         </div>
                     </div>
@@ -766,6 +765,7 @@
                             <div class="row-control">
                                 <div class="stepper"><button type="button" onclick="adjustNum('wm-x', -5, 5)">−</button><input type="number" id="wm-x" value="0"><button type="button" onclick="adjustNum('wm-x', 5, 5)">+</button></div>
                                 <div class="stepper"><button type="button" onclick="adjustNum('wm-y', -5, 5)">−</button><input type="number" id="wm-y" value="0"><button type="button" onclick="adjustNum('wm-y', 5, 5)">+</button></div>
+                                <button class="action-btn" onclick="resetWatermarkOffset()" style="height: 32px; padding: 0 8px;" title="출처 표시 위치 초기화">↺ 초기화</button>
                             </div>
                         </div>
                         <div class="row">
@@ -872,6 +872,15 @@
                             </label>
                         </div>
                         <div class="section-note" style="margin-bottom:14px;">켜면 미리보기 우측 아이콘들이 투명해지지 않고 항상 켜져있습니다.</div>
+
+                        <div class="row" style="flex-direction: column; align-items: stretch; gap: 6px; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px dashed var(--line);">
+                            <span class="row-label" style="font-weight:700;">휠 확대축소 민감도</span>
+                            <div class="row-control" style="width: 100%;">
+                                <input type="range" id="wheel-sensitivity-slider" min="0.00005" max="0.001" step="0.00005" value="0.0002" oninput="updateWheelSensitivity()" style="flex:1;">
+                                <span class="row-hex" id="wheel-sensitivity-readout" style="min-width: 60px; text-align:right;">0.0002</span>
+                            </div>
+                            <p class="section-note" style="margin:0;">배경 이미지와 오버레이 내부 이미지, 둘 다 휠로 확대/축소할 때 공통으로 적용됩니다. 값이 작을수록 더 미세하게 조절됩니다.</p>
+                        </div>
 
                         <div style="display: flex; gap: 8px; margin-bottom: 10px;">
                             <button class="action-btn" onclick="saveTypoDefault()" style="flex: 1; justify-content:center;" title="현재의 폰트, 여백, 정렬 상태를 기본값으로 저장합니다.">타이포 기본값 저장</button>
@@ -1007,9 +1016,6 @@
                                     <div id="preview-text" style="text-align: center; word-break: keep-all; width: 100%; pointer-events: auto;"></div>
                                 </div>
                                 
-                                <div id="guide-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease;">
-                                    <div id="guide-box" style="width:100%; height:100%; border: 2px dashed #ff4757; box-sizing:border-box; background-clip: content-box; background-color: rgba(255,71,87,0.08);"></div>
-                                </div>
                                 <div id="guide-overlay-text" style="position: absolute; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; box-sizing: border-box;"></div>
                             </div>
                         </div>
@@ -1081,6 +1087,10 @@
         
         let bgScale = 1.0;
         let bgOffsetX = 0, bgOffsetY = 0;
+        let ovScale = 1.0;
+        // 배경/오버레이 이미지 휠 확대축소 민감도 (작을수록 더 미세하게 조절됨).
+        // 시스템 설정에서 조절 가능하고, localStorage에 저장되어 계속 기억된다.
+        let wheelZoomSensitivity = parseFloat(localStorage.getItem('archive_wheel_zoom_sensitivity')) || 0.0002;
         
         // ESC 취소를 위한 임시 기억소
         let origX = 0, origY = 0;
@@ -1115,7 +1125,7 @@
             wmSize: document.getElementById('wm-size'), wmColor: document.getElementById('wm-color'),
             wmX: document.getElementById('wm-x'), wmY: document.getElementById('wm-y'),
             
-            ovUpload: document.getElementById('ov-upload'), ovScale: document.getElementById('ov-scale'),
+            ovUpload: document.getElementById('ov-upload'),
             ovMaskW: document.getElementById('ov-mask-w'), ovMaskH: document.getElementById('ov-mask-h'), ovMaskR: document.getElementById('ov-mask-r'),
             ovX: document.getElementById('ov-x'), ovY: document.getElementById('ov-y'),
             ovInX: document.getElementById('ov-in-x'), ovInY: document.getElementById('ov-in-y'),
@@ -1135,10 +1145,12 @@
         function shellSetAlign(val) {
             DOM.align.value = val;
             updateUI();
+            showVisualGuide();
         }
         function shellSetWrap(isChar) {
             DOM.charWrap.checked = isChar;
             updateUI();
+            showVisualGuide();
         }
 
         function updateUI() {
@@ -1244,7 +1256,7 @@
             }
 
             // 내부 이미지 이동 (틀 정중앙 영점 기준)
-            ovTransform.style.transform = `translate(calc(-50% + ${DOM.ovInX.value}px), calc(-50% + ${-DOM.ovInY.value}px)) scale(${DOM.ovScale.value})`;
+            ovTransform.style.transform = `translate(calc(-50% + ${DOM.ovInX.value}px), calc(-50% + ${-DOM.ovInY.value}px)) scale(${ovScale})`;
 
             // 워터마크 좌표 정상화 (정중앙 0,0 기준)
             const wmTransform = document.getElementById('watermark-transform');
@@ -1440,7 +1452,7 @@
             DOM.wmX.value = defs.wmX || 0; DOM.wmY.value = defs.wmY || 0;
 
             DOM.ovMaskW.value = defs.ovMaskW || 300; DOM.ovMaskH.value = defs.ovMaskH || 300; DOM.ovMaskR.value = defs.ovMaskR || 0;
-            DOM.ovScale.value = defs.ovScale || 1.0; 
+            ovScale = defs.ovScale || 1.0; 
             DOM.ovX.value = defs.ovX || 0; DOM.ovY.value = defs.ovY || 0;
             DOM.ovInX.value = defs.ovInX || 0; DOM.ovInY.value = defs.ovInY || 0;
             DOM.ovFColor.value = defs.ovFColor || '#000000'; DOM.ovFOpacity.value = defs.ovFOpacity || 0;
@@ -1496,6 +1508,39 @@
             updateBgLayer();
         }
 
+        function updateWheelSensitivity() {
+            const val = parseFloat(document.getElementById('wheel-sensitivity-slider').value);
+            wheelZoomSensitivity = val;
+            document.getElementById('wheel-sensitivity-readout').textContent = val;
+            localStorage.setItem('archive_wheel_zoom_sensitivity', String(val));
+        }
+
+        function resetTextOffset() {
+            document.getElementById('text-x').value = 0;
+            document.getElementById('text-y').value = 0;
+            updateUI();
+            showVisualGuide();
+        }
+
+        function resetOverlayMaskOffset() {
+            document.getElementById('ov-x').value = 0;
+            document.getElementById('ov-y').value = 0;
+            updateUI();
+        }
+
+        function resetOverlayImageOffset() {
+            document.getElementById('ov-in-x').value = 0;
+            document.getElementById('ov-in-y').value = 0;
+            ovScale = 1.0;
+            updateUI();
+        }
+
+        function resetWatermarkOffset() {
+            document.getElementById('wm-x').value = 0;
+            document.getElementById('wm-y').value = 0;
+            updateUI();
+        }
+
         function adjustNum(id, delta, step = 1) {
             const input = document.getElementById(id);
             let val = parseFloat(input.value) || 0;
@@ -1514,35 +1559,20 @@
             DOM.width, DOM.height, DOM.bgColor, DOM.dim, DOM.color, DOM.size, DOM.pad, DOM.lh, DOM.paraGap, 
             DOM.marginTop, DOM.marginBottom, DOM.marginLeft, DOM.marginRight, DOM.htmlScale, DOM.textX, DOM.textY,
             DOM.wmChar, DOM.wmCreator, DOM.wmSize, DOM.wmColor, DOM.wmX, DOM.wmY,
-            DOM.ovMaskW, DOM.ovMaskH, DOM.ovMaskR, DOM.ovScale, DOM.ovX, DOM.ovY, DOM.ovInX, DOM.ovInY, DOM.ovFOpacity,
+            DOM.ovMaskW, DOM.ovMaskH, DOM.ovMaskR, DOM.ovX, DOM.ovY, DOM.ovInX, DOM.ovInY, DOM.ovFOpacity,
             DOM.tsColor, DOM.tsOpacity, DOM.tsBlur, DOM.tsY, DOM.letterSpacing, DOM.hScale2
         ];
         inputs.forEach(el => el.addEventListener('input', updateUI));
         DOM.ovFColor.addEventListener('input', updateUI);
         
-        // 여백 및 간격 조절 시 점선 가이드라인 표시
-        // 내부 여백(빨강)은 카드 테두리 기준 박스를, 줄 간격(파랑)/문단 간격(주황)은
-        // 실제 텍스트 영역 기준 박스를 보여줘서 서로 다른 색으로 구분한다.
+        // 타이포그래피 영역에서 뭘 수정하든, 실제 텍스트 박스의 현재 위치/크기를
+        // 그대로 빨간 점선으로 보여준다. (이전엔 내부 여백만 카드 중앙 기준으로
+        // 고정된 박스를 보여줘서, 텍스트를 드래그로 옮겨둔 상태에서는 그 박스
+        // 위치가 실제 텍스트 위치와 안 맞는 문제가 있었다. getBoundingClientRect로
+        // 매번 실측하므로 드래그 이동 여부와 무관하게 항상 정확하다.)
         let guideTimer;
-        function showVisualGuide(type) {
+        function showVisualGuide() {
             if (DOM.htmlToggle.checked) return;
-
-            if (type === 'padding') {
-                const overlay = document.getElementById('guide-overlay');
-                const box = document.getElementById('guide-box');
-                box.style.padding = DOM.pad.value + 'px';
-                overlay.style.opacity = '1';
-                clearTimeout(guideTimer);
-                guideTimer = setTimeout(() => { overlay.style.opacity = '0'; }, 1000);
-                return;
-            }
-
-            const colors = {
-                lineheight: { border: '#4a7fff', bg: 'rgba(74,127,255,0.08)' },
-                paragap: { border: '#ff9f43', bg: 'rgba(255,159,67,0.08)' }
-            };
-            const c = colors[type];
-            if (!c) return;
 
             const textOverlay = document.getElementById('guide-overlay-text');
             const textRect = DOM.pText.getBoundingClientRect();
@@ -1553,16 +1583,17 @@
             textOverlay.style.top = ((textRect.top - cardRect.top) / scale) + 'px';
             textOverlay.style.width = (textRect.width / scale) + 'px';
             textOverlay.style.height = (textRect.height / scale) + 'px';
-            textOverlay.style.border = `2px dashed ${c.border}`;
-            textOverlay.style.backgroundColor = c.bg;
+            textOverlay.style.border = '2px dashed #ff4757';
+            textOverlay.style.backgroundColor = 'rgba(255,71,87,0.08)';
             textOverlay.style.opacity = '1';
 
             clearTimeout(guideTimer);
             guideTimer = setTimeout(() => { textOverlay.style.opacity = '0'; }, 1000);
         }
-        DOM.pad.addEventListener('input', () => showVisualGuide('padding'));
-        DOM.lh.addEventListener('input', () => showVisualGuide('lineheight'));
-        DOM.paraGap.addEventListener('input', () => showVisualGuide('paragap'));
+        [DOM.pad, DOM.lh, DOM.paraGap, DOM.letterSpacing, DOM.hScale2, DOM.size].forEach(el => el.addEventListener('input', showVisualGuide));
+        DOM.align.addEventListener('change', showVisualGuide);
+        DOM.charWrap.addEventListener('change', showVisualGuide);
+        DOM.color.addEventListener('input', showVisualGuide);
 
         window.onload = () => {
             setupFontPicker();
@@ -1571,6 +1602,9 @@
                 document.getElementById('toolbar-always-toggle').checked = true;
                 document.body.classList.add('toolbar-always');
             }
+
+            document.getElementById('wheel-sensitivity-slider').value = wheelZoomSensitivity;
+            document.getElementById('wheel-sensitivity-readout').textContent = wheelZoomSensitivity;
 
             const savedServerUrl = localStorage.getItem('archive_capture_server_url');
             const savedServerSecret = localStorage.getItem('archive_capture_server_secret');
@@ -1742,7 +1776,7 @@
 
         function removeOvImg() { 
             currentOvImageDataUrl = ''; DOM.ovUpload.value = ''; 
-            DOM.ovInX.value = 0; DOM.ovInY.value = 0; DOM.ovScale.value = 1.0;
+            DOM.ovInX.value = 0; DOM.ovInY.value = 0; ovScale = 1.0;
             document.getElementById('overlay-img-content').src = '';
             document.getElementById('overlay-img-content').style.display = 'none';
             updateUI(); 
@@ -1777,7 +1811,7 @@
                     'bg': '배경을 움직이거나 휠로 크기를 조절하세요. (ESC 취소)',
                     'text': '마우스 드래그로 요소 위치를 조절하세요. (ESC 취소)',
                     'ovMask': '마스크 틀 자체를 이동합니다. (ESC 취소)',
-                    'ovImg': '마스크 틀 안의 이미지만 자르기 이동합니다. (ESC 취소)',
+                    'ovImg': '이미지를 움직이거나 휠로 크기를 조절하세요. (ESC 취소)',
                     'wm': '워터마크 위치를 이동합니다. (ESC 취소)'
                 };
                 showToast(msgs[mode]);
@@ -1839,8 +1873,8 @@
                 updateUI();
             }
             else if (dragMode === 'ovImg') {
-                const innerDx = dx / parseFloat(DOM.ovScale.value || 1);
-                const innerDyMath = dyMath / parseFloat(DOM.ovScale.value || 1);
+                const innerDx = dx / (ovScale || 1);
+                const innerDyMath = dyMath / (ovScale || 1);
                 DOM.ovInX.value = Math.round(origX + innerDx); DOM.ovInY.value = Math.round(origY + innerDyMath);
                 updateUI();
             }
@@ -1853,11 +1887,17 @@
         window.addEventListener('mouseup', () => { isDragging = false; });
 
         DOM.preview.addEventListener('wheel', (e) => {
-            if (dragMode !== 'bg' || !currentBgImageDataUrl) return;
-            e.preventDefault();
-            bgScale -= e.deltaY * 0.0005; 
-            bgScale = Math.max(0.1, Math.min(bgScale, 10)); 
-            updateBgLayer();
+            if (dragMode === 'bg' && currentBgImageDataUrl) {
+                e.preventDefault();
+                bgScale -= e.deltaY * wheelZoomSensitivity;
+                bgScale = Math.max(0.1, Math.min(bgScale, 10));
+                updateBgLayer();
+            } else if (dragMode === 'ovImg' && currentOvImageDataUrl) {
+                e.preventDefault();
+                ovScale -= e.deltaY * wheelZoomSensitivity;
+                ovScale = Math.max(0.1, Math.min(ovScale, 10));
+                updateUI();
+            }
         }, { passive: false });
 
 
@@ -1923,6 +1963,7 @@
                     fontTrigger.style.fontFamily = currentFontVal;
                     fontOptions.classList.remove('open');
                     updateUI();
+                    showVisualGuide();
                 });
             });
         }
@@ -1975,7 +2016,7 @@
                 wmChar: DOM.wmChar.value, wmCreator: DOM.wmCreator.value, wmSize: DOM.wmSize.value, wmColor: DOM.wmColor.value,
                 wmX: DOM.wmX.value, wmY: DOM.wmY.value,
                 ovImg: currentOvImageDataUrl, ovMaskW: DOM.ovMaskW.value, ovMaskH: DOM.ovMaskH.value, ovMaskR: DOM.ovMaskR.value, 
-                ovScale: DOM.ovScale.value, ovX: DOM.ovX.value, ovY: DOM.ovY.value, ovInX: DOM.ovInX.value, ovInY: DOM.ovInY.value,
+                ovScale: ovScale, ovX: DOM.ovX.value, ovY: DOM.ovY.value, ovInX: DOM.ovInX.value, ovInY: DOM.ovInY.value,
                 ovFColor: DOM.ovFColor.value, ovFOpacity: DOM.ovFOpacity.value,
                 tsColor: DOM.tsColor.value, tsOpacity: DOM.tsOpacity.value, tsBlur: DOM.tsBlur.value, tsY: DOM.tsY.value
             };
@@ -2006,7 +2047,7 @@
             DOM.wmX.value = config.wmX || 0; DOM.wmY.value = config.wmY || 0; 
 
             DOM.ovMaskW.value = config.ovMaskW || 300; DOM.ovMaskH.value = config.ovMaskH || 300; DOM.ovMaskR.value = config.ovMaskR || 0;
-            DOM.ovScale.value = config.ovScale || 1.0; 
+            ovScale = config.ovScale || 1.0; 
             DOM.ovFColor.value = config.ovFColor || '#000000'; DOM.ovFOpacity.value = config.ovFOpacity || 0;
             
             DOM.tsColor.value = config.tsColor || '#000000'; DOM.tsOpacity.value = config.tsOpacity || 0;
@@ -2242,8 +2283,6 @@
                 if (!src || src.trim() === '') img.parentNode.removeChild(img);
             });
 
-            const guide = cloneEl.querySelector('#guide-overlay');
-            if (guide) guide.parentNode.removeChild(guide);
             const guideText = cloneEl.querySelector('#guide-overlay-text');
             if (guideText) guideText.parentNode.removeChild(guideText);
 
