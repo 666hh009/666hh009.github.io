@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로</title>
+    <title>AI 대화 아카이브 프로 (v3.1 마스터 안정화)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -617,6 +617,7 @@
                         <button type="button" class="action-btn" id="btn-text-drag" onclick="toggleDragMode('text')" title="드래그로 텍스트 위치 이동">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
                         </button>
+                        <button type="button" class="action-btn" onclick="resetTextOffset()" title="텍스트 위치 초기화">↺</button>
                     </div>
 
                     <div class="row" style="padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px dashed var(--line);">
@@ -632,7 +633,6 @@
                                 <input type="number" id="text-y" value="0" oninput="updateUI()">
                                 <button type="button" onclick="adjustNum('text-y', 5, 5)">+</button>
                             </div>
-                            <button class="action-btn" onclick="resetTextOffset()" style="height: 32px; padding: 0 8px;" title="텍스트 위치 초기화">↺ 초기화</button>
                         </div>
                     </div>
                 </div>
@@ -709,15 +709,16 @@
                             <div class="row-control">
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-x', -10, 10)">−</button><input type="number" id="ov-x" value="0"><button type="button" onclick="adjustNum('ov-x', 10, 10)">+</button></div>
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-y', -10, 10)">−</button><input type="number" id="ov-y" value="0"><button type="button" onclick="adjustNum('ov-y', 10, 10)">+</button></div>
-                                <button class="action-btn" onclick="resetOverlayMaskOffset()" style="height: 32px; padding: 0 8px;" title="틀 위치 초기화">↺ 초기화</button>
                             </div>
                         </div>
                         <div class="row" style="padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px dashed var(--line);">
                             <span class="row-label">틀 드래그 이동</span>
-                            <button type="button" class="action-btn" id="btn-ov-mask-drag" onclick="toggleDragMode('ovMask')" title="드래그로 틀 위치 이동">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                이동
-                            </button>
+                            <div class="row-control">
+                                <button type="button" class="action-btn" id="btn-ov-mask-drag" onclick="toggleDragMode('ovMask')" title="드래그로 틀 위치 이동">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                </button>
+                                <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="틀 위치 초기화">↺</button>
+                            </div>
                         </div>
 
                         <div class="row">
@@ -725,15 +726,16 @@
                             <div class="row-control">
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -10, 10)">−</button><input type="number" id="ov-in-x" value="0"><button type="button" onclick="adjustNum('ov-in-x', 10, 10)">+</button></div>
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -10, 10)">−</button><input type="number" id="ov-in-y" value="0"><button type="button" onclick="adjustNum('ov-in-y', 10, 10)">+</button></div>
-                                <button class="action-btn" onclick="resetOverlayImageOffset()" style="height: 32px; padding: 0 8px;" title="내부 이미지 위치/배율 초기화">↺ 초기화</button>
                             </div>
                         </div>
                         <div class="row">
                             <span class="row-label">내부 이미지 드래그 이동</span>
-                            <button type="button" class="action-btn" id="btn-ov-img-drag" onclick="toggleDragMode('ovImg')" title="드래그로 위치를, 휠로 크기를 조절하세요">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                이동 · 휠로 확대
-                            </button>
+                            <div class="row-control">
+                                <button type="button" class="action-btn" id="btn-ov-img-drag" onclick="toggleDragMode('ovImg')" title="드래그로 위치를, 휠로 크기를 조절하세요">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                </button>
+                                <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="내부 이미지 위치/배율 초기화">↺</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -765,15 +767,16 @@
                             <div class="row-control">
                                 <div class="stepper"><button type="button" onclick="adjustNum('wm-x', -5, 5)">−</button><input type="number" id="wm-x" value="0"><button type="button" onclick="adjustNum('wm-x', 5, 5)">+</button></div>
                                 <div class="stepper"><button type="button" onclick="adjustNum('wm-y', -5, 5)">−</button><input type="number" id="wm-y" value="0"><button type="button" onclick="adjustNum('wm-y', 5, 5)">+</button></div>
-                                <button class="action-btn" onclick="resetWatermarkOffset()" style="height: 32px; padding: 0 8px;" title="출처 표시 위치 초기화">↺ 초기화</button>
                             </div>
                         </div>
                         <div class="row">
                             <span class="row-label">드래그 이동</span>
-                            <button type="button" class="action-btn" id="btn-wm-drag" onclick="toggleDragMode('wm')" title="드래그로 출처 표시 위치 이동">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                이동
-                            </button>
+                            <div class="row-control">
+                                <button type="button" class="action-btn" id="btn-wm-drag" onclick="toggleDragMode('wm')" title="드래그로 출처 표시 위치 이동">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                                </button>
+                                <button type="button" class="action-btn" onclick="resetWatermarkOffset()" title="출처 표시 위치 초기화">↺</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -939,11 +942,10 @@
                         <div class="toolbar-item">
                             <label>&nbsp;</label>
                             <div style="display: flex; gap: 6px;">
-                                <button class="action-btn" id="btn-bg-drag" onclick="toggleDragMode('bg')" style="height: 26px;">
+                                <button class="action-btn" id="btn-bg-drag" onclick="toggleDragMode('bg')" style="height: 26px;" title="드래그로 배경 위치를, 휠로 크기를 조절하세요">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                    배경 이동
                                 </button>
-                                <button class="action-btn" onclick="resetBgPos()" style="height: 26px; padding: 0 8px;" title="배경 위치/배율 초기화">↺ 초기화</button>
+                                <button class="action-btn" onclick="resetBgPos()" style="height: 26px; padding: 0 8px;" title="배경 위치/배율 초기화">↺</button>
                             </div>
                         </div>
 
