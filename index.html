@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.1 UX 개선버전)</title>
+    <title>네카이브 (v3.3 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -270,9 +270,10 @@
         .row-group { border-bottom: 1px solid var(--line-soft); padding-bottom: var(--sp-4); margin-bottom: var(--sp-4); }
         .row-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 
-        .row-label { font-size: var(--fs-base); color: var(--ink); font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+        /* row-label은 필요하면 줄바꿈되고, row-control(버튼류)은 항상 같은 크기로 오른쪽 끝에 고정 정렬됨 */
+        .row-label { font-size: var(--fs-base); color: var(--ink); font-weight: 500; white-space: normal; word-break: keep-all; overflow-wrap: break-word; line-height: 1.3; flex: 1 1 auto; min-width: 0; }
         .row-label.bold { font-weight: 700; color: var(--ink); }
-        .row-control { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+        .row-control { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; margin-left: auto; }
         .section-note { font-size: var(--fs-xs); color: var(--ink-soft); margin: 0 0 var(--sp-3) 0; line-height: 1.55; word-break: keep-all; }
 
         /* 세그먼트 버튼 (정렬, 줄바꿈 등) */
@@ -286,7 +287,40 @@
         .segmented button.active { background: var(--ink); color: var(--paper); }
         .segmented button:not(.active):hover { background: var(--paper-muted); color: var(--ink); }
 
-        #input-text { height: 220px; font-family: 'Noto Serif KR', serif; font-size: var(--fs-md); line-height: 1.7; margin-top: var(--sp-2); }
+        /* ── 문법 강조 에디터 ──────────────────────────────────────────
+           구조: .code-editor-wrap (grid, 1칸) 안에 하이라이트 레이어(pre>code)와
+           실제 textarea가 같은 자리에 겹쳐짐. 실제 값(원본 텍스트)은 textarea.value에만
+           있고, 하이라이트 레이어는 그걸 그대로 읽어서 "색만" 입히는 표시 전용 사본임.
+           → 붙여넣기/입력 내용 자체는 절대 변형되지 않음. */
+        .code-editor-wrap {
+            position: relative; display: grid; height: 220px; margin-top: var(--sp-2);
+        }
+        .code-editor-wrap > * { grid-area: 1 / 1; width: 100%; height: 100%; margin: 0; box-sizing: border-box; }
+        .code-editor-wrap textarea,
+        .code-editor-wrap .code-highlight-layer,
+        .code-editor-wrap .code-highlight-layer code {
+            font-family: 'Noto Serif KR', serif; font-size: var(--fs-md); line-height: 1.7;
+        }
+        .code-highlight-layer {
+            padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius-sm);
+            background: var(--paper); overflow: hidden; pointer-events: none; user-select: none;
+        }
+        .code-highlight-layer code {
+            display: block; white-space: pre-wrap; word-break: keep-all; overflow-wrap: break-word;
+            color: var(--ink); font-weight: 400; will-change: transform;
+        }
+        #input-text {
+            position: relative; resize: vertical; padding: var(--sp-2) var(--sp-3); border: 1px solid transparent;
+            border-radius: var(--radius-sm); background: transparent; color: transparent; caret-color: var(--ink);
+            -webkit-text-fill-color: transparent; white-space: pre-wrap; word-break: keep-all;
+        }
+        #input-text:focus { border-color: var(--ink); box-shadow: var(--focus-ring); }
+        /* 문법 강조 토큰 색상 */
+        .tok-punc { color: var(--ink-soft); }
+        .tok-tag { color: #8a4fd6; font-weight: 600; }
+        .tok-attr { color: #b3701f; }
+        .tok-str { color: #2f8f5b; }
+        .tok-comment { color: var(--ink-faint); font-style: italic; }
 
         /* 오른쪽 미리보기 패널 */
         .preview-container { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -446,7 +480,10 @@
                         <button class="action-btn" onclick="insertText('—')" title="엠대시(긴 줄)">—</button>
                         <button class="action-btn" onclick="insertText('\n<hr>\n')" title="가로 구분선 삽입">구분선</button>
                     </div>
-                    <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..."></textarea>
+                    <div class="code-editor-wrap" id="code-editor-wrap">
+                        <pre class="code-highlight-layer" id="code-highlight-layer" aria-hidden="true"><code id="code-highlight-code"></code></pre>
+                        <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..." spellcheck="false"></textarea>
+                    </div>
                 </div>
 
                 <!-- 2. 타이포그래피 -->
@@ -569,7 +606,7 @@
                         <div class="row-control">
                             <button type="button" class="action-btn" id="btn-text-drag" onclick="toggleDragMode('text')" title="드래그로 텍스트 위치 이동">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                드래그 이동
+                                드래그
                             </button>
                             <button type="button" class="action-btn" onclick="resetTextOffset()" title="텍스트 위치 초기화">↺</button>
                         </div>
@@ -608,7 +645,7 @@
                         <span class="row-label">위치 이동</span>
                         <button type="button" class="action-btn" id="btn-text-drag-html" onclick="toggleDragMode('text')" title="드래그로 위치 이동">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                            드래그 이동
+                            드래그
                         </button>
                     </div>
                 </div>
@@ -655,7 +692,7 @@
                                 <div class="row-control">
                                     <button type="button" class="action-btn" id="btn-ov-mask-drag" onclick="toggleDragMode('ovMask')" title="드래그로 틀 위치 이동">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                        드래그 이동
+                                        드래그
                                     </button>
                                     <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="틀 위치 초기화">↺</button>
                                 </div>
@@ -719,7 +756,7 @@
                             <div class="row-control">
                                 <button type="button" class="action-btn" id="btn-wm-drag" onclick="toggleDragMode('wm')" title="드래그로 출처 표시 위치 이동">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                    드래그 이동
+                                    드래그
                                 </button>
                                 <button type="button" class="action-btn" onclick="resetWatermarkOffset()" title="출처 위치 초기화">↺</button>
                             </div>
@@ -876,7 +913,7 @@
                     <div class="toolbar-group">
                         <div class="toolbar-item">
                             <label>가로 (px)</label>
-                            <div class="stepper" style="height: 32px;">
+                            <div class="stepper">
                                 <button type="button" onclick="adjustNum('card-width', -1, 50)">−</button>
                                 <input type="number" id="card-width" value="700">
                                 <button type="button" onclick="adjustNum('card-width', 1, 50)">+</button>
@@ -884,7 +921,7 @@
                         </div>
                         <div class="toolbar-item">
                             <label>세로 (px)</label>
-                            <div class="stepper" style="height: 32px;">
+                            <div class="stepper">
                                 <button type="button" onclick="adjustNum('card-height', -1, 50)">−</button>
                                 <input type="number" id="card-height" value="700">
                                 <button type="button" onclick="adjustNum('card-height', 1, 50)">+</button>
@@ -892,7 +929,7 @@
                         </div>
                         <div class="toolbar-item">
                             <label>단색 배경</label>
-                            <span class="swatch" style="background:#ffffff; width:32px; height:32px;"><input type="color" id="bg-color" value="#ffffff"></span>
+                            <span class="swatch" style="background:#ffffff;"><input type="color" id="bg-color" value="#ffffff"></span>
                         </div>
                     </div>
                     
@@ -902,18 +939,18 @@
                         <div class="toolbar-item" style="flex: 1; max-width: 280px;">
                             <label>배경 이미지</label>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <input type="file" id="input-bg" accept="image/*" style="height:32px;">
-                                <button class="action-btn" onclick="removeBgImage()" style="height:32px;">지우기</button>
+                                <input type="file" id="input-bg" accept="image/*">
+                                <button class="action-btn" onclick="removeBgImage()">지우기</button>
                             </div>
                         </div>
                         <div class="toolbar-item">
                             <label>배경 조절</label>
                             <div style="display: flex; gap: 8px;">
-                                <button class="action-btn" id="btn-bg-drag" onclick="toggleDragMode('bg')" style="height: 32px;" title="드래그로 배경 위치를, 휠로 크기를 조절하세요">
+                                <button class="action-btn" id="btn-bg-drag" onclick="toggleDragMode('bg')" title="드래그로 배경 위치를, 휠로 크기를 조절하세요">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
                                     드래그 & 휠
                                 </button>
-                                <button class="action-btn" onclick="resetBgPos()" style="height: 32px;" title="배경 위치/배율 초기화">↺</button>
+                                <button class="action-btn" onclick="resetBgPos()" title="배경 위치/배율 초기화">↺</button>
                             </div>
                         </div>
                         <div class="toolbar-item">
@@ -1066,6 +1103,7 @@
             customFont: document.getElementById('input-custom-font'), color: document.getElementById('input-color'),
             size: document.getElementById('input-size'), pad: document.getElementById('input-padding'), lh: document.getElementById('input-lineheight'), align: document.getElementById('input-align'),
             paraGap: document.getElementById('input-para-gap'), htmlToggle: document.getElementById('html-mode-toggle'),
+            hlLayer: document.getElementById('code-highlight-layer'), hlCode: document.getElementById('code-highlight-code'),
             letterSpacing: document.getElementById('input-letterspacing'), hScale2: document.getElementById('input-hscale'),
             
             marginTop: document.getElementById('margin-top'), marginBottom: document.getElementById('margin-bottom'),
@@ -1119,8 +1157,56 @@
             document.getElementById('text-editor-toolbar').style.display = isChecked ? 'flex' : 'none';
         }
 
+        /* ── 문법 강조 (표시 전용, 원본 textarea.value는 절대 변경하지 않음) ── */
+        function escapeHtmlForDisplay(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function highlightAttrs(inner) {
+            // 태그 내부(속성 부분)만 이름/문자열/구두점으로 색칠. inner는 이미 escape된 문자열.
+            return inner.replace(/([a-zA-Z_:][-a-zA-Z0-9_:.]*)(\s*=\s*)(&quot;[^&]*?&quot;|&#39;[^&]*?&#39;|"[^"]*"|'[^']*')/g,
+                (m, name, eq, val) => `<span class="tok-attr">${name}</span><span class="tok-punc">${eq}</span><span class="tok-str">${val}</span>`
+            );
+        }
+
+        function highlightSyntax(raw) {
+            const re = /<!--[\s\S]*?-->|<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s+[^<>]*?)?\s*\/?>/g;
+            let out = '', lastIndex = 0, m;
+            while ((m = re.exec(raw)) !== null) {
+                out += escapeHtmlForDisplay(raw.slice(lastIndex, m.index));
+                const token = m[0];
+                if (token.startsWith('<!--')) {
+                    out += `<span class="tok-comment">${escapeHtmlForDisplay(token)}</span>`;
+                } else {
+                    const isClose = token.startsWith('</');
+                    const selfClose = /\/>\s*$/.test(token);
+                    const nameMatch = token.match(/^<\/?([a-zA-Z][a-zA-Z0-9-]*)/);
+                    const tagName = nameMatch ? nameMatch[1] : '';
+                    const afterName = token.slice(nameMatch ? nameMatch[0].length : (isClose ? 2 : 1), token.length - (selfClose ? 2 : 1));
+                    const escAfter = highlightAttrs(escapeHtmlForDisplay(afterName));
+                    out += `<span class="tok-punc">&lt;${isClose ? '/' : ''}</span><span class="tok-tag">${escapeHtmlForDisplay(tagName)}</span>${escAfter}<span class="tok-punc">${selfClose ? '/' : ''}&gt;</span>`;
+                }
+                lastIndex = re.lastIndex;
+            }
+            out += escapeHtmlForDisplay(raw.slice(lastIndex));
+            return out;
+        }
+
+        function syncHighlightScroll() {
+            if (!DOM.hlLayer || !DOM.text) return;
+            DOM.hlCode.style.transform = `translateY(${-DOM.text.scrollTop}px) translateX(${-DOM.text.scrollLeft}px)`;
+        }
+
+        function syncHighlight() {
+            if (!DOM.hlCode || !DOM.text) return;
+            // 마지막 줄이 비어있어도 높이가 맞도록 폭 0 문자를 하나 덧붙임 (표시 전용, 원본엔 영향 없음)
+            DOM.hlCode.innerHTML = highlightSyntax(DOM.text.value) + '\u200b';
+            syncHighlightScroll();
+        }
+
         function updateUI() {
           try {
+            syncHighlight();
             DOM.preview.style.width = DOM.width.value + 'px';
             DOM.preview.style.height = DOM.height.value + 'px';
             DOM.preview.style.backgroundColor = DOM.bgColor.value;
@@ -1261,6 +1347,7 @@
         }
 
         DOM.htmlToggle.addEventListener('change', () => { userManuallyToggledHtml = true; updateUI(); });
+        DOM.text.addEventListener('scroll', syncHighlightScroll);
         DOM.text.addEventListener('input', (e) => {
             const val = e.target.value;
             if (!DOM.htmlToggle.checked && !userManuallyToggledHtml && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
