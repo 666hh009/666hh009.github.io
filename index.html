@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.31 UX 개선버전)</title>
+    <title>네카이브 (v3.4 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -29,6 +29,8 @@
             --accent-soft: #fbeaea;
             --danger: #b1484a;
             --danger-hover: #98393b;
+            --tag-hover: #2f6fed;
+            --tag-hover-soft: rgba(47, 111, 237, 0.16);
 
             /* ---- 폰트 (Typography scale) ---- */
             --font-ui: 'Pretendard', 'Noto Sans KR', sans-serif;
@@ -329,6 +331,18 @@
         .tok-str { color: #2f8f5b; }
         .tok-comment { color: var(--ink-faint); font-style: italic; }
 
+        /* ── 태그 도우미 (코드 ↔ 미리보기 호버 연동) ──────────────────────
+           미리보기 요소에 마우스를 올리면 해당 요소, 코드 쪽엔 대응 범위를 강조.
+           반대로 코드 위에 마우스를 올려도 대응 미리보기 요소가 강조됨. */
+        #card-preview [data-tag-hover="1"] {
+            outline: 2px solid var(--tag-hover) !important; outline-offset: 1px;
+        }
+        #code-hover-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+        #code-hover-overlay .code-hover-box {
+            position: absolute; background: var(--tag-hover-soft); border-radius: 2px;
+            box-shadow: 0 0 0 1px var(--tag-hover);
+        }
+
         /* 오른쪽 미리보기 패널 */
         .preview-container { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
@@ -490,6 +504,7 @@
                     <div class="code-editor-wrap" id="code-editor-wrap">
                         <pre class="code-highlight-layer" id="code-highlight-layer" aria-hidden="true"><code id="code-highlight-code"></code></pre>
                         <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..." spellcheck="false"></textarea>
+                        <div id="code-hover-overlay" aria-hidden="true"></div>
                     </div>
                 </div>
 
@@ -654,6 +669,13 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
                             드래그
                         </button>
+                    </div>
+                    <div class="row">
+                        <span class="row-label">태그 도우미</span>
+                        <label class="row-switch" title="코드에 마우스를 올리면 미리보기에서, 미리보기에 마우스를 올리면 코드에서 대응하는 태그를 하이라이트로 표시">
+                            <input type="checkbox" id="tag-helper-toggle">
+                            <span class="track"></span>
+                        </label>
                     </div>
                 </div>
 
@@ -1111,6 +1133,7 @@
             size: document.getElementById('input-size'), pad: document.getElementById('input-padding'), lh: document.getElementById('input-lineheight'), align: document.getElementById('input-align'),
             paraGap: document.getElementById('input-para-gap'), htmlToggle: document.getElementById('html-mode-toggle'),
             hlLayer: document.getElementById('code-highlight-layer'), hlCode: document.getElementById('code-highlight-code'),
+            codeHoverOverlay: document.getElementById('code-hover-overlay'), tagHelper: document.getElementById('tag-helper-toggle'),
             letterSpacing: document.getElementById('input-letterspacing'), hScale2: document.getElementById('input-hscale'),
             
             marginTop: document.getElementById('margin-top'), marginBottom: document.getElementById('margin-bottom'),
@@ -1169,6 +1192,38 @@
             return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
+        const TAG_RE = /<!--[\s\S]*?-->|<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s+[^<>]*?)?\s*\/?>/g;
+        // 자체적으로 닫히는 것으로 취급할 HTML void 요소 (닫는 태그가 없음)
+        const VOID_TAGS = new Set(['br','hr','img','input','meta','link','source','area','base','col','embed','param','track','wbr']);
+
+        // 공용 토크나이저: 문법 강조(색칠)와 태그 도우미(호버 연동)가 이 하나의 스캔 결과를 함께 씀
+        // → 두 기능이 서로 다른 태그 경계를 인식해서 어긋나는 일이 구조적으로 없음
+        function tokenizeHtml(raw) {
+            const tokens = []; let lastIndex = 0, m;
+            TAG_RE.lastIndex = 0;
+            while ((m = TAG_RE.exec(raw)) !== null) {
+                if (m.index > lastIndex) tokens.push({ type: 'text', start: lastIndex, end: m.index });
+                const token = m[0];
+                if (token.startsWith('<!--')) {
+                    tokens.push({ type: 'comment', start: m.index, end: TAG_RE.lastIndex, token });
+                } else {
+                    const isClose = token.startsWith('</');
+                    const explicitSelfClose = /\/>\s*$/.test(token);
+                    const nameMatch = token.match(/^<\/?([a-zA-Z][a-zA-Z0-9-]*)/);
+                    const tagName = nameMatch ? nameMatch[1] : '';
+                    const selfClose = explicitSelfClose || (!isClose && VOID_TAGS.has(tagName.toLowerCase()));
+                    tokens.push({
+                        type: 'tag', start: m.index, end: TAG_RE.lastIndex, token, tagName,
+                        isClose, selfClose: explicitSelfClose, isVoid: !isClose && !explicitSelfClose && VOID_TAGS.has(tagName.toLowerCase()),
+                        nameLen: nameMatch ? nameMatch[0].length : (isClose ? 2 : 1)
+                    });
+                }
+                lastIndex = TAG_RE.lastIndex;
+            }
+            if (lastIndex < raw.length) tokens.push({ type: 'text', start: lastIndex, end: raw.length });
+            return tokens;
+        }
+
         function highlightAttrs(inner) {
             // 태그 내부(속성 부분)만 이름/문자열/구두점으로 색칠. inner는 이미 escape된 문자열.
             return inner.replace(/([a-zA-Z_:][-a-zA-Z0-9_:.]*)(\s*=\s*)(&quot;[^&]*?&quot;|&#39;[^&]*?&#39;|"[^"]*"|'[^']*')/g,
@@ -1177,27 +1232,217 @@
         }
 
         function highlightSyntax(raw) {
-            const re = /<!--[\s\S]*?-->|<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s+[^<>]*?)?\s*\/?>/g;
-            let out = '', lastIndex = 0, m;
-            while ((m = re.exec(raw)) !== null) {
-                out += escapeHtmlForDisplay(raw.slice(lastIndex, m.index));
-                const token = m[0];
-                if (token.startsWith('<!--')) {
-                    out += `<span class="tok-comment">${escapeHtmlForDisplay(token)}</span>`;
-                } else {
-                    const isClose = token.startsWith('</');
-                    const selfClose = /\/>\s*$/.test(token);
-                    const nameMatch = token.match(/^<\/?([a-zA-Z][a-zA-Z0-9-]*)/);
-                    const tagName = nameMatch ? nameMatch[1] : '';
-                    const afterName = token.slice(nameMatch ? nameMatch[0].length : (isClose ? 2 : 1), token.length - (selfClose ? 2 : 1));
-                    const escAfter = highlightAttrs(escapeHtmlForDisplay(afterName));
-                    out += `<span class="tok-punc">&lt;${isClose ? '/' : ''}</span><span class="tok-tag">${escapeHtmlForDisplay(tagName)}</span>${escAfter}<span class="tok-punc">${selfClose ? '/' : ''}&gt;</span>`;
-                }
-                lastIndex = re.lastIndex;
+            const tokens = tokenizeHtml(raw);
+            let out = '';
+            for (const t of tokens) {
+                if (t.type === 'text') { out += escapeHtmlForDisplay(raw.slice(t.start, t.end)); continue; }
+                if (t.type === 'comment') { out += `<span class="tok-comment">${escapeHtmlForDisplay(t.token)}</span>`; continue; }
+                const selfCloseMark = t.selfClose ? '/' : '';
+                const afterName = t.token.slice(t.nameLen, t.token.length - (t.selfClose ? 2 : 1));
+                const escAfter = highlightAttrs(escapeHtmlForDisplay(afterName));
+                out += `<span class="tok-punc">&lt;${t.isClose ? '/' : ''}</span><span class="tok-tag">${escapeHtmlForDisplay(t.tagName)}</span>${escAfter}<span class="tok-punc">${selfCloseMark}&gt;</span>`;
             }
-            out += escapeHtmlForDisplay(raw.slice(lastIndex));
             return out;
         }
+
+        /* ── 태그 도우미: 원본 문자열 오프셋 ↔ 태그(요소) 범위 매핑 ──
+           스택 기반으로 여는 태그~닫는 태그를 짝지어서, 각 요소가 원본 문자열의
+           [start, end] 어느 구간에 해당하는지 계산. 짝이 안 맞는 깨진 마크업은
+           최대한 방어적으로 건너뛰고, 앱이 죽지 않도록 함. */
+        function computeElementRanges(raw) {
+            const tokens = tokenizeHtml(raw);
+            const ranges = []; // ranges[id] = { start, end, tagName } (id = 여는/자체닫힘 태그의 등장 순서)
+            const stack = [];  // { tagName, start, id }
+            for (const t of tokens) {
+                if (t.type !== 'tag') continue;
+                if (t.isClose) {
+                    // 스택에서 같은 이름의 여는 태그를 위에서부터 찾아 짝지음 (중간에 안 닫힌 태그는 포기하고 건너뜀)
+                    let matchIdx = -1;
+                    for (let i = stack.length - 1; i >= 0; i--) { if (stack[i].tagName === t.tagName) { matchIdx = i; break; } }
+                    if (matchIdx === -1) continue; // 여는 태그 없이 닫는 태그만 있음 → 무시
+                    const opened = stack[matchIdx];
+                    stack.length = matchIdx; // 그 사이에 안 닫힌 태그들도 함께 버림 (null로 남아 무시됨)
+                    ranges[opened.id] = { start: opened.start, end: t.end, tagName: opened.tagName };
+                } else if (t.selfClose || t.isVoid) {
+                    ranges.push({ start: t.start, end: t.end, tagName: t.tagName });
+                } else {
+                    const id = ranges.length;
+                    ranges.push(null); // 닫힐 때 채워짐 (끝까지 안 닫히면 null로 남아 무시됨)
+                    stack.push({ tagName: t.tagName, start: t.start, id });
+                }
+            }
+            return { tokens, ranges };
+        }
+
+        // 여는 태그(또는 자체 닫힘 태그)에 data-src-id 속성을 심어서 미리보기에 주입할 HTML을 생성.
+        // 텍스트 내용/구조는 원본과 100% 동일 — 속성 하나만 추가됨 (화면에 안 보이는 값).
+        function buildAnnotatedHtml(raw) {
+            const { tokens, ranges } = computeElementRanges(raw);
+            let out = '';
+            let idCursor = 0;
+            const idOfOpenToken = [];
+            // 여는/자체닫힘 태그 순서대로 id를 재부여 (ranges 배열의 순서를 그대로 각 여는 토큰과 매칭)
+            let nextId = 0;
+            for (const t of tokens) {
+                if (t.type !== 'tag' || t.isClose) continue;
+                idOfOpenToken.push(nextId); nextId++;
+            }
+            let openCursor = 0;
+            for (const t of tokens) {
+                if (t.type === 'text') { out += raw.slice(t.start, t.end); continue; }
+                if (t.type === 'comment') { out += t.token; continue; }
+                if (t.isClose) { out += t.token; continue; }
+                const id = idOfOpenToken[openCursor++];
+                const range = ranges[id];
+                if (!range) { out += t.token; continue; } // 안 닫힌 태그 → 매핑 없이 원본 그대로
+                if (t.selfClose) {
+                    out += t.token.replace(/\/>\s*$/, ` data-src-id="${id}"/>`);
+                } else {
+                    out += t.token.replace(/>\s*$/, ` data-src-id="${id}">`);
+                }
+            }
+            window.srcRangeMap = ranges;
+            return out;
+        }
+
+        /* ── 태그 도우미: 실제 호버 인터랙션 ──────────────────────────
+           방향 1) 미리보기 위 마우스 → data-src-id로 원본 범위를 찾아 코드 쪽에 강조
+           방향 2) 코드(textarea) 위 마우스 → 실제로는 보이는 하이라이트 레이어의
+                   글자 위치를 좌표로 역산(caretRangeFromPoint)해서 원본 오프셋을 구하고,
+                   그 오프셋을 포함하는 가장 작은 범위를 찾아 미리보기 쪽 요소를 강조 */
+        let currentHoverPreviewEl = null;
+
+        function isTagHelperActive() {
+            return !!(DOM.tagHelper && DOM.tagHelper.checked && DOM.htmlToggle.checked && !dragMode);
+        }
+
+        function clearTagHelperHighlight() {
+            if (currentHoverPreviewEl) { currentHoverPreviewEl.removeAttribute('data-tag-hover'); currentHoverPreviewEl = null; }
+            if (DOM.codeHoverOverlay) DOM.codeHoverOverlay.innerHTML = '';
+        }
+
+        // raw 문자열의 [start, end] 범위가 하이라이트 레이어(#code-highlight-code) 안에서
+        // 화면상 어느 사각형(들)을 차지하는지 구해서 그 자리에 강조 박스를 그림.
+        // 하이라이트 레이어는 실제로 화면에 보이는 텍스트라, 여기 기준으로 Range를 잡으면
+        // 투명 textarea와 픽셀 단위로 정확히 겹침.
+        function highlightCodeRange(start, end) {
+            if (!DOM.codeHoverOverlay || !DOM.hlCode) return;
+            DOM.codeHoverOverlay.innerHTML = '';
+            const range = rawOffsetsToDomRange(DOM.hlCode, start, end);
+            if (!range) return;
+            const wrapRect = DOM.codeHoverOverlay.getBoundingClientRect();
+            const rects = range.getClientRects();
+            const frag = document.createDocumentFragment();
+            for (const r of rects) {
+                if (r.width <= 0 || r.height <= 0) continue;
+                const box = document.createElement('div');
+                box.className = 'code-hover-box';
+                box.style.left = (r.left - wrapRect.left) + 'px';
+                box.style.top = (r.top - wrapRect.top) + 'px';
+                box.style.width = r.width + 'px';
+                box.style.height = r.height + 'px';
+                frag.appendChild(box);
+            }
+            DOM.codeHoverOverlay.appendChild(frag);
+        }
+
+        // 원본 문자열 오프셋 [start,end] → 실제 라이브 DOM(text node, offset) 쌍으로 변환해 Range 생성.
+        // 하이라이트 레이어의 텍스트 노드를 순서대로 훑으면(TreeWalker), 그 textContent를 합친 것이
+        // 원본 문자열과 글자 수 기준으로 항상 정확히 일치함(HTML 엔티티는 파싱되며 원래 글자 수로 되돌아옴).
+        function rawOffsetsToDomRange(container, start, end) {
+            const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+            let pos = 0, startNode = null, startOffset = 0, endNode = null, endOffset = 0, node;
+            while ((node = walker.nextNode())) {
+                const len = node.textContent.length;
+                if (startNode === null && pos + len >= start) { startNode = node; startOffset = start - pos; }
+                if (pos + len >= end) { endNode = node; endOffset = end - pos; break; }
+                pos += len;
+            }
+            if (!startNode || !endNode) return null;
+            try {
+                const range = document.createRange();
+                range.setStart(startNode, Math.max(0, Math.min(startOffset, startNode.textContent.length)));
+                range.setEnd(endNode, Math.max(0, Math.min(endOffset, endNode.textContent.length)));
+                return range;
+            } catch (e) { return null; }
+        }
+
+        // 화면 좌표(clientX, clientY) → 하이라이트 레이어 기준 원본 문자열 오프셋.
+        // textarea가 맨 위에서 실제 클릭/입력을 받고 있어서 caretRangeFromPoint가 그대로는
+        // textarea를 가리키므로, 이 계산 순간에만 잠깐 포인터 이벤트를 꺼서 아래 레이어를 잡음.
+        function pointToRawOffset(clientX, clientY) {
+            if (!DOM.hlCode) return null;
+            let domRange = null;
+            const prevPE = DOM.text.style.pointerEvents;
+            DOM.text.style.pointerEvents = 'none';
+            try {
+                if (document.caretRangeFromPoint) domRange = document.caretRangeFromPoint(clientX, clientY);
+                else if (document.caretPositionFromPoint) {
+                    const pos = document.caretPositionFromPoint(clientX, clientY);
+                    if (pos) { domRange = document.createRange(); domRange.setStart(pos.offsetNode, pos.offset); }
+                }
+            } catch (e) { domRange = null; }
+            DOM.text.style.pointerEvents = prevPE;
+            if (!domRange || !DOM.hlCode.contains(domRange.startContainer)) return null;
+
+            const walker = document.createTreeWalker(DOM.hlCode, NodeFilter.SHOW_TEXT, null);
+            let pos = 0, node;
+            while ((node = walker.nextNode())) {
+                if (node === domRange.startContainer) return pos + domRange.startOffset;
+                pos += node.textContent.length;
+            }
+            return null;
+        }
+
+        function findSmallestRangeAt(offset) {
+            const ranges = window.srcRangeMap || [];
+            let bestId = -1, bestLen = Infinity;
+            for (let i = 0; i < ranges.length; i++) {
+                const r = ranges[i];
+                if (!r) continue;
+                if (offset >= r.start && offset <= r.end && (r.end - r.start) < bestLen) { bestId = i; bestLen = r.end - r.start; }
+            }
+            return bestId;
+        }
+
+        function handlePreviewMouseOver(e) {
+            if (!isTagHelperActive()) return;
+            const el = e.target.closest('[data-src-id]');
+            if (!el || el === currentHoverPreviewEl) return;
+            clearTagHelperHighlight();
+            currentHoverPreviewEl = el;
+            el.setAttribute('data-tag-hover', '1');
+            const id = parseInt(el.getAttribute('data-src-id'), 10);
+            const range = (window.srcRangeMap || [])[id];
+            if (range) highlightCodeRange(range.start, range.end);
+        }
+
+        function handlePreviewMouseOut(e) {
+            if (!isTagHelperActive()) return;
+            if (e.relatedTarget && currentHoverPreviewEl && currentHoverPreviewEl.contains(e.relatedTarget)) return;
+            clearTagHelperHighlight();
+        }
+
+        let codeHoverRaf = null;
+        function handleCodeMouseMove(e) {
+            if (!isTagHelperActive()) return;
+            if (codeHoverRaf) cancelAnimationFrame(codeHoverRaf);
+            const clientX = e.clientX, clientY = e.clientY;
+            codeHoverRaf = requestAnimationFrame(() => {
+                const offset = pointToRawOffset(clientX, clientY);
+                if (offset === null) { clearTagHelperHighlight(); return; }
+                const id = findSmallestRangeAt(offset);
+                if (id === -1) { clearTagHelperHighlight(); return; }
+                const range = window.srcRangeMap[id];
+                if (currentHoverPreviewEl && currentHoverPreviewEl.getAttribute('data-src-id') === String(id)) return;
+                clearTagHelperHighlight();
+                const targetEl = DOM.pText.querySelector(`[data-src-id="${id}"]`);
+                if (targetEl) { targetEl.setAttribute('data-tag-hover', '1'); currentHoverPreviewEl = targetEl; }
+                highlightCodeRange(range.start, range.end);
+            });
+        }
+
+        function handleCodeMouseLeave() { clearTagHelperHighlight(); }
 
         function syncHighlightScroll() {
             if (!DOM.hlLayer || !DOM.text) return;
@@ -1264,7 +1509,12 @@
                 DOM.pText.style.transform = `scale(${hScale})`;
                 DOM.pText.style.transformOrigin = 'center center';
                 
-                DOM.pText.innerHTML = DOM.text.value;
+                if (DOM.tagHelper && DOM.tagHelper.checked) {
+                    try { DOM.pText.innerHTML = buildAnnotatedHtml(DOM.text.value); }
+                    catch (e) { DOM.pText.innerHTML = DOM.text.value; } // 파싱 중 예외가 나도 원래 동작으로 안전하게 폴백
+                } else {
+                    DOM.pText.innerHTML = DOM.text.value;
+                }
                 handleForcedPosition();
             } else {
                 DOM.sectionTypography.style.display = 'block';
@@ -1364,6 +1614,13 @@
         }
 
         DOM.htmlToggle.addEventListener('change', () => { userManuallyToggledHtml = true; updateUI(); });
+        if (DOM.tagHelper) {
+            DOM.tagHelper.addEventListener('change', () => { clearTagHelperHighlight(); updateUI(); });
+        }
+        DOM.pText.addEventListener('mouseover', handlePreviewMouseOver);
+        DOM.pText.addEventListener('mouseout', handlePreviewMouseOut);
+        DOM.text.addEventListener('mousemove', handleCodeMouseMove);
+        DOM.text.addEventListener('mouseleave', handleCodeMouseLeave);
         DOM.text.addEventListener('scroll', syncHighlightScroll);
         if (window.ResizeObserver) {
             // 우측 하단 손잡이로 textarea 크기를 드래그하는 동안엔 'input' 이벤트가 안 나기 때문에
@@ -1686,6 +1943,7 @@
                 dragMode = mode; if(btns[mode]) btns[mode].classList.add('drag-active');
                 if(mode === 'text' && btns['text-html']) btns['text-html'].classList.add('drag-active');
                 DOM.preview.style.cursor = 'move';
+                if (typeof clearTagHelperHighlight === 'function') clearTagHelperHighlight();
                 const msgs = { 'bg': '배경을 움직이거나 휠로 크기를 조절하세요. (ESC 취소)', 'text': '마우스 드래그로 요소 위치를 조절하세요. (ESC 취소)', 'ovMask': '마스크 틀 자체를 이동합니다. (ESC 취소)', 'ovImg': '이미지를 움직이거나 휠로 크기를 조절하세요. (ESC 취소)', 'wm': '워터마크 위치를 이동합니다. (ESC 취소)' };
                 showToast(msgs[mode]);
             }
@@ -1978,6 +2236,7 @@
 
             cloneEl.querySelectorAll('img').forEach(img => { const src = img.getAttribute('src'); if (!src || src.trim() === '') img.parentNode.removeChild(img); });
             const guideText = cloneEl.querySelector('#guide-overlay-text'); if (guideText) guideText.parentNode.removeChild(guideText);
+            cloneEl.querySelectorAll('[data-tag-hover]').forEach(el => el.removeAttribute('data-tag-hover'));
             cloneEl.style.transform = 'none'; cloneEl.style.boxShadow = 'none';
 
             idoc.open();
