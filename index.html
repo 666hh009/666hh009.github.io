@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.3 UX 개선버전)</title>
+    <title>네카이브 (v3.31 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -291,29 +291,36 @@
            구조: .code-editor-wrap (grid, 1칸) 안에 하이라이트 레이어(pre>code)와
            실제 textarea가 같은 자리에 겹쳐짐. 실제 값(원본 텍스트)은 textarea.value에만
            있고, 하이라이트 레이어는 그걸 그대로 읽어서 "색만" 입히는 표시 전용 사본임.
-           → 붙여넣기/입력 내용 자체는 절대 변형되지 않음. */
+           → 붙여넣기/입력 내용 자체는 절대 변형되지 않음.
+           높이는 고정하지 않고 textarea의 실제 크기(기본값 또는 드래그로 조절한 값)를
+           JS(ResizeObserver)가 하이라이트 레이어에 그대로 반영함 → 부모 박스도 같이
+           커지고 줄어들어 아래 메뉴들이 정상적으로 밀리고 당겨짐. */
         .code-editor-wrap {
-            position: relative; display: grid; height: 220px; margin-top: var(--sp-2);
+            position: relative; display: grid; margin-top: var(--sp-2);
         }
-        .code-editor-wrap > * { grid-area: 1 / 1; width: 100%; height: 100%; margin: 0; box-sizing: border-box; }
+        .code-editor-wrap > * { grid-area: 1 / 1; width: 100%; margin: 0; box-sizing: border-box; }
+        /* 줄바꿈에 관여하는 속성은 반드시 이 한 곳에서만 관리 (두 레이어가 항상 100% 동일해야 함) */
         .code-editor-wrap textarea,
-        .code-editor-wrap .code-highlight-layer,
         .code-editor-wrap .code-highlight-layer code {
             font-family: 'Noto Serif KR', serif; font-size: var(--fs-md); line-height: 1.7;
+            white-space: pre-wrap; word-break: keep-all; overflow-wrap: break-word;
         }
         .code-highlight-layer {
-            padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius-sm);
+            height: 220px; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius-sm);
             background: var(--paper); overflow: hidden; pointer-events: none; user-select: none;
         }
         .code-highlight-layer code {
-            display: block; white-space: pre-wrap; word-break: keep-all; overflow-wrap: break-word;
-            color: var(--ink); font-weight: 400; will-change: transform;
+            display: block; color: var(--ink); font-weight: 400; will-change: transform;
         }
         #input-text {
-            position: relative; resize: vertical; padding: var(--sp-2) var(--sp-3); border: 1px solid transparent;
+            height: 220px; position: relative; resize: vertical; padding: var(--sp-2) var(--sp-3); border: 1px solid transparent;
             border-radius: var(--radius-sm); background: transparent; color: transparent; caret-color: var(--ink);
-            -webkit-text-fill-color: transparent; white-space: pre-wrap; word-break: keep-all;
+            -webkit-text-fill-color: transparent;
+            /* 네이티브 스크롤바는 숨기되(두 레이어 폭이 항상 같아야 줄바꿈이 어긋나지 않음)
+               휠/키보드 스크롤 기능 자체는 그대로 유지됨 */
+            scrollbar-width: none; -ms-overflow-style: none;
         }
+        #input-text::-webkit-scrollbar { width: 0; height: 0; }
         #input-text:focus { border-color: var(--ink); box-shadow: var(--focus-ring); }
         /* 문법 강조 토큰 색상 */
         .tok-punc { color: var(--ink-soft); }
@@ -1197,10 +1204,20 @@
             DOM.hlCode.style.transform = `translateY(${-DOM.text.scrollTop}px) translateX(${-DOM.text.scrollLeft}px)`;
         }
 
+        function syncHighlightHeight() {
+            if (!DOM.hlLayer || !DOM.text) return;
+            // textarea 우측 하단 드래그로 조절한 실제 높이를 하이라이트 레이어(및 부모 grid 박스)에 그대로 반영
+            // → 부모 박스가 실제로 커지고/줄어들어서 아래 메뉴들이 정상적으로 밀리고 당겨짐
+            if (DOM.hlLayer.style.height !== DOM.text.offsetHeight + 'px') {
+                DOM.hlLayer.style.height = DOM.text.offsetHeight + 'px';
+            }
+        }
+
         function syncHighlight() {
             if (!DOM.hlCode || !DOM.text) return;
             // 마지막 줄이 비어있어도 높이가 맞도록 폭 0 문자를 하나 덧붙임 (표시 전용, 원본엔 영향 없음)
             DOM.hlCode.innerHTML = highlightSyntax(DOM.text.value) + '\u200b';
+            syncHighlightHeight();
             syncHighlightScroll();
         }
 
@@ -1348,6 +1365,11 @@
 
         DOM.htmlToggle.addEventListener('change', () => { userManuallyToggledHtml = true; updateUI(); });
         DOM.text.addEventListener('scroll', syncHighlightScroll);
+        if (window.ResizeObserver) {
+            // 우측 하단 손잡이로 textarea 크기를 드래그하는 동안엔 'input' 이벤트가 안 나기 때문에
+            // 별도로 크기 변화를 감시해서 하이라이트 레이어 높이를 실시간으로 맞춰줌
+            new ResizeObserver(() => { syncHighlightHeight(); syncHighlightScroll(); }).observe(DOM.text);
+        }
         DOM.text.addEventListener('input', (e) => {
             const val = e.target.value;
             if (!DOM.htmlToggle.checked && !userManuallyToggledHtml && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
