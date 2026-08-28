@@ -2,12 +2,12 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 대화 아카이브 프로 (v3.1 UX 개선버전)</title>
+    <title>네카이브 (v3.1 UX 개선버전)</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css" />
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.7.0/dist/index.js"></script>
@@ -119,8 +119,9 @@
             padding: 0 var(--sp-8); height: 60px; border-bottom: 1px solid var(--line);
             flex-shrink: 0; background: var(--paper);
         }
-        .brand { display: flex; align-items: center; gap: var(--sp-2); font-weight: 700; font-size: var(--fs-lg); color: var(--ink); letter-spacing: -0.01em; }
+        .brand { display: flex; align-items: center; gap: var(--sp-2); font-family: 'Black Han Sans', var(--font-ui); font-weight: 400; font-size: 1.375rem; color: var(--ink); letter-spacing: -0.01em; }
         .brand-mark { color: var(--accent); flex-shrink: 0; }
+        .brand-text { position: relative; top: 3px; }
 
         .nav-tabs { display: flex; gap: var(--sp-8); height: 100%; }
         .tab-btn {
@@ -415,7 +416,7 @@
             <svg class="brand-mark" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M10 8c0-2.2-1.8-4-4-4S2 5.8 2 8c0 2.1 1.2 3.8 3.1 4.6l-1.3 3.4h2.9l1.4-3.6C9.3 11.5 10 9.8 10 8zm12 0c0-2.2-1.8-4-4-4s-4 1.8-4 4c0 2.1 1.2 3.8 3.1 4.6l-1.3 3.4h2.9l1.4-3.6c1.2-0.9 1.9-2.6 1.9-4.4z"/>
             </svg>
-            AI Archive Pro
+            <span class="brand-text">네카이브</span>
         </div>
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('extractor')">발췌기</button>
@@ -463,6 +464,12 @@
                                     <div class="picker-opt" data-val="'Gowun Dodum', sans-serif" style="font-family: 'Gowun Dodum', sans-serif">고운돋움</div>
                                     <div class="picker-opt" data-val="'Nanum Myeongjo', serif" style="font-family: 'Nanum Myeongjo', serif">나눔명조</div>
                                     <div class="picker-opt" data-val="'Pretendard', sans-serif" style="font-family: 'Pretendard', sans-serif">프리텐다드</div>
+                                    <div class="picker-opt" data-val="'IBM Plex Sans KR', sans-serif" style="font-family: 'IBM Plex Sans KR', sans-serif">아이비엠 플렉스</div>
+                                    <div class="picker-opt" data-val="'Nanum Gothic', sans-serif" style="font-family: 'Nanum Gothic', sans-serif">나눔고딕</div>
+                                    <div class="picker-opt" data-val="'Gothic A1', sans-serif" style="font-family: 'Gothic A1', sans-serif">고딕 A1</div>
+                                    <div class="picker-opt" data-val="'Do Hyeon', sans-serif" style="font-family: 'Do Hyeon', sans-serif">도현체</div>
+                                    <div class="picker-opt" data-val="'Song Myung', serif" style="font-family: 'Song Myung', serif">송명체</div>
+                                    <div class="picker-opt" data-val="'Galmuri11', sans-serif" style="font-family: 'Galmuri11', sans-serif">도트체</div>
                                 </div>
                             </div>
                         </div>
@@ -1413,7 +1420,7 @@
         DOM.ovFColor.addEventListener('input', updateUI);
         
         let guideTimer;
-        function showVisualGuide() {
+        function showVisualGuide(persistent = false) {
             if (DOM.htmlToggle.checked) return;
             const textOverlay = document.getElementById('guide-overlay-text');
             const textRect = DOM.pText.getBoundingClientRect(); const cardRect = DOM.preview.getBoundingClientRect();
@@ -1421,7 +1428,8 @@
             textOverlay.style.left = ((textRect.left - cardRect.left) / scale) + 'px'; textOverlay.style.top = ((textRect.top - cardRect.top) / scale) + 'px';
             textOverlay.style.width = (textRect.width / scale) + 'px'; textOverlay.style.height = (textRect.height / scale) + 'px';
             textOverlay.style.border = '2px dashed #ff4757'; textOverlay.style.backgroundColor = 'rgba(255,71,87,0.08)'; textOverlay.style.opacity = '1';
-            clearTimeout(guideTimer); guideTimer = setTimeout(() => { textOverlay.style.opacity = '0'; }, 1000);
+            clearTimeout(guideTimer);
+            if (!persistent) guideTimer = setTimeout(() => { textOverlay.style.opacity = '0'; }, 1000);
         }
         [DOM.pad, DOM.lh, DOM.paraGap, DOM.letterSpacing, DOM.hScale2, DOM.size].forEach(el => el.addEventListener('input', showVisualGuide));
         DOM.align.addEventListener('change', showVisualGuide); DOM.charWrap.addEventListener('change', showVisualGuide); DOM.color.addEventListener('input', showVisualGuide);
@@ -1577,7 +1585,7 @@
         function cancelDrag() {
             if(!isDragging) return; isDragging = false;
             if(dragMode === 'bg') { bgOffsetX = origX; bgOffsetY = origY; updateBgLayer(); }
-            else if(dragMode === 'text') { DOM.textX.value = origX; DOM.textY.value = origY; updateUI(); }
+            else if(dragMode === 'text') { DOM.textX.value = origX; DOM.textY.value = origY; updateUI(); showVisualGuide(false); }
             else if(dragMode === 'ovMask') { DOM.ovX.value = origX; DOM.ovY.value = origY; updateUI(); }
             else if(dragMode === 'ovImg') { DOM.ovInX.value = origX; DOM.ovInY.value = origY; updateUI(); }
             else if(dragMode === 'wm') { DOM.wmX.value = origX; DOM.wmY.value = origY; updateUI(); }
@@ -1592,7 +1600,7 @@
             if ((dragMode === 'ovMask' || dragMode === 'ovImg') && !currentOvImageDataUrl) return;
             isDragging = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
             if(dragMode === 'bg') { origX = bgOffsetX; origY = bgOffsetY; }
-            else if(dragMode === 'text') { origX = parseFloat(DOM.textX.value)||0; origY = parseFloat(DOM.textY.value)||0; }
+            else if(dragMode === 'text') { origX = parseFloat(DOM.textX.value)||0; origY = parseFloat(DOM.textY.value)||0; showVisualGuide(true); }
             else if(dragMode === 'ovMask') { origX = parseFloat(DOM.ovX.value)||0; origY = parseFloat(DOM.ovY.value)||0; }
             else if(dragMode === 'ovImg') { origX = parseFloat(DOM.ovInX.value)||0; origY = parseFloat(DOM.ovInY.value)||0; }
             else if(dragMode === 'wm') { origX = parseFloat(DOM.wmX.value)||0; origY = parseFloat(DOM.wmY.value)||0; }
@@ -1604,13 +1612,16 @@
             const dx = (e.clientX - startMouseX) / previewScale; const dyMath = (startMouseY - e.clientY) / previewScale; 
 
             if (dragMode === 'bg') { const bgDx = (e.clientX - startMouseX) / (previewScale * bgScale); const bgDy = (e.clientY - startMouseY) / (previewScale * bgScale); bgOffsetX = origX + bgDx; bgOffsetY = origY + bgDy; updateBgLayer(); } 
-            else if (dragMode === 'text') { DOM.textX.value = Math.round(origX + dx); DOM.textY.value = Math.round(origY + dyMath); updateUI(); }
+            else if (dragMode === 'text') { DOM.textX.value = Math.round(origX + dx); DOM.textY.value = Math.round(origY + dyMath); updateUI(); showVisualGuide(true); }
             else if (dragMode === 'ovMask') { DOM.ovX.value = Math.round(origX + dx); DOM.ovY.value = Math.round(origY + dyMath); updateUI(); }
             else if (dragMode === 'ovImg') { const innerDx = dx / (ovScale || 1); const innerDyMath = dyMath / (ovScale || 1); DOM.ovInX.value = Math.round(origX + innerDx); DOM.ovInY.value = Math.round(origY + innerDyMath); updateUI(); }
             else if (dragMode === 'wm') { DOM.wmX.value = Math.round(origX + dx); DOM.wmY.value = Math.round(origY + dyMath); updateUI(); }
         });
 
-        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mouseup', () => {
+            if (isDragging && dragMode === 'text') showVisualGuide(false);
+            isDragging = false;
+        });
 
         document.querySelector('.preview-canvas-wrapper').addEventListener('wheel', (e) => {
             if (dragMode === 'bg' && currentBgImageDataUrl) {
@@ -1778,6 +1789,12 @@
             else if (fontFamilyStr.includes('Gowun Dodum')) cssUrl = 'https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap';
             else if (fontFamilyStr.includes('Nanum Myeongjo')) cssUrl = 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap';
             else if (fontFamilyStr.includes('Pretendard')) cssUrl = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css';
+            else if (fontFamilyStr.includes('IBM Plex Sans KR')) cssUrl = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap';
+            else if (fontFamilyStr.includes('Nanum Gothic')) cssUrl = 'https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap';
+            else if (fontFamilyStr.includes('Gothic A1')) cssUrl = 'https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;900&display=swap';
+            else if (fontFamilyStr.includes('Do Hyeon')) cssUrl = 'https://fonts.googleapis.com/css2?family=Do+Hyeon&display=swap';
+            else if (fontFamilyStr.includes('Song Myung')) cssUrl = 'https://fonts.googleapis.com/css2?family=Song+Myung&display=swap';
+            else if (fontFamilyStr.includes('Galmuri')) cssUrl = 'https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css';
             if (!cssUrl) return '';
 
             try {
