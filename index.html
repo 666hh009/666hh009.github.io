@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.4 UX 개선버전)</title>
+    <title>네카이브 (v3.5 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -301,29 +301,45 @@
             position: relative; display: grid; margin-top: var(--sp-2);
         }
         .code-editor-wrap > * { grid-area: 1 / 1; width: 100%; margin: 0; box-sizing: border-box; }
-        /* 줄바꿈에 관여하는 속성은 반드시 이 한 곳에서만 관리 (두 레이어가 항상 100% 동일해야 함) */
         .code-editor-wrap textarea,
         .code-editor-wrap .code-highlight-layer code {
             font-family: 'Noto Serif KR', serif; font-size: var(--fs-md); line-height: 1.7;
-            white-space: pre-wrap; word-break: keep-all; overflow-wrap: break-word;
         }
-        .code-highlight-layer {
+        /* 기본 상태 (태그 도우미 꺼짐): 색칠 레이어 없이 평범한 textarea 하나뿐 →
+           애초에 두 레이어가 어긋날 일 자체가 없음. 줄바꿈도 평소처럼 자동으로 됨. */
+        .code-highlight-layer, #code-hover-overlay { display: none; }
+        #input-text {
+            height: 220px; position: relative; resize: vertical; padding: var(--sp-2) var(--sp-3);
+            border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper); color: var(--ink);
+            white-space: pre-wrap; word-break: keep-all; overflow-wrap: break-word; overflow-x: hidden;
+        }
+        #input-text:focus { border-color: var(--ink); box-shadow: var(--focus-ring); }
+
+        /* 태그 도우미 켜짐: 색칠 오버레이 활성화. 이때는 줄바꿈 자체를 끄고(각 줄 통째로 유지)
+           가로 스크롤로 보게 해서, "긴 속성값이 태그별로 조각난 span 때문에 줄바꿈 지점이
+           살짝씩 어긋나는" 문제가 구조적으로 아예 발생하지 않게 함. */
+        .code-editor-wrap.hl-active .code-highlight-layer, .code-editor-wrap.hl-active #code-hover-overlay { display: block; }
+        .code-editor-wrap.hl-active .code-highlight-layer code {
+            white-space: pre; word-break: normal; overflow-wrap: normal;
+        }
+        .code-editor-wrap.hl-active .code-highlight-layer {
             height: 220px; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius-sm);
             background: var(--paper); overflow: hidden; pointer-events: none; user-select: none;
         }
-        .code-highlight-layer code {
+        .code-editor-wrap.hl-active .code-highlight-layer code {
             display: block; color: var(--ink); font-weight: 400; will-change: transform;
         }
-        #input-text {
-            height: 220px; position: relative; resize: vertical; padding: var(--sp-2) var(--sp-3); border: 1px solid transparent;
-            border-radius: var(--radius-sm); background: transparent; color: transparent; caret-color: var(--ink);
-            -webkit-text-fill-color: transparent;
+        /* ID(#input-text) 규칙보다 우선해야 해서 여기서도 ID를 포함시켜 명시도를 맞춤 */
+        .code-editor-wrap.hl-active #input-text {
+            white-space: pre; word-break: normal; overflow-wrap: normal;
+            border: 1px solid transparent; background: transparent; color: transparent; caret-color: var(--ink);
+            -webkit-text-fill-color: transparent; overflow-x: auto;
             /* 네이티브 스크롤바는 숨기되(두 레이어 폭이 항상 같아야 줄바꿈이 어긋나지 않음)
-               휠/키보드 스크롤 기능 자체는 그대로 유지됨 */
+               휠/키보드/드래그 스크롤 기능 자체는 그대로 유지됨 */
             scrollbar-width: none; -ms-overflow-style: none;
         }
-        #input-text::-webkit-scrollbar { width: 0; height: 0; }
-        #input-text:focus { border-color: var(--ink); box-shadow: var(--focus-ring); }
+        .code-editor-wrap.hl-active #input-text::-webkit-scrollbar { width: 0; height: 0; }
+        .code-editor-wrap.hl-active #input-text:focus { border-color: var(--ink); box-shadow: var(--focus-ring); }
         /* 문법 강조 토큰 색상 */
         .tok-punc { color: var(--ink-soft); }
         .tok-tag { color: #8a4fd6; font-weight: 600; }
@@ -1134,6 +1150,7 @@
             paraGap: document.getElementById('input-para-gap'), htmlToggle: document.getElementById('html-mode-toggle'),
             hlLayer: document.getElementById('code-highlight-layer'), hlCode: document.getElementById('code-highlight-code'),
             codeHoverOverlay: document.getElementById('code-hover-overlay'), tagHelper: document.getElementById('tag-helper-toggle'),
+            codeWrap: document.getElementById('code-editor-wrap'),
             letterSpacing: document.getElementById('input-letterspacing'), hScale2: document.getElementById('input-hscale'),
             
             marginTop: document.getElementById('margin-top'), marginBottom: document.getElementById('margin-bottom'),
@@ -1458,8 +1475,18 @@
             }
         }
 
+        function isSyntaxHighlightOn() {
+            return !!(DOM.tagHelper && DOM.tagHelper.checked && DOM.htmlToggle.checked);
+        }
+
         function syncHighlight() {
-            if (!DOM.hlCode || !DOM.text) return;
+            if (!DOM.hlCode || !DOM.text || !DOM.codeWrap) return;
+            const on = isSyntaxHighlightOn();
+            DOM.codeWrap.classList.toggle('hl-active', on);
+            if (!on) {
+                if (typeof clearTagHelperHighlight === 'function') clearTagHelperHighlight();
+                return; // 평범한 textarea 상태 → 색칠 레이어는 렌더링 자체를 안 함
+            }
             // 마지막 줄이 비어있어도 높이가 맞도록 폭 0 문자를 하나 덧붙임 (표시 전용, 원본엔 영향 없음)
             DOM.hlCode.innerHTML = highlightSyntax(DOM.text.value) + '\u200b';
             syncHighlightHeight();
@@ -2040,18 +2067,32 @@
             });
         }
 
+        // 커스텀 폰트를 실제로 브라우저에 등록(FontFace)하고 폰트 선택 목록에 옵션을 추가.
+        // 업로드 직후 / 아카이브에서 복원할 때 양쪽에서 공통으로 사용 (등록 로직이 두 곳에서 어긋나지 않게)
+        async function registerCustomFont(fontName, dataUrl, displayFileName) {
+            const font = new FontFace(fontName, `url(${dataUrl})`);
+            await font.load(); document.fonts.add(font);
+            const label = `내 폰트 (${displayFileName || '업로드된 폰트'})`;
+            let opt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === fontName);
+            if (!opt) {
+                opt = document.createElement('div'); opt.className = 'picker-opt'; opt.dataset.val = fontName; opt.style.fontFamily = fontName;
+                fontOptions.appendChild(opt);
+            }
+            opt.textContent = label;
+            setupFontPicker();
+            return label;
+        }
+
         DOM.customFont.addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = async (ev) => {
-                window.currentCustomFontBase64 = ev.target.result; 
-                const fontName = 'Custom_' + Date.now(); const fontUrl = URL.createObjectURL(file); const font = new FontFace(fontName, `url(${fontUrl})`);
+                window.currentCustomFontBase64 = ev.target.result; window.currentCustomFontFileName = file.name;
+                const fontName = 'Custom_' + Date.now();
                 try {
-                    await font.load(); document.fonts.add(font);
-                    const opt = document.createElement('div'); opt.className = 'picker-opt'; opt.dataset.val = fontName; opt.style.fontFamily = fontName; opt.textContent = `내 폰트 (${file.name})`;
-                    fontOptions.appendChild(opt);
-                    currentFontVal = fontName; fontTrigger.textContent = opt.textContent; fontTrigger.style.fontFamily = fontName;
-                    fontOptions.classList.remove('open'); setupFontPicker(); updateUI(); showToast('폰트가 적용되었습니다.');
+                    const label = await registerCustomFont(fontName, window.currentCustomFontBase64, file.name);
+                    currentFontVal = fontName; fontTrigger.textContent = label; fontTrigger.style.fontFamily = fontName;
+                    fontOptions.classList.remove('open'); updateUI(); showToast('폰트가 적용되었습니다.');
                 } catch (err) { showToast('폰트를 불러올 수 없습니다.'); }
             };
             reader.readAsDataURL(file);
@@ -2067,6 +2108,9 @@
                 marginTop: DOM.marginTop.value, marginBottom: DOM.marginBottom.value, marginLeft: DOM.marginLeft.value, marginRight: DOM.marginRight.value,
                 htmlScale: DOM.htmlScale.value,
                 font: currentFontVal, color: DOM.color.value, size: DOM.size.value, pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value,
+                // 커스텀 업로드 폰트는 세션 한정 이름표만으론 나중에 복원이 안 되므로, 실제 폰트 파일 데이터/원래 파일명도 같이 저장
+                customFontData: currentFontVal.startsWith('Custom_') ? (window.currentCustomFontBase64 || null) : null,
+                customFontFileName: currentFontVal.startsWith('Custom_') ? (window.currentCustomFontFileName || null) : null,
                 letterSpacing: DOM.letterSpacing.value, hScale2: DOM.hScale2.value, forceCenter: DOM.forceCenter.checked, charWrap: DOM.charWrap.checked,
                 wmChar: DOM.wmChar.value, wmCreator: DOM.wmCreator.value, wmSize: DOM.wmSize.value, wmColor: DOM.wmColor.value, wmX: DOM.wmX.value, wmY: DOM.wmY.value,
                 ovImg: currentOvImageDataUrl, ovMaskW: DOM.ovMaskW.value, ovMaskH: DOM.ovMaskH.value, ovMaskR: DOM.ovMaskR.value, 
@@ -2101,9 +2145,20 @@
             DOM.tsBlur.value = config.tsBlur || 5; DOM.tsY.value = config.tsY || 2;
 
             if (config.font) {
-                currentFontVal = config.font; fontTrigger.style.fontFamily = currentFontVal;
-                const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
-                if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
+                currentFontVal = config.font;
+                if (currentFontVal.startsWith('Custom_') && config.customFontData) {
+                    // 아카이브에 저장해둔 실제 폰트 파일 데이터로 다시 등록 (세션이 바뀌어도 정확히 복원됨)
+                    try {
+                        window.currentCustomFontBase64 = config.customFontData; window.currentCustomFontFileName = config.customFontFileName || null;
+                        const label = await registerCustomFont(currentFontVal, config.customFontData, config.customFontFileName);
+                        fontTrigger.textContent = label;
+                    } catch (e) { showToast('저장된 커스텀 폰트를 불러오지 못했습니다.'); }
+                } else {
+                    if (!currentFontVal.startsWith('Custom_')) { window.currentCustomFontBase64 = null; window.currentCustomFontFileName = null; }
+                    const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
+                    if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
+                }
+                fontTrigger.style.fontFamily = currentFontVal;
             }
 
             const bgPromise = new Promise(resolve => {
