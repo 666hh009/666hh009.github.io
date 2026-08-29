@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.5 UX 개선버전)</title>
+    <title>네카이브 (v3.5.1 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -301,51 +301,53 @@
             position: relative; display: grid; margin-top: var(--sp-2);
         }
         .code-editor-wrap > * { grid-area: 1 / 1; width: 100%; margin: 0; box-sizing: border-box; }
+        /* 줄바꿈 관련 속성은 이 한 곳에서만 관리 (두 레이어가 항상 100% 동일해야 함).
+           문법 강조 켜짐/꺼짐 여부와 상관없이 항상 자동 줄바꿈 유지. */
         .code-editor-wrap textarea,
         .code-editor-wrap .code-highlight-layer code {
             font-family: 'Noto Serif KR', serif; font-size: var(--fs-md); line-height: 1.7;
+            white-space: pre-wrap; word-break: keep-all; overflow-wrap: break-word;
         }
         /* 기본 상태 (태그 도우미 꺼짐): 색칠 레이어 없이 평범한 textarea 하나뿐 →
-           애초에 두 레이어가 어긋날 일 자체가 없음. 줄바꿈도 평소처럼 자동으로 됨. */
+           애초에 두 레이어가 어긋날 일 자체가 없음. */
         .code-highlight-layer, #code-hover-overlay { display: none; }
         #input-text {
             height: 220px; position: relative; resize: vertical; padding: var(--sp-2) var(--sp-3);
             border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper); color: var(--ink);
-            white-space: pre-wrap; word-break: keep-all; overflow-wrap: break-word; overflow-x: hidden;
+            overflow-x: hidden;
         }
         #input-text:focus { border-color: var(--ink); box-shadow: var(--focus-ring); }
 
-        /* 태그 도우미 켜짐: 색칠 오버레이 활성화. 이때는 줄바꿈 자체를 끄고(각 줄 통째로 유지)
-           가로 스크롤로 보게 해서, "긴 속성값이 태그별로 조각난 span 때문에 줄바꿈 지점이
-           살짝씩 어긋나는" 문제가 구조적으로 아예 발생하지 않게 함. */
+        /* 태그 도우미 켜짐: 색칠 오버레이 활성화. 줄바꿈은 그대로 자동으로 유지됨 —
+           대신 색깔을 입히는 span들이 font-weight/font-style을 절대 안 바꾸고 color만
+           바꾸도록 해서(아래 .tok-* 참고), 브라우저가 줄 전체를 "글꼴이 끊기지 않는
+           하나의 이어진 텍스트"로 보고 순수 textarea와 완전히 같은 지점에서 줄을 바꾸게 함.
+           (font-weight/style이 하나라도 다르면 그 지점에서 글자 배치 계산이 별도로 끊겨서
+           아주 미세하게 폭이 달라지고, 이게 누적되면서 줄바꿈 지점이 어긋났었음) */
         .code-editor-wrap.hl-active .code-highlight-layer, .code-editor-wrap.hl-active #code-hover-overlay { display: block; }
-        .code-editor-wrap.hl-active .code-highlight-layer code {
-            white-space: pre; word-break: normal; overflow-wrap: normal;
-        }
         .code-editor-wrap.hl-active .code-highlight-layer {
             height: 220px; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius-sm);
             background: var(--paper); overflow: hidden; pointer-events: none; user-select: none;
         }
         .code-editor-wrap.hl-active .code-highlight-layer code {
-            display: block; color: var(--ink); font-weight: 400; will-change: transform;
+            display: block; color: var(--ink); font-weight: 400; font-style: normal; will-change: transform;
         }
-        /* ID(#input-text) 규칙보다 우선해야 해서 여기서도 ID를 포함시켜 명시도를 맞춤 */
         .code-editor-wrap.hl-active #input-text {
-            white-space: pre; word-break: normal; overflow-wrap: normal;
             border: 1px solid transparent; background: transparent; color: transparent; caret-color: var(--ink);
-            -webkit-text-fill-color: transparent; overflow-x: auto;
+            -webkit-text-fill-color: transparent;
             /* 네이티브 스크롤바는 숨기되(두 레이어 폭이 항상 같아야 줄바꿈이 어긋나지 않음)
-               휠/키보드/드래그 스크롤 기능 자체는 그대로 유지됨 */
+               휠/키보드 스크롤 기능 자체는 그대로 유지됨 */
             scrollbar-width: none; -ms-overflow-style: none;
         }
         .code-editor-wrap.hl-active #input-text::-webkit-scrollbar { width: 0; height: 0; }
         .code-editor-wrap.hl-active #input-text:focus { border-color: var(--ink); box-shadow: var(--focus-ring); }
-        /* 문법 강조 토큰 색상 */
+        /* 문법 강조 토큰 색상 — font-weight/font-style은 절대 넣지 않음 (위 설명 참고).
+           구분은 오직 color로만 함. */
         .tok-punc { color: var(--ink-soft); }
-        .tok-tag { color: #8a4fd6; font-weight: 600; }
+        .tok-tag { color: #8a4fd6; }
         .tok-attr { color: #b3701f; }
         .tok-str { color: #2f8f5b; }
-        .tok-comment { color: var(--ink-faint); font-style: italic; }
+        .tok-comment { color: var(--ink-faint); }
 
         /* ── 태그 도우미 (코드 ↔ 미리보기 호버 연동) ──────────────────────
            미리보기 요소에 마우스를 올리면 해당 요소, 코드 쪽엔 대응 범위를 강조.
@@ -353,11 +355,22 @@
         #card-preview [data-tag-hover="1"] {
             outline: 2px solid var(--tag-hover) !important; outline-offset: 1px;
         }
-        #code-hover-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+        /* overflow: hidden 추가 — 대응 코드 범위가 스크롤 때문에 화면 밖(위/아래)에 있을 때
+           강조 박스가 입력창 경계 밖으로 삐져나와 보이던 문제 수정 */
+        #code-hover-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
         #code-hover-overlay .code-hover-box {
             position: absolute; background: var(--tag-hover-soft); border-radius: 2px;
             box-shadow: 0 0 0 1px var(--tag-hover);
         }
+        .code-hover-indicator {
+            position: absolute; left: 50%; transform: translateX(-50%); z-index: 6; width: max-content; max-width: 90%;
+            background: var(--tag-hover); color: #fff; font-size: 11px; font-weight: 600; line-height: 1;
+            padding: 4px 9px; border-radius: 999px; pointer-events: none; white-space: nowrap;
+            opacity: 0; transition: opacity .12s ease; box-shadow: 0 2px 6px rgba(0,0,0,.18);
+        }
+        #code-hover-indicator-up { top: 6px; }
+        #code-hover-indicator-down { bottom: 6px; }
+        .code-hover-indicator.visible { opacity: 1; }
 
         /* 오른쪽 미리보기 패널 */
         .preview-container { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -521,6 +534,8 @@
                         <pre class="code-highlight-layer" id="code-highlight-layer" aria-hidden="true"><code id="code-highlight-code"></code></pre>
                         <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..." spellcheck="false"></textarea>
                         <div id="code-hover-overlay" aria-hidden="true"></div>
+                        <div class="code-hover-indicator" id="code-hover-indicator-up" aria-hidden="true">▲ 대응 코드가 위에 있어요</div>
+                        <div class="code-hover-indicator" id="code-hover-indicator-down" aria-hidden="true">▼ 대응 코드가 아래에 있어요</div>
                     </div>
                 </div>
 
@@ -1150,6 +1165,7 @@
             paraGap: document.getElementById('input-para-gap'), htmlToggle: document.getElementById('html-mode-toggle'),
             hlLayer: document.getElementById('code-highlight-layer'), hlCode: document.getElementById('code-highlight-code'),
             codeHoverOverlay: document.getElementById('code-hover-overlay'), tagHelper: document.getElementById('tag-helper-toggle'),
+            codeHoverUp: document.getElementById('code-hover-indicator-up'), codeHoverDown: document.getElementById('code-hover-indicator-down'),
             codeWrap: document.getElementById('code-editor-wrap'),
             letterSpacing: document.getElementById('input-letterspacing'), hScale2: document.getElementById('input-hscale'),
             
@@ -1333,34 +1349,54 @@
             return !!(DOM.tagHelper && DOM.tagHelper.checked && DOM.htmlToggle.checked && !dragMode);
         }
 
+        function hideCodeHoverIndicators() {
+            if (DOM.codeHoverUp) DOM.codeHoverUp.classList.remove('visible');
+            if (DOM.codeHoverDown) DOM.codeHoverDown.classList.remove('visible');
+        }
+
         function clearTagHelperHighlight() {
             if (currentHoverPreviewEl) { currentHoverPreviewEl.removeAttribute('data-tag-hover'); currentHoverPreviewEl = null; }
             if (DOM.codeHoverOverlay) DOM.codeHoverOverlay.innerHTML = '';
+            hideCodeHoverIndicators();
         }
 
         // raw 문자열의 [start, end] 범위가 하이라이트 레이어(#code-highlight-code) 안에서
         // 화면상 어느 사각형(들)을 차지하는지 구해서 그 자리에 강조 박스를 그림.
         // 하이라이트 레이어는 실제로 화면에 보이는 텍스트라, 여기 기준으로 Range를 잡으면
         // 투명 textarea와 픽셀 단위로 정확히 겹침.
+        // 대응 범위가 지금 스크롤 위치상 입력창 화면 밖(위/아래)에 있으면, 박스 대신
+        // "위/아래에 있음" 배지로 방향만 알려줌 (입력창 경계 밖으로 삐져나오지 않게).
         function highlightCodeRange(start, end) {
             if (!DOM.codeHoverOverlay || !DOM.hlCode) return;
             DOM.codeHoverOverlay.innerHTML = '';
+            hideCodeHoverIndicators();
             const range = rawOffsetsToDomRange(DOM.hlCode, start, end);
             if (!range) return;
             const wrapRect = DOM.codeHoverOverlay.getBoundingClientRect();
             const rects = range.getClientRects();
             const frag = document.createDocumentFragment();
+            let anyVisible = false, hasRect = false, allAbove = true, allBelow = true;
             for (const r of rects) {
                 if (r.width <= 0 || r.height <= 0) continue;
+                hasRect = true;
+                const relTop = r.top - wrapRect.top;
+                const relBottom = r.bottom - wrapRect.top;
+                if (relBottom > 0) allAbove = false;
+                if (relTop < wrapRect.height) allBelow = false;
+                if (relBottom > 0 && relTop < wrapRect.height) anyVisible = true;
                 const box = document.createElement('div');
                 box.className = 'code-hover-box';
                 box.style.left = (r.left - wrapRect.left) + 'px';
-                box.style.top = (r.top - wrapRect.top) + 'px';
+                box.style.top = relTop + 'px';
                 box.style.width = r.width + 'px';
                 box.style.height = r.height + 'px';
                 frag.appendChild(box);
             }
             DOM.codeHoverOverlay.appendChild(frag);
+            if (hasRect && !anyVisible) {
+                if (allAbove && DOM.codeHoverUp) DOM.codeHoverUp.classList.add('visible');
+                else if (allBelow && DOM.codeHoverDown) DOM.codeHoverDown.classList.add('visible');
+            }
         }
 
         // 원본 문자열 오프셋 [start,end] → 실제 라이브 DOM(text node, offset) 쌍으로 변환해 Range 생성.
@@ -2355,7 +2391,16 @@
             let built = null;
             try {
                 built = buildCaptureDom();
-                const { iframe, idoc, w, h } = built;
+                const { iframe, idoc, sourceEl, w, h } = built;
+                // 서버는 완전히 별도의 브라우저에서 이 HTML을 다시 렌더링하기 때문에, 로컬 캡쳐와
+                // 마찬가지로 폰트 데이터(커스텀 폰트 base64 포함)를 문서 안에 직접 심어서 보내야 함.
+                // 이게 빠지면 서버 쪽은 "Custom_..." 같은 폰트 이름을 몰라서 기본 폰트로 대체해버림.
+                const embeddedFontCss = await buildEmbeddedFontCss(sourceEl);
+                if (embeddedFontCss) {
+                    const styleTag = idoc.createElement('style');
+                    styleTag.textContent = embeddedFontCss;
+                    idoc.head.appendChild(styleTag);
+                }
                 const fullHtml = '<!DOCTYPE html>' + idoc.documentElement.outerHTML;
                 document.body.removeChild(iframe); built = null;
 
