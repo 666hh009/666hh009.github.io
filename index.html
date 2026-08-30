@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.5.2 UX 개선버전)</title>
+    <title>네카이브 (v3.7 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -114,6 +114,30 @@
         @media (min-width: 1440px) {
             .app-container { margin: var(--sp-6) 0; height: calc(100vh - 48px); border-radius: 18px; }
         }
+
+        /* ── 화면 확장: 양옆 여백 없애고 사이드바를 넓혀서 2열로 배치 ── */
+        body.screen-expand .app-container { max-width: none; width: 100%; }
+        body.screen-expand .controls { flex: 0 0 clamp(380px, 34vw, 640px); }
+        /* 사이드바 내부를 2열 그리드로. row-group(관련 항목 묶음)이나 독립된 row 하나하나가
+           그리드 칸 하나씩을 차지해서 자연스럽게 옆으로 짝지어짐. 폭이 넓어야 하는 항목만
+           .row-span2(또는 아래 지정된 선택자)로 두 칸을 다 차지하게 함.
+           주의: collapsible-header가 있는 섹션(4~7번)은 .ctrl-section 자체가 아니라
+           .collapsible-content만 그리드로 만들어야 함 — 안 그러면 헤더와 본문이 옆으로
+           나란히 배치되어버림. :has()로 그 경우를 구분해서 뺌. */
+        body.screen-expand .ctrl-section:not(:has(> .collapsible-header)),
+        body.screen-expand .collapsible-content {
+            display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--sp-6); row-gap: 0; align-items: start;
+        }
+        body.screen-expand .ctrl-section > .ctrl-eyebrow,
+        body.screen-expand .code-editor-wrap,
+        body.screen-expand #text-editor-toolbar,
+        body.screen-expand .section-note,
+        body.screen-expand .row-span2 {
+            grid-column: 1 / -1;
+        }
+        /* section-html-layout, section-typography는 collapsible-content 없이 ctrl-section
+           바로 아래 row가 오므로 위 선택자가 그대로 적용됨. 다만 헤더 없는 section(본문 입력)의
+           맨 위 첫 row가 grid-row 계산에서 어색해지지 않도록 gap은 row-group/자체 margin으로 유지 */
 
         /* 헤더 */
         header {
@@ -515,7 +539,7 @@
 
                 <!-- 1. 본문 입력 -->
                 <div class="ctrl-section">
-                    <div class="row">
+                    <div class="row row-span2">
                         <span class="row-label bold">HTML 뷰어 모드</span>
                         <label class="row-switch">
                             <input type="checkbox" id="html-mode-toggle">
@@ -631,7 +655,7 @@
                         </div>
                     </div>
 
-                    <div class="row-group">
+                    <div class="row-group row-span2">
                         <div class="row">
                             <div class="segmented" id="align-segmented" title="정렬" style="flex:1;">
                                 <button type="button" data-align="left" onclick="shellSetAlign('left')" title="왼쪽 정렬">
@@ -743,6 +767,7 @@
                                     <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-h', -10, 10)">−</button><input type="number" id="ov-mask-h" value="300" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-h', 10, 10)">+</button></div>
                                 </div>
                             </div>
+                            <div class="section-note" style="margin-top:-4px;">미리보기 틀의 파란 모서리 점을 드래그해도 크기가 바뀝니다.</div>
                             <div class="row">
                                 <span class="row-label">틀 둥글기 (Radius)</span>
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-r', -5, 5)">−</button><input type="number" id="ov-mask-r" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-r', 5, 5)">+</button></div>
@@ -769,13 +794,10 @@
                         <div class="row">
                             <span class="row-label">내부 이미지 조절</span>
                             <div class="row-control">
-                                <button type="button" class="action-btn" id="btn-ov-img-drag" onclick="toggleDragMode('ovImg')" title="드래그로 위치를, 휠로 크기를 조절하세요">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                    드래그 & 휠
-                                </button>
-                                <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="내부 이미지 초기화">↺</button>
+                                <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="내부 이미지 초기화">↺ 초기화</button>
                             </div>
                         </div>
+                        <div class="section-note" style="margin-top:-4px; margin-bottom:12px;">미리보기의 파란 틀 안에서 바로 드래그(이동)·휠(확대축소)로 조절하세요. 모서리를 드래그하면 틀 크기가 바뀝니다.</div>
                         <div class="row">
                             <span class="row-label">내부 좌표 (X · Y)</span>
                             <div class="row-control">
@@ -839,57 +861,65 @@
                     </div>
                     <div class="collapsible-content">
                         <!-- 텍스트 편집 도구 -->
-                        <div class="row">
-                            <span class="row-label bold">텍스트 편집 도구 표시</span>
-                            <label class="row-switch">
-                                <input type="checkbox" id="text-toolbar-toggle" onchange="toggleTextToolbar()">
-                                <span class="track"></span>
-                            </label>
+                        <div class="row-group">
+                            <div class="row">
+                                <span class="row-label bold">텍스트 편집 도구 표시</span>
+                                <label class="row-switch">
+                                    <input type="checkbox" id="text-toolbar-toggle" onchange="toggleTextToolbar()">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="section-note">켜면 텍스트 입력창 위에 볼드, 기울임, 형광펜, 엠대시, 구분선 버튼이 나타납니다.</div>
                         </div>
-                        <div class="section-note row-group">켜면 텍스트 입력창 위에 볼드, 기울임, 형광펜, 엠대시, 구분선 버튼이 나타납니다.</div>
 
                         <!-- 형광펜 기능 -->
-                        <div class="row">
-                            <span class="row-label bold">형광펜 칠하기</span>
-                        </div>
-                        <div class="section-note" style="margin-bottom:8px;">텍스트 모드에서 글자를 드래그한 후 누르세요.</div>
-                        <div class="row row-group">
-                            <span class="swatch" style="background:#a3e635;"><input type="color" id="hl-color" value="#a3e635"></span>
-                            <input type="range" id="hl-opacity" min="0.1" max="1.0" step="0.1" value="0.5" style="flex:1; margin:0 8px;">
-                            <button class="action-btn" onclick="applyHighlight()">칠하기</button>
-                            <button class="action-btn" onclick="clearHighlights()" style="color:var(--danger); border-color:var(--accent-soft);">삭제</button>
+                        <div class="row-group">
+                            <div class="row">
+                                <span class="row-label bold">형광펜 칠하기</span>
+                            </div>
+                            <div class="section-note" style="margin-bottom:8px;">텍스트 모드에서 글자를 드래그한 후 누르세요.</div>
+                            <div class="row">
+                                <span class="swatch" style="background:#a3e635;"><input type="color" id="hl-color" value="#a3e635"></span>
+                                <input type="range" id="hl-opacity" min="0.1" max="1.0" step="0.1" value="0.5" style="flex:1; margin:0 8px;">
+                                <button class="action-btn" onclick="applyHighlight()">칠하기</button>
+                                <button class="action-btn" onclick="clearHighlights()" style="color:var(--danger); border-color:var(--accent-soft);">삭제</button>
+                            </div>
                         </div>
 
                         <!-- 텍스트 그림자 -->
-                        <div class="row">
-                            <span class="row-label bold">텍스트 그림자 (Drop Shadow)</span>
-                        </div>
-                        <div class="section-note" style="margin-bottom:8px;">글자 뒤에 그림자를 추가하여 가독성을 높입니다.</div>
-                        <div class="row">
-                            <span class="row-label">색상 · 진하기</span>
-                            <div class="row-control">
-                                <span class="swatch" style="background:#000000;"><input type="color" id="ts-color" value="#000000" oninput="updateUI()"></span>
-                                <input type="range" id="ts-opacity" min="0" max="1.0" step="0.1" value="0" style="width:100px;" oninput="updateUI()">
+                        <div class="row-group">
+                            <div class="row">
+                                <span class="row-label bold">텍스트 그림자 (Drop Shadow)</span>
                             </div>
-                        </div>
-                        <div class="row row-group">
-                            <span class="row-label">흐림 · Y 위치</span>
-                            <div class="row-control">
-                                <div class="stepper"><button type="button" onclick="adjustNum('ts-blur', -1, 1)">−</button><input type="number" id="ts-blur" value="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ts-blur', 1, 1)">+</button></div>
-                                <div class="stepper"><button type="button" onclick="adjustNum('ts-y', -1, 1)">−</button><input type="number" id="ts-y" value="2" oninput="updateUI()"><button type="button" onclick="adjustNum('ts-y', 1, 1)">+</button></div>
+                            <div class="section-note" style="margin-bottom:8px;">글자 뒤에 그림자를 추가하여 가독성을 높입니다.</div>
+                            <div class="row">
+                                <span class="row-label">색상 · 진하기</span>
+                                <div class="row-control">
+                                    <span class="swatch" style="background:#000000;"><input type="color" id="ts-color" value="#000000" oninput="updateUI()"></span>
+                                    <input type="range" id="ts-opacity" min="0" max="1.0" step="0.1" value="0" style="width:100px;" oninput="updateUI()">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <span class="row-label">흐림 · Y 위치</span>
+                                <div class="row-control">
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ts-blur', -1, 1)">−</button><input type="number" id="ts-blur" value="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ts-blur', 1, 1)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ts-y', -1, 1)">−</button><input type="number" id="ts-y" value="2" oninput="updateUI()"><button type="button" onclick="adjustNum('ts-y', 1, 1)">+</button></div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- 컨테이너 위치 강제 해제 -->
-                        <div class="row">
-                            <span class="row-label bold">컨테이너 위치 강제 해제</span>
-                            <label class="row-switch">
-                                <input type="checkbox" id="force-center-toggle" onchange="updateUI()">
-                                <span class="track"></span>
-                            </label>
+                        <div class="row-group">
+                            <div class="row">
+                                <span class="row-label bold">컨테이너 위치 강제 해제</span>
+                                <label class="row-switch">
+                                    <input type="checkbox" id="force-center-toggle" onchange="updateUI()">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="section-note" style="margin-top:4px;">HTML 코드 최상위 태그의 위치 고정(position/margin 등)만 무력화해서 가운데로 오게 합니다.</div>
+                            <p id="position-warning-detail" style="font-size: 0.75rem; margin-top: 8px; margin-bottom: 0; font-weight: 600;"></p>
                         </div>
-                        <div class="section-note" style="margin-top:4px;">HTML 코드 최상위 태그의 위치 고정(position/margin 등)만 무력화해서 가운데로 오게 합니다.</div>
-                        <p id="position-warning-detail" style="font-size: 0.75rem; margin-top: 8px; margin-bottom: 0; font-weight: 600;"></p>
                     </div>
                 </div>
 
@@ -901,66 +931,85 @@
                     </div>
                     <div class="collapsible-content">
                         <!-- 시스템 설정 -->
-                        <div class="row">
-                            <span class="row-label bold">메뉴 툴바 항상 표시</span>
-                            <label class="row-switch">
-                                <input type="checkbox" id="toolbar-always-toggle" onchange="toggleToolbarAlways()">
-                                <span class="track"></span>
-                            </label>
-                        </div>
-                        <div class="section-note row-group">켜면 미리보기 우측 아이콘들이 투명해지지 않고 항상 켜져있습니다.</div>
-
-                        <div class="row">
-                            <span class="row-label bold">휠 확대축소 민감도</span>
-                            <div class="row-control">
-                                <input type="range" id="wheel-sensitivity-slider" min="0.00005" max="0.001" step="0.00005" value="0.0002" oninput="updateWheelSensitivity()" style="width: 100px;">
-                                <span class="row-hex" id="wheel-sensitivity-readout" style="min-width: 50px; text-align:right;">0.0002</span>
+                        <div class="row-group">
+                            <div class="row">
+                                <span class="row-label bold">화면 확장</span>
+                                <label class="row-switch">
+                                    <input type="checkbox" id="screen-expand-toggle" onchange="toggleScreenExpand()">
+                                    <span class="track"></span>
+                                </label>
                             </div>
+                            <div class="section-note">켜면 화면 양옆 여백을 없애고, 입력창과 미리보기를 더 넓게 씁니다. (편집 패널이 2열로 배치돼요)</div>
                         </div>
-                        <div class="section-note row-group">배경 이미지와 오버레이 내부 이미지에 공통으로 적용됩니다. (값이 작을수록 미세 조절)</div>
 
-                        <!-- 서버 캡쳐 설정 -->
-                        <div class="row">
-                            <span class="row-label bold">서버 캡쳐 설정</span>
+                        <div class="row-group">
+                            <div class="row">
+                                <span class="row-label bold">메뉴 툴바 항상 표시</span>
+                                <label class="row-switch">
+                                    <input type="checkbox" id="toolbar-always-toggle" onchange="toggleToolbarAlways()">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="section-note">켜면 미리보기 우측 아이콘들이 투명해지지 않고 항상 켜져있습니다.</div>
                         </div>
-                        <div class="section-note" style="margin-bottom:12px;">우측 하단 툴바에서 체크 시 작동합니다. 주소/토큰은 꺼둬도 계속 저장됩니다.</div>
-                        <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px;">
-                            <span class="row-label" style="font-size:var(--fs-sm);">Worker 주소</span>
-                            <input type="text" id="capture-server-url" placeholder="https://xxxx.workers.dev" style="font-family: var(--mono);">
-                        </div>
-                        <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px;">
-                            <span class="row-label" style="font-size:var(--fs-sm);">보안 토큰 (선택)</span>
-                            <input type="text" id="capture-server-secret" placeholder="워커 코드에 넣은 값과 동일하게" style="font-family: var(--mono);">
-                        </div>
-                        <div style="display:flex; gap:12px; margin-top:16px;">
-                            <button class="action-btn" onclick="saveCaptureServerSettings()" style="flex:1;">저장</button>
-                            <button class="action-btn" onclick="testCaptureServer()" style="flex:1;">연결 테스트</button>
-                        </div>
-                        <p id="capture-server-status" class="section-note" style="margin-top:12px; margin-bottom:0; font-weight:600;"></p>
 
-                        <div class="row" style="margin-top:16px; padding-top:16px; border-top: 1px solid var(--line-soft);">
-                            <span class="row-label">오늘 사용량</span>
-                            <button class="action-btn" onclick="refreshCaptureUsage()" style="height:28px; padding:0 12px; font-size:var(--fs-xs);">새로고침</button>
+                        <div class="row-group">
+                            <div class="row">
+                                <span class="row-label bold">휠 확대축소 민감도</span>
+                                <div class="row-control">
+                                    <input type="range" id="wheel-sensitivity-slider" min="0.00005" max="0.001" step="0.00005" value="0.0002" oninput="updateWheelSensitivity()" style="width: 100px;">
+                                    <span class="row-hex" id="wheel-sensitivity-readout" style="min-width: 50px; text-align:right;">0.0002</span>
+                                </div>
+                            </div>
+                            <div class="section-note">배경 이미지와 오버레이 내부 이미지에 공통으로 적용됩니다. (값이 작을수록 미세 조절)</div>
                         </div>
-                        <p id="capture-usage-status" class="section-note row-group">아직 조회 안 함</p>
+
+                        <!-- 서버 캡쳐 설정 — 내용이 넓어서(주소 입력창 등) 2열로 안 쪼개고 항상 한 줄 전체를 씀 -->
+                        <div class="row-group row-span2">
+                            <div class="row">
+                                <span class="row-label bold">서버 캡쳐 설정</span>
+                            </div>
+                            <div class="section-note" style="margin-bottom:12px;">우측 하단 툴바에서 체크 시 작동합니다. 주소/토큰은 꺼둬도 계속 저장됩니다.</div>
+                            <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                                <span class="row-label" style="font-size:var(--fs-sm);">Worker 주소</span>
+                                <input type="text" id="capture-server-url" placeholder="https://xxxx.workers.dev" style="font-family: var(--mono);">
+                            </div>
+                            <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px;">
+                                <span class="row-label" style="font-size:var(--fs-sm);">보안 토큰 (선택)</span>
+                                <input type="text" id="capture-server-secret" placeholder="워커 코드에 넣은 값과 동일하게" style="font-family: var(--mono);">
+                            </div>
+                            <div style="display:flex; gap:12px; margin-top:16px;">
+                                <button class="action-btn" onclick="saveCaptureServerSettings()" style="flex:1;">저장</button>
+                                <button class="action-btn" onclick="testCaptureServer()" style="flex:1;">연결 테스트</button>
+                            </div>
+                            <p id="capture-server-status" class="section-note" style="margin-top:12px; margin-bottom:0; font-weight:600;"></p>
+
+                            <div class="row" style="margin-top:16px; padding-top:16px; border-top: 1px solid var(--line-soft);">
+                                <span class="row-label">오늘 사용량</span>
+                                <button class="action-btn" onclick="refreshCaptureUsage()" style="height:28px; padding:0 12px; font-size:var(--fs-xs);">새로고침</button>
+                            </div>
+                            <p id="capture-usage-status" class="section-note">아직 조회 안 함</p>
+                        </div>
 
                         <!-- 초기화 및 기본값 저장 -->
-                        <div class="row">
-                            <span class="row-label bold">초기화 및 기본값 저장</span>
-                        </div>
-                        <div class="section-note" style="margin-bottom:16px;">설정된 값을 초기화하거나 기본값으로 저장합니다.</div>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <div style="display: flex; gap: 12px;">
-                                <button class="action-btn" onclick="saveTypoDefault()" style="flex: 1;" title="현재의 폰트, 여백, 정렬 상태를 기본값으로 저장">타이포 기본값 저장</button>
-                                <button class="action-btn" onclick="saveBgDefault()" style="flex: 1;" title="현재의 배경, 배율, 부가기능 상태를 기본값으로 저장">배경영역 기본값 저장</button>
+                        <div class="row-group row-span2">
+                            <div class="row">
+                                <span class="row-label bold">초기화 및 기본값 저장</span>
                             </div>
-                            <div style="display: flex; gap: 12px;">
-                                <button class="action-btn" onclick="resetTypography()" style="flex: 1; color:var(--accent); border-color:var(--accent-soft);" title="지정한 '타이포 기본값'으로 텍스트 관련 설정만 되돌립니다">타이포 초기화</button>
-                                <button class="action-btn" onclick="resetBackground()" style="flex: 1; color:var(--accent); border-color:var(--accent-soft);" title="지정한 '배경영역 기본값'으로 배경 및 부가기능만 되돌립니다">배경 초기화</button>
+                            <div class="section-note" style="margin-bottom:16px;">설정된 값을 초기화하거나 기본값으로 저장합니다.</div>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="display: flex; gap: 12px;">
+                                    <button class="action-btn" onclick="saveTypoDefault()" style="flex: 1;" title="현재의 폰트, 여백, 정렬 상태를 기본값으로 저장">타이포 기본값 저장</button>
+                                    <button class="action-btn" onclick="saveBgDefault()" style="flex: 1;" title="현재의 배경, 배율, 부가기능 상태를 기본값으로 저장">배경영역 기본값 저장</button>
+                                </div>
+                                <div style="display: flex; gap: 12px;">
+                                    <button class="action-btn" onclick="resetTypography()" style="flex: 1; color:var(--accent); border-color:var(--accent-soft);" title="지정한 '타이포 기본값'으로 텍스트 관련 설정만 되돌립니다">타이포 초기화</button>
+                                    <button class="action-btn" onclick="resetBackground()" style="flex: 1; color:var(--accent); border-color:var(--accent-soft);" title="지정한 '배경영역 기본값'으로 배경 및 부가기능만 되돌립니다">배경 초기화</button>
+                                </div>
+                                <button class="action-btn" onclick="resetAllSettings()" style="width: 100%; color:var(--danger); border-color:var(--accent-soft);" title="모든 설정을 공장 초기화 상태로 완전히 리셋합니다.">전체 공장 초기화</button>
                             </div>
-                            <button class="action-btn" onclick="resetAllSettings()" style="width: 100%; color:var(--danger); border-color:var(--accent-soft);" title="모든 설정을 공장 초기화 상태로 완전히 리셋합니다.">전체 공장 초기화</button>
+                            <p class="section-note" style="text-align: center; margin-top: 12px;">작성한 대화 내용과 코드는 지워지지 않습니다.</p>
                         </div>
-                        <p class="section-note" style="text-align: center; margin-top: 12px;">작성한 대화 내용과 코드는 지워지지 않습니다.</p>
                     </div>
                 </div>
 
@@ -1069,6 +1118,19 @@
                                         <div id="overlay-img-transform" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%) scale(1); z-index: 1; pointer-events: none;">
                                             <img id="overlay-img-content" src="" style="max-width: none; pointer-events: auto; display: none;">
                                         </div>
+                                    </div>
+                                    <!-- 크롭 툴: 틀과 정확히 같은 크기로 겹쳐서(부모가 이미 flex 중앙정렬 해줌) 별도 좌표
+                                         계산 없이도 항상 틀 위치에 딱 맞음. 내부 드래그=이미지 이동, 휠=이미지 확대축소,
+                                         모서리 4점 드래그=틀 크기 조절. 오버레이 이미지가 있을 때만 보임(JS에서 토글). -->
+                                    <div id="ov-crop-frame" style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); width:300px; height:300px; box-sizing:border-box; border:2px solid #2f6fed; pointer-events:auto; cursor:move; display:none;">
+                                        <div class="ov-crop-grid-line" style="position:absolute; left:33.333%; top:0; bottom:0; width:1px; background:rgba(255,255,255,.6);"></div>
+                                        <div class="ov-crop-grid-line" style="position:absolute; left:66.666%; top:0; bottom:0; width:1px; background:rgba(255,255,255,.6);"></div>
+                                        <div class="ov-crop-grid-line" style="position:absolute; top:33.333%; left:0; right:0; height:1px; background:rgba(255,255,255,.6);"></div>
+                                        <div class="ov-crop-grid-line" style="position:absolute; top:66.666%; left:0; right:0; height:1px; background:rgba(255,255,255,.6);"></div>
+                                        <div class="ov-crop-handle" data-corner="nw" style="position:absolute; top:0; left:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nwse-resize;"></div>
+                                        <div class="ov-crop-handle" data-corner="ne" style="position:absolute; top:0; right:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nesw-resize;"></div>
+                                        <div class="ov-crop-handle" data-corner="sw" style="position:absolute; bottom:0; left:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nesw-resize;"></div>
+                                        <div class="ov-crop-handle" data-corner="se" style="position:absolute; bottom:0; right:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nwse-resize;"></div>
                                     </div>
                                 </div>
 
@@ -1560,6 +1622,13 @@
             ovMask.style.width = DOM.ovMaskW.value + 'px';
             ovMask.style.height = DOM.ovMaskH.value + 'px';
             ovMask.style.borderRadius = DOM.ovMaskR.value + 'px';
+            // 크롭 툴 프레임을 틀과 항상 같은 크기로 유지 (위치는 같은 부모의 flex 중앙정렬로 자동 일치)
+            const cropFrame = document.getElementById('ov-crop-frame');
+            if (cropFrame) {
+                cropFrame.style.width = DOM.ovMaskW.value + 'px';
+                cropFrame.style.height = DOM.ovMaskH.value + 'px';
+                cropFrame.style.display = currentOvImageDataUrl ? 'block' : 'none';
+            }
             ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
             
             if(parseFloat(DOM.ovFOpacity.value) > 0) {
@@ -1661,6 +1730,21 @@
                 try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } 
                 catch(e) { delete config.bgImg; delete config.ovImg; try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } catch(e){} }
             }, 1000);
+        }
+
+        function toggleScreenExpand() {
+            const isChecked = document.getElementById('screen-expand-toggle').checked;
+            document.body.classList.toggle('screen-expand', isChecked);
+            // 이미 펼쳐져 있던 섹션들의 인라인 display 값을 새 모드(grid/block)에 맞게 갱신
+            // (안 그러면 toggleSection이 예전에 남겨둔 display:block이 grid보다 우선 적용돼버림)
+            document.querySelectorAll('.collapsible-content').forEach(content => {
+                if (content.style.display && content.style.display !== 'none') {
+                    content.style.display = isChecked ? 'grid' : 'block';
+                }
+            });
+            localStorage.setItem('archive_screen_expand', isChecked);
+            // 사이드바 폭이 바뀌면 코드 입력창 폭도 바뀌어서, 문법 강조 레이어 위치를 다시 맞춰야 함
+            if (typeof syncHighlightScroll === 'function') requestAnimationFrame(syncHighlightScroll);
         }
 
         function toggleToolbarAlways() {
@@ -1807,6 +1891,9 @@
             if(localStorage.getItem('archive_toolbar_always') === 'true') {
                 document.getElementById('toolbar-always-toggle').checked = true; document.body.classList.add('toolbar-always');
             }
+            if(localStorage.getItem('archive_screen_expand') === 'true') {
+                document.getElementById('screen-expand-toggle').checked = true; document.body.classList.add('screen-expand');
+            }
 
             document.getElementById('wheel-sensitivity-slider').value = wheelZoomSensitivity;
             document.getElementById('wheel-sensitivity-readout').textContent = wheelZoomSensitivity;
@@ -1899,6 +1986,9 @@
             DOM.previewWrapper.style.width = (DOM.width.value * ratio) + 'px';
             DOM.previewWrapper.style.height = (DOM.height.value * ratio) + 'px';
             DOM.scrollArea.style.alignItems = (DOM.height.value * ratio) < DOM.scrollArea.clientHeight ? 'center' : 'flex-start';
+            // 미리보기를 확대/축소해도 크롭 툴 손잡이(모서리 점)는 화면상 항상 같은 크기로 보이게 역보정
+            const invScale = ratio > 0 ? 1 / ratio : 1;
+            document.querySelectorAll('.ov-crop-handle').forEach(h => { h.style.transform = `scale(${invScale})`; });
         }
 
         DOM.bgImg.addEventListener('change', function(e) {
@@ -1937,7 +2027,7 @@
         }
 
         function toggleDragMode(mode) {
-            const btns = { 'bg': document.getElementById('btn-bg-drag'), 'text': DOM.textDragBtn, 'text-html': DOM.textDragBtnHtml, 'ovMask': document.getElementById('btn-ov-mask-drag'), 'ovImg': document.getElementById('btn-ov-img-drag'), 'wm': document.getElementById('btn-wm-drag') };
+            const btns = { 'bg': document.getElementById('btn-bg-drag'), 'text': DOM.textDragBtn, 'text-html': DOM.textDragBtnHtml, 'ovMask': document.getElementById('btn-ov-mask-drag'), 'wm': document.getElementById('btn-wm-drag') };
             Object.values(btns).forEach(b => b && b.classList.remove('drag-active'));
             if (dragMode === mode) { dragMode = null; DOM.preview.style.cursor = 'default'; hideToast(); }
             else {
@@ -1945,7 +2035,7 @@
                 if(mode === 'text' && btns['text-html']) btns['text-html'].classList.add('drag-active');
                 DOM.preview.style.cursor = 'move';
                 if (typeof clearTagHelperHighlight === 'function') clearTagHelperHighlight();
-                const msgs = { 'bg': '배경을 움직이거나 휠로 크기를 조절하세요. (ESC 취소)', 'text': '마우스 드래그로 요소 위치를 조절하세요. (ESC 취소)', 'ovMask': '마스크 틀 자체를 이동합니다. (ESC 취소)', 'ovImg': '이미지를 움직이거나 휠로 크기를 조절하세요. (ESC 취소)', 'wm': '워터마크 위치를 이동합니다. (ESC 취소)' };
+                const msgs = { 'bg': '배경을 움직이거나 휠로 크기를 조절하세요. (ESC 취소)', 'text': '마우스 드래그로 요소 위치를 조절하세요. (ESC 취소)', 'ovMask': '마스크 틀 자체를 이동합니다. (ESC 취소)', 'wm': '워터마크 위치를 이동합니다. (ESC 취소)' };
                 showToast(msgs[mode]);
             }
         }
@@ -1955,7 +2045,6 @@
             if(dragMode === 'bg') { bgOffsetX = origX; bgOffsetY = origY; updateBgLayer(); }
             else if(dragMode === 'text') { DOM.textX.value = origX; DOM.textY.value = origY; updateUI(); showVisualGuide(false); }
             else if(dragMode === 'ovMask') { DOM.ovX.value = origX; DOM.ovY.value = origY; updateUI(); }
-            else if(dragMode === 'ovImg') { DOM.ovInX.value = origX; DOM.ovInY.value = origY; updateUI(); }
             else if(dragMode === 'wm') { DOM.wmX.value = origX; DOM.wmY.value = origY; updateUI(); }
             showToast('이동이 취소되었습니다.');
         }
@@ -1965,12 +2054,11 @@
         DOM.preview.addEventListener('mousedown', (e) => {
             if (!dragMode) return;
             if (dragMode === 'bg' && !currentBgImageDataUrl) return;
-            if ((dragMode === 'ovMask' || dragMode === 'ovImg') && !currentOvImageDataUrl) return;
+            if (dragMode === 'ovMask' && !currentOvImageDataUrl) return;
             isDragging = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
             if(dragMode === 'bg') { origX = bgOffsetX; origY = bgOffsetY; }
             else if(dragMode === 'text') { origX = parseFloat(DOM.textX.value)||0; origY = parseFloat(DOM.textY.value)||0; showVisualGuide(true); }
             else if(dragMode === 'ovMask') { origX = parseFloat(DOM.ovX.value)||0; origY = parseFloat(DOM.ovY.value)||0; }
-            else if(dragMode === 'ovImg') { origX = parseFloat(DOM.ovInX.value)||0; origY = parseFloat(DOM.ovInY.value)||0; }
             else if(dragMode === 'wm') { origX = parseFloat(DOM.wmX.value)||0; origY = parseFloat(DOM.wmY.value)||0; }
         });
 
@@ -1982,7 +2070,6 @@
             if (dragMode === 'bg') { const bgDx = (e.clientX - startMouseX) / (previewScale * bgScale); const bgDy = (e.clientY - startMouseY) / (previewScale * bgScale); bgOffsetX = origX + bgDx; bgOffsetY = origY + bgDy; updateBgLayer(); } 
             else if (dragMode === 'text') { DOM.textX.value = Math.round(origX + dx); DOM.textY.value = Math.round(origY + dyMath); updateUI(); showVisualGuide(true); }
             else if (dragMode === 'ovMask') { DOM.ovX.value = Math.round(origX + dx); DOM.ovY.value = Math.round(origY + dyMath); updateUI(); }
-            else if (dragMode === 'ovImg') { const innerDx = dx / (ovScale || 1); const innerDyMath = dyMath / (ovScale || 1); DOM.ovInX.value = Math.round(origX + innerDx); DOM.ovInY.value = Math.round(origY + innerDyMath); updateUI(); }
             else if (dragMode === 'wm') { DOM.wmX.value = Math.round(origX + dx); DOM.wmY.value = Math.round(origY + dyMath); updateUI(); }
         });
 
@@ -1994,8 +2081,6 @@
         document.querySelector('.preview-canvas-wrapper').addEventListener('wheel', (e) => {
             if (dragMode === 'bg' && currentBgImageDataUrl) {
                 e.preventDefault(); bgScale -= e.deltaY * wheelZoomSensitivity; bgScale = Math.max(0.1, Math.min(bgScale, 10)); updateBgLayer();
-            } else if (dragMode === 'ovImg' && currentOvImageDataUrl) {
-                e.preventDefault(); ovScale -= e.deltaY * wheelZoomSensitivity; ovScale = Math.max(0.1, Math.min(ovScale, 10)); updateUI();
             } else {
                 e.preventDefault(); const step = 0.05; let currentScale = parseFloat(DOM.scale.value);
                 if (e.deltaY < 0) currentScale = Math.min(2.0, currentScale + step);
@@ -2004,10 +2089,85 @@
             }
         }, { passive: false });
 
+        // ── 오버레이 이미지 크롭 툴: 미리보기 위 파란 틀에서 직접 조절 ──────────
+        // 모서리 4점 드래그 = 틀 크기 조절(반대쪽 모서리는 고정), 틀 내부 드래그 = 안쪽 이미지 이동,
+        // 틀 위에서 휠 = 안쪽 이미지 확대축소. 버튼을 눌러 "모드 진입"할 필요 없이 항상 바로 작동함.
+        (function setupOvCropTool() {
+            const frame = document.getElementById('ov-crop-frame');
+            if (!frame) return;
+            let mode = null; // 'resize' | 'pan'
+            let corner = null;
+            let startX = 0, startY = 0;
+            let origW = 0, origH = 0, origOvX = 0, origOvY = 0, origInX = 0, origInY = 0;
+
+            frame.querySelectorAll('.ov-crop-handle').forEach(handle => {
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    mode = 'resize'; corner = handle.dataset.corner;
+                    startX = e.clientX; startY = e.clientY;
+                    origW = parseFloat(DOM.ovMaskW.value) || 0;
+                    origH = parseFloat(DOM.ovMaskH.value) || 0;
+                    origOvX = parseFloat(DOM.ovX.value) || 0;
+                    origOvY = parseFloat(DOM.ovY.value) || 0;
+                });
+            });
+
+            frame.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.ov-crop-handle')) return; // 손잡이는 위에서 이미 처리됨
+                if (!currentOvImageDataUrl) return;
+                e.preventDefault(); e.stopPropagation();
+                mode = 'pan';
+                startX = e.clientX; startY = e.clientY;
+                origInX = parseFloat(DOM.ovInX.value) || 0;
+                origInY = parseFloat(DOM.ovInY.value) || 0;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!mode) return;
+                const previewScale = parseFloat(DOM.scale.value) || 1;
+                const dxRight = (e.clientX - startX) / previewScale;   // + = 오른쪽으로 이동
+                const dyDown = (e.clientY - startY) / previewScale;    // + = 아래로 이동
+                const dyUp = -dyDown;                                   // + = 위로 이동 (기존 다른 드래그 기능과 같은 부호 규칙)
+
+                if (mode === 'resize') {
+                    const h = (corner === 'ne' || corner === 'se') ? 1 : -1; // 동쪽 모서리를 오른쪽으로 끌면 폭 증가
+                    const v = (corner === 'sw' || corner === 'se') ? 1 : -1; // 남쪽 모서리를 아래로 끌면 높이 증가
+                    const minSize = 20;
+                    const newW = Math.max(minSize, origW + h * dxRight);
+                    const newH = Math.max(minSize, origH + v * dyDown);
+                    // 반대쪽 모서리가 고정되도록 중심을 옮김: 어느 모서리를 잡았든, 움직인 그 변(edge)만
+                    // 옮겨지고 반대쪽 변은 그대로이므로 중심 이동량은 항상 "옮긴 거리의 절반"
+                    // (모서리 방향(h, v)을 여기서 다시 곱하면 부호가 두 번 꼬여 서/북쪽 모서리에서 반대로
+                    // 튕겨나가는 버그가 생김 — 아래처럼 방향 곱 없이 그대로 절반만 적용해야 정확함)
+                    DOM.ovMaskW.value = Math.round(newW);
+                    DOM.ovMaskH.value = Math.round(newH);
+                    DOM.ovX.value = Math.round(origOvX + dxRight / 2);
+                    DOM.ovY.value = Math.round(origOvY - dyDown / 2);
+                    updateUI();
+                } else if (mode === 'pan') {
+                    const s = ovScale || 1;
+                    DOM.ovInX.value = Math.round(origInX + dxRight / s);
+                    DOM.ovInY.value = Math.round(origInY + dyUp / s);
+                    updateUI();
+                }
+            });
+
+            window.addEventListener('mouseup', () => { mode = null; corner = null; });
+
+            frame.addEventListener('wheel', (e) => {
+                if (!currentOvImageDataUrl) return;
+                e.preventDefault(); e.stopPropagation();
+                ovScale -= e.deltaY * wheelZoomSensitivity;
+                ovScale = Math.max(0.1, Math.min(ovScale, 10));
+                updateUI();
+            }, { passive: false });
+        })();
+
         function toggleSection(headerEl) {
             const content = headerEl.nextElementSibling; const icon = headerEl.querySelector('.collapsible-icon');
-            if (content.style.display === 'block') { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; } 
-            else { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; }
+            const openDisplay = document.body.classList.contains('screen-expand') ? 'grid' : 'block';
+            if (content.style.display === openDisplay) { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }
+            else { content.style.display = openDisplay; icon.style.transform = 'rotate(180deg)'; }
         }
 
         function applyHighlight() {
@@ -2265,6 +2425,7 @@
 
             cloneEl.querySelectorAll('img').forEach(img => { const src = img.getAttribute('src'); if (!src || src.trim() === '') img.parentNode.removeChild(img); });
             const guideText = cloneEl.querySelector('#guide-overlay-text'); if (guideText) guideText.parentNode.removeChild(guideText);
+            const cropFrameClone = cloneEl.querySelector('#ov-crop-frame'); if (cropFrameClone) cropFrameClone.parentNode.removeChild(cropFrameClone);
             cloneEl.querySelectorAll('[data-tag-hover]').forEach(el => el.removeAttribute('data-tag-hover'));
             cloneEl.style.transform = 'none'; cloneEl.style.boxShadow = 'none';
 
