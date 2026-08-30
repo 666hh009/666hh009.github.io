@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.7.1 UX 개선버전)</title>
+    <title>네카이브 (v3.7.2 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -460,8 +460,6 @@
         #overlay-img-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; justify-content: center; align-items: center; }
         #watermark-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: var(--sp-6); justify-content: center; align-items: flex-end; }
         .card-content { position: relative; z-index: 4; width: 100%; pointer-events: none; }
-        /* "이미지를 텍스트 위로" 옵션 켰을 때: 오버레이 이미지가 텍스트/워터마크보다 위로 오게 */
-        #card-preview.ov-above-text #overlay-img-wrapper { z-index: 5; }
 
         #card-bg-image { position: absolute; transform-origin: center; pointer-events: none; display: none; max-width: none; max-height: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
@@ -765,7 +763,7 @@
                         </div>
 
                         <!-- 이미지 편집: 다른 드래그 기능들처럼 버튼으로 켜고 끄는 모드. 켜져 있을 때만
-                             미리보기에 파란 크롭 틀(모서리 손잡이)이 나타남 -->
+                             미리보기에 파란 크롭 마스크(모서리 손잡이)이 나타남 -->
                         <div class="row-group">
                             <div class="row">
                                 <span class="row-label bold">이미지 편집</span>
@@ -774,7 +772,7 @@
                                     편집 시작
                                 </button>
                             </div>
-                            <div class="section-note" style="margin-top:-4px;">켜면 미리보기에 크롭 틀이 나타나요. 모서리를 드래그하면 크기를, 안쪽을 드래그하면 틀 위치를 바꿀 수 있어요. (이미지 자체는 그대로 있고, 틀이 그 위를 움직여요)</div>
+                            <div class="section-note" style="margin-top:-4px;">켜면 미리보기에 크롭 마스크가 나타나요. 모서리를 드래그하면 크기를, 안쪽을 드래그하면 마스크와 이미지를 함께 옮길 수 있어요.</div>
                             <div class="row">
                                 <span class="row-label">이미지를 텍스트 위로</span>
                                 <label class="row-switch">
@@ -784,41 +782,41 @@
                             </div>
                         </div>
 
-                        <!-- 세부조절: 크롭 틀로 직접 조절한 값이 여기 숫자에도 실시간으로 반영됨.
+                        <!-- 세부조절: 크롭 마스크로 직접 조절한 값이 여기 숫자에도 실시간으로 반영됨.
                              정확한 수치가 필요할 때 직접 입력해도 됨 -->
                         <div class="row-group row-span2">
                             <div class="row">
                                 <span class="row-label bold">세부조절</span>
                             </div>
                             <div class="row">
-                                <span class="row-label">틀 크기 (W · H)</span>
+                                <span class="row-label">마스크 크기 (W · H)</span>
                                 <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-w', -10, 10)">−</button><input type="number" id="ov-mask-w" value="300" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-w', 10, 10)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-h', -10, 10)">−</button><input type="number" id="ov-mask-h" value="300" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-h', 10, 10)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-w', -5, 5)">−</button><input type="number" id="ov-mask-w" value="300" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-w', 5, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-h', -5, 5)">−</button><input type="number" id="ov-mask-h" value="300" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-h', 5, 5)">+</button></div>
                                 </div>
                             </div>
                             <div class="row">
-                                <span class="row-label">틀 둥글기 (Radius)</span>
-                                <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-r', -5, 5)">−</button><input type="number" id="ov-mask-r" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-r', 5, 5)">+</button></div>
+                                <span class="row-label">마스크 둥글기 (Radius)</span>
+                                <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-r', -5, 5)">−</button><input type="number" id="ov-mask-r" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-r', 5, 5)">+</button></div>
                             </div>
                             <div class="row">
-                                <span class="row-label">틀 좌표 (X · Y)</span>
+                                <span class="row-label">마스크 좌표 (X · Y)</span>
                                 <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-x', -10, 10)">−</button><input type="number" id="ov-x" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-x', 10, 10)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-y', -10, 10)">−</button><input type="number" id="ov-y" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-y', 10, 10)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-x', -5, 5)">−</button><input type="number" id="ov-x" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-x', 5, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-y', -5, 5)">−</button><input type="number" id="ov-y" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-y', 5, 5)">+</button></div>
                                 </div>
                             </div>
                             <div class="row">
                                 <span class="row-label">이미지 위치 (X · Y)</span>
                                 <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -10, 10)">−</button><input type="number" id="ov-in-x" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-x', 10, 10)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -10, 10)">−</button><input type="number" id="ov-in-y" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-y', 10, 10)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -5, 5)">−</button><input type="number" id="ov-in-x" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-x', 5, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -5, 5)">−</button><input type="number" id="ov-in-y" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-y', 5, 5)">+</button></div>
                                 </div>
                             </div>
-                            <div class="section-note">"이미지 위치"는 이미지 중심을 기준으로, 지금 틀이 이미지의 어느 부분을 보여주고 있는지를 나타내는 값이에요. 틀을 움직여도 이미지는 화면에서 그대로 있고, 이 숫자만 자동으로 갱신돼요.</div>
+                            <div class="section-note">마스크를 옮기면 이미지도 함께 따라와요. 이 값은 마스크 중심과 이미지 중심 사이의 어긋난 정도를 나타내요.</div>
                             <div class="row" style="margin-top:8px;">
                                 <span class="row-label"></span>
-                                <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="틀 위치 초기화">틀 위치 초기화</button>
+                                <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="마스크 위치 초기화">마스크 위치 초기화</button>
                                 <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="이미지 위치 초기화" style="margin-left:8px;">이미지 초기화</button>
                             </div>
                         </div>
@@ -1151,7 +1149,7 @@
                                 <div id="guide-overlay-text" style="position: absolute; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; box-sizing: border-box;"></div>
                             </div>
                             <!-- 크롭 툴 레이어: #card-preview "밖"에 둠 (card-preview는 overflow:hidden이라
-                                 그 안에 있으면 틀이 카드보다 커질 때 손잡이가 잘려서 안 보이는 문제가 있었음).
+                                 그 안에 있으면 마스크가 카드보다 커질 때 손잡이가 잘려서 안 보이는 문제가 있었음).
                                  카드와 완전히 같은 위치/크기/배율로 겹치도록 JS에서 동일한 값을 그대로 복제함.
                                  "이미지 편집" 모드가 켜졌을 때만 보임(JS에서 토글). -->
                             <div id="ov-crop-layer" style="position:absolute; top:0; left:0; transform-origin: top left; pointer-events:none; z-index: 50; display:none;">
@@ -1645,7 +1643,7 @@
             ovMask.style.height = DOM.ovMaskH.value + 'px';
             ovMask.style.borderRadius = DOM.ovMaskR.value + 'px';
             ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
-            // 크롭 툴 프레임: card-preview 밖의 별도 레이어에 있으므로, 틀과 완전히 같은 위치가 되도록
+            // 크롭 툴 프레임: card-preview 밖의 별도 레이어에 있으므로, 마스크와 완전히 같은 위치가 되도록
             // 위 ovWrapper와 동일한 수식으로 직접 옮겨줌 (부모가 달라서 flex 중앙정렬에 자동으로 안 묻어남)
             const cropLayer = document.getElementById('ov-crop-layer');
             const cropFrame = document.getElementById('ov-crop-frame');
@@ -1656,7 +1654,10 @@
                 cropFrame.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
             }
             if (cropLayer) cropLayer.style.display = (ovEditMode && currentOvImageDataUrl) ? 'block' : 'none';
-            DOM.preview.classList.toggle('ov-above-text', !!(DOM.ovAboveText && DOM.ovAboveText.checked));
+            const aboveText = !!(DOM.ovAboveText && DOM.ovAboveText.checked);
+            // overlay-img-wrapper에 이미 인라인 z-index가 박혀있어서 스타일시트 클래스 규칙으로는
+            // 못 이김 (인라인 스타일이 항상 우선순위가 더 높음) → 여기서 직접 값을 바꿔줌
+            ovWrapper.style.zIndex = aboveText ? 5 : 2;
             
             if(parseFloat(DOM.ovFOpacity.value) > 0) {
                 ovFilter.style.background = `rgba(${hexToRgbStr(DOM.ovFColor.value)}, ${DOM.ovFOpacity.value})`;
@@ -2121,9 +2122,7 @@
         }, { passive: false });
 
         // ── 오버레이 이미지 크롭 툴: "이미지 편집" 모드일 때만 작동 ──────────────
-        // 모서리 4점 드래그 = 틀 크기 조절, 틀 내부 드래그 = 틀 위치 이동.
-        // 이미지 자체는 카드 위에서 "가만히 있고", 틀만 그 위를 움직이는 것처럼 보이도록
-        // 틀이 움직이거나 커질 때마다 "이미지 위치(ov-in-x/y)" 값을 자동으로 반대 방향 보정함.
+        // 모서리 4점 드래그 = 마스크 크기 조절, 마스크 내부 드래그 = 마스크+이미지 함께 이동.
         function setOvEditMode(on) {
             ovEditMode = !!on;
             const btn = document.getElementById('btn-ov-edit-mode');
@@ -2153,7 +2152,7 @@
             let mode = null; // 'resize' | 'move'
             let corner = null;
             let startX = 0, startY = 0;
-            let origW = 0, origH = 0, origOvX = 0, origOvY = 0, origInX = 0, origInY = 0;
+            let origW = 0, origH = 0, origOvX = 0, origOvY = 0;
 
             frame.querySelectorAll('.ov-crop-handle').forEach(handle => {
                 handle.addEventListener('mousedown', (e) => {
@@ -2165,8 +2164,6 @@
                     origH = parseFloat(DOM.ovMaskH.value) || 0;
                     origOvX = parseFloat(DOM.ovX.value) || 0;
                     origOvY = parseFloat(DOM.ovY.value) || 0;
-                    origInX = parseFloat(DOM.ovInX.value) || 0;
-                    origInY = parseFloat(DOM.ovInY.value) || 0;
                 });
             });
 
@@ -2178,8 +2175,6 @@
                 startX = e.clientX; startY = e.clientY;
                 origOvX = parseFloat(DOM.ovX.value) || 0;
                 origOvY = parseFloat(DOM.ovY.value) || 0;
-                origInX = parseFloat(DOM.ovInX.value) || 0;
-                origInY = parseFloat(DOM.ovInY.value) || 0;
             });
 
             window.addEventListener('mousemove', (e) => {
@@ -2196,26 +2191,17 @@
                     const newH = Math.max(minSize, origH + v * dyDown);
                     // 반대쪽 모서리가 고정되도록 중심을 옮김: 어느 모서리를 잡았든, 움직인 그 변(edge)만
                     // 옮겨지고 반대쪽 변은 그대로이므로 중심 이동량은 항상 "옮긴 거리의 절반"
-                    // (모서리 방향(h, v)을 여기서 다시 곱하면 부호가 두 번 꼬여 서/북쪽 모서리에서 반대로
-                    // 튕겨나가는 버그가 생김 — 아래처럼 방향 곱 없이 그대로 절반만 적용해야 정확함)
-                    const deltaOvX = dxRight / 2;
-                    const deltaOvY = -dyDown / 2;
                     DOM.ovMaskW.value = Math.round(newW);
                     DOM.ovMaskH.value = Math.round(newH);
-                    DOM.ovX.value = Math.round(origOvX + deltaOvX);
-                    DOM.ovY.value = Math.round(origOvY + deltaOvY);
-                    // 이미지는 카드 위에서 그대로 있어야 하므로, 틀 중심이 옮겨간 만큼 반대로 보정
-                    DOM.ovInX.value = Math.round(origInX - deltaOvX);
-                    DOM.ovInY.value = Math.round(origInY - deltaOvY);
+                    DOM.ovX.value = Math.round(origOvX + dxRight / 2);
+                    DOM.ovY.value = Math.round(origOvY - dyDown / 2);
+                    // 이미지 위치(ov-in-x/y)는 건드리지 않음 — 마스크 중심 기준 상대 위치라서,
+                    // 마스크가 움직이는 방향으로 이미지도 자연스럽게 같이 딸려옴
                     updateUI();
                 } else if (mode === 'move') {
-                    const deltaOvX = dxRight;
-                    const deltaOvY = dyDown; // ovY는 -dyDown 이 아니라, 아래 식에서 부호를 직접 반영
-                    DOM.ovX.value = Math.round(origOvX + deltaOvX);
-                    DOM.ovY.value = Math.round(origOvY - deltaOvY);
-                    // 틀이 이동한 만큼 이미지 위치도 반대로 보정해서, 이미지는 카드 위에서 안 움직이는 것처럼 보이게 함
-                    DOM.ovInX.value = Math.round(origInX - deltaOvX);
-                    DOM.ovInY.value = Math.round(origInY + deltaOvY);
+                    DOM.ovX.value = Math.round(origOvX + dxRight);
+                    DOM.ovY.value = Math.round(origOvY - dyDown);
+                    // 이미지 위치는 그대로 둠 → 마스크와 이미지가 한 덩어리처럼 같이 움직임
                     updateUI();
                 }
             });
