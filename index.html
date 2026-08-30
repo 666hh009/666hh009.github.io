@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.7 UX 개선버전)</title>
+    <title>네카이브 (v3.7.1 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -447,7 +447,7 @@
             background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 24px 24px; padding: var(--sp-8);
         }
 
-        #card-preview-wrapper { transition: width 0.1s, height 0.1s; }
+        #card-preview-wrapper { position: relative; transition: width 0.1s, height 0.1s; }
         #card-preview {
             background-color: #ffffff; display: flex; flex-direction: column; justify-content: center; position: relative;
             box-shadow: 0 24px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06); transform-origin: top left; overflow: hidden;
@@ -460,6 +460,8 @@
         #overlay-img-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 2; pointer-events: none; justify-content: center; align-items: center; }
         #watermark-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 3; pointer-events: none; box-sizing: border-box; padding: var(--sp-6); justify-content: center; align-items: flex-end; }
         .card-content { position: relative; z-index: 4; width: 100%; pointer-events: none; }
+        /* "이미지를 텍스트 위로" 옵션 켰을 때: 오버레이 이미지가 텍스트/워터마크보다 위로 오게 */
+        #card-preview.ov-above-text #overlay-img-wrapper { z-index: 5; }
 
         #card-bg-image { position: absolute; transform-origin: center; pointer-events: none; display: none; max-width: none; max-height: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
@@ -750,7 +752,10 @@
                                 <span class="row-label"></span>
                                 <button class="action-btn" onclick="removeOvImg()" style="width: 180px;">이미지 지우기</button>
                             </div>
-                            <div class="row" style="margin-top: 12px;">
+                        </div>
+
+                        <div class="row-group">
+                            <div class="row">
                                 <span class="row-label">필터 색상 · 투명도</span>
                                 <div class="row-control">
                                     <span class="swatch" style="background:#000000;"><input type="color" id="ov-filter-color" value="#000000" oninput="updateUI()"></span>
@@ -759,7 +764,32 @@
                             </div>
                         </div>
 
+                        <!-- 이미지 편집: 다른 드래그 기능들처럼 버튼으로 켜고 끄는 모드. 켜져 있을 때만
+                             미리보기에 파란 크롭 틀(모서리 손잡이)이 나타남 -->
                         <div class="row-group">
+                            <div class="row">
+                                <span class="row-label bold">이미지 편집</span>
+                                <button type="button" class="action-btn" id="btn-ov-edit-mode" onclick="toggleOvEditMode()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg>
+                                    편집 시작
+                                </button>
+                            </div>
+                            <div class="section-note" style="margin-top:-4px;">켜면 미리보기에 크롭 틀이 나타나요. 모서리를 드래그하면 크기를, 안쪽을 드래그하면 틀 위치를 바꿀 수 있어요. (이미지 자체는 그대로 있고, 틀이 그 위를 움직여요)</div>
+                            <div class="row">
+                                <span class="row-label">이미지를 텍스트 위로</span>
+                                <label class="row-switch">
+                                    <input type="checkbox" id="ov-above-text-toggle" onchange="updateUI()">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 세부조절: 크롭 틀로 직접 조절한 값이 여기 숫자에도 실시간으로 반영됨.
+                             정확한 수치가 필요할 때 직접 입력해도 됨 -->
+                        <div class="row-group row-span2">
+                            <div class="row">
+                                <span class="row-label bold">세부조절</span>
+                            </div>
                             <div class="row">
                                 <span class="row-label">틀 크기 (W · H)</span>
                                 <div class="row-control">
@@ -767,20 +797,9 @@
                                     <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-h', -10, 10)">−</button><input type="number" id="ov-mask-h" value="300" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-h', 10, 10)">+</button></div>
                                 </div>
                             </div>
-                            <div class="section-note" style="margin-top:-4px;">미리보기 틀의 파란 모서리 점을 드래그해도 크기가 바뀝니다.</div>
                             <div class="row">
                                 <span class="row-label">틀 둥글기 (Radius)</span>
                                 <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-r', -5, 5)">−</button><input type="number" id="ov-mask-r" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-r', 5, 5)">+</button></div>
-                            </div>
-                            <div class="row">
-                                <span class="row-label">틀 위치 이동</span>
-                                <div class="row-control">
-                                    <button type="button" class="action-btn" id="btn-ov-mask-drag" onclick="toggleDragMode('ovMask')" title="드래그로 틀 위치 이동">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                                        드래그
-                                    </button>
-                                    <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="틀 위치 초기화">↺</button>
-                                </div>
                             </div>
                             <div class="row">
                                 <span class="row-label">틀 좌표 (X · Y)</span>
@@ -789,20 +808,18 @@
                                     <div class="stepper"><button type="button" onclick="adjustNum('ov-y', -10, 10)">−</button><input type="number" id="ov-y" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-y', 10, 10)">+</button></div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <span class="row-label">내부 이미지 조절</span>
-                            <div class="row-control">
-                                <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="내부 이미지 초기화">↺ 초기화</button>
+                            <div class="row">
+                                <span class="row-label">이미지 위치 (X · Y)</span>
+                                <div class="row-control">
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -10, 10)">−</button><input type="number" id="ov-in-x" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-x', 10, 10)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -10, 10)">−</button><input type="number" id="ov-in-y" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-y', 10, 10)">+</button></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="section-note" style="margin-top:-4px; margin-bottom:12px;">미리보기의 파란 틀 안에서 바로 드래그(이동)·휠(확대축소)로 조절하세요. 모서리를 드래그하면 틀 크기가 바뀝니다.</div>
-                        <div class="row">
-                            <span class="row-label">내부 좌표 (X · Y)</span>
-                            <div class="row-control">
-                                <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -10, 10)">−</button><input type="number" id="ov-in-x" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-x', 10, 10)">+</button></div>
-                                <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -10, 10)">−</button><input type="number" id="ov-in-y" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-y', 10, 10)">+</button></div>
+                            <div class="section-note">"이미지 위치"는 이미지 중심을 기준으로, 지금 틀이 이미지의 어느 부분을 보여주고 있는지를 나타내는 값이에요. 틀을 움직여도 이미지는 화면에서 그대로 있고, 이 숫자만 자동으로 갱신돼요.</div>
+                            <div class="row" style="margin-top:8px;">
+                                <span class="row-label"></span>
+                                <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="틀 위치 초기화">틀 위치 초기화</button>
+                                <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="이미지 위치 초기화" style="margin-left:8px;">이미지 초기화</button>
                             </div>
                         </div>
                     </div>
@@ -1119,19 +1136,6 @@
                                             <img id="overlay-img-content" src="" style="max-width: none; pointer-events: auto; display: none;">
                                         </div>
                                     </div>
-                                    <!-- 크롭 툴: 틀과 정확히 같은 크기로 겹쳐서(부모가 이미 flex 중앙정렬 해줌) 별도 좌표
-                                         계산 없이도 항상 틀 위치에 딱 맞음. 내부 드래그=이미지 이동, 휠=이미지 확대축소,
-                                         모서리 4점 드래그=틀 크기 조절. 오버레이 이미지가 있을 때만 보임(JS에서 토글). -->
-                                    <div id="ov-crop-frame" style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); width:300px; height:300px; box-sizing:border-box; border:2px solid #2f6fed; pointer-events:auto; cursor:move; display:none;">
-                                        <div class="ov-crop-grid-line" style="position:absolute; left:33.333%; top:0; bottom:0; width:1px; background:rgba(255,255,255,.6);"></div>
-                                        <div class="ov-crop-grid-line" style="position:absolute; left:66.666%; top:0; bottom:0; width:1px; background:rgba(255,255,255,.6);"></div>
-                                        <div class="ov-crop-grid-line" style="position:absolute; top:33.333%; left:0; right:0; height:1px; background:rgba(255,255,255,.6);"></div>
-                                        <div class="ov-crop-grid-line" style="position:absolute; top:66.666%; left:0; right:0; height:1px; background:rgba(255,255,255,.6);"></div>
-                                        <div class="ov-crop-handle" data-corner="nw" style="position:absolute; top:0; left:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nwse-resize;"></div>
-                                        <div class="ov-crop-handle" data-corner="ne" style="position:absolute; top:0; right:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nesw-resize;"></div>
-                                        <div class="ov-crop-handle" data-corner="sw" style="position:absolute; bottom:0; left:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nesw-resize;"></div>
-                                        <div class="ov-crop-handle" data-corner="se" style="position:absolute; bottom:0; right:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nwse-resize;"></div>
-                                    </div>
                                 </div>
 
                                 <div id="watermark-wrapper" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; box-sizing: border-box; display: flex; justify-content: center; align-items: flex-end;">
@@ -1145,6 +1149,22 @@
                                 </div>
                                 
                                 <div id="guide-overlay-text" style="position: absolute; z-index: 9000; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; box-sizing: border-box;"></div>
+                            </div>
+                            <!-- 크롭 툴 레이어: #card-preview "밖"에 둠 (card-preview는 overflow:hidden이라
+                                 그 안에 있으면 틀이 카드보다 커질 때 손잡이가 잘려서 안 보이는 문제가 있었음).
+                                 카드와 완전히 같은 위치/크기/배율로 겹치도록 JS에서 동일한 값을 그대로 복제함.
+                                 "이미지 편집" 모드가 켜졌을 때만 보임(JS에서 토글). -->
+                            <div id="ov-crop-layer" style="position:absolute; top:0; left:0; transform-origin: top left; pointer-events:none; z-index: 50; display:none;">
+                                <div id="ov-crop-frame" style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); width:300px; height:300px; box-sizing:border-box; border:2px solid #2f6fed; pointer-events:auto; cursor:move;">
+                                    <div class="ov-crop-grid-line" style="position:absolute; left:33.333%; top:0; bottom:0; width:1px; background:rgba(255,255,255,.6);"></div>
+                                    <div class="ov-crop-grid-line" style="position:absolute; left:66.666%; top:0; bottom:0; width:1px; background:rgba(255,255,255,.6);"></div>
+                                    <div class="ov-crop-grid-line" style="position:absolute; top:33.333%; left:0; right:0; height:1px; background:rgba(255,255,255,.6);"></div>
+                                    <div class="ov-crop-grid-line" style="position:absolute; top:66.666%; left:0; right:0; height:1px; background:rgba(255,255,255,.6);"></div>
+                                    <div class="ov-crop-handle" data-corner="nw" style="position:absolute; top:0; left:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nwse-resize;"></div>
+                                    <div class="ov-crop-handle" data-corner="ne" style="position:absolute; top:0; right:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nesw-resize;"></div>
+                                    <div class="ov-crop-handle" data-corner="sw" style="position:absolute; bottom:0; left:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nesw-resize;"></div>
+                                    <div class="ov-crop-handle" data-corner="se" style="position:absolute; bottom:0; right:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nwse-resize;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1205,6 +1225,7 @@
         let originalBgHeight = 0;
         
         let dragMode = null; 
+        let ovEditMode = false;
         
         let isDragging = false;
         let isCapturing = false; 
@@ -1254,6 +1275,7 @@
             ovMaskW: document.getElementById('ov-mask-w'), ovMaskH: document.getElementById('ov-mask-h'), ovMaskR: document.getElementById('ov-mask-r'),
             ovX: document.getElementById('ov-x'), ovY: document.getElementById('ov-y'),
             ovInX: document.getElementById('ov-in-x'), ovInY: document.getElementById('ov-in-y'),
+            ovAboveText: document.getElementById('ov-above-text-toggle'),
             ovFColor: document.getElementById('ov-filter-color'), ovFOpacity: document.getElementById('ov-filter-opacity'),
             
             tsColor: document.getElementById('ts-color'), tsOpacity: document.getElementById('ts-opacity'),
@@ -1622,14 +1644,19 @@
             ovMask.style.width = DOM.ovMaskW.value + 'px';
             ovMask.style.height = DOM.ovMaskH.value + 'px';
             ovMask.style.borderRadius = DOM.ovMaskR.value + 'px';
-            // 크롭 툴 프레임을 틀과 항상 같은 크기로 유지 (위치는 같은 부모의 flex 중앙정렬로 자동 일치)
+            ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
+            // 크롭 툴 프레임: card-preview 밖의 별도 레이어에 있으므로, 틀과 완전히 같은 위치가 되도록
+            // 위 ovWrapper와 동일한 수식으로 직접 옮겨줌 (부모가 달라서 flex 중앙정렬에 자동으로 안 묻어남)
+            const cropLayer = document.getElementById('ov-crop-layer');
             const cropFrame = document.getElementById('ov-crop-frame');
             if (cropFrame) {
                 cropFrame.style.width = DOM.ovMaskW.value + 'px';
                 cropFrame.style.height = DOM.ovMaskH.value + 'px';
-                cropFrame.style.display = currentOvImageDataUrl ? 'block' : 'none';
+                cropFrame.style.borderRadius = DOM.ovMaskR.value + 'px';
+                cropFrame.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
             }
-            ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
+            if (cropLayer) cropLayer.style.display = (ovEditMode && currentOvImageDataUrl) ? 'block' : 'none';
+            DOM.preview.classList.toggle('ov-above-text', !!(DOM.ovAboveText && DOM.ovAboveText.checked));
             
             if(parseFloat(DOM.ovFOpacity.value) > 0) {
                 ovFilter.style.background = `rgba(${hexToRgbStr(DOM.ovFColor.value)}, ${DOM.ovFOpacity.value})`;
@@ -1986,6 +2013,13 @@
             DOM.previewWrapper.style.width = (DOM.width.value * ratio) + 'px';
             DOM.previewWrapper.style.height = (DOM.height.value * ratio) + 'px';
             DOM.scrollArea.style.alignItems = (DOM.height.value * ratio) < DOM.scrollArea.clientHeight ? 'center' : 'flex-start';
+            // 크롭 툴 레이어를 카드와 똑같은 배율/크기로 유지 (card-preview와 완전히 겹치도록)
+            const cropLayer = document.getElementById('ov-crop-layer');
+            if (cropLayer) {
+                cropLayer.style.width = DOM.width.value + 'px';
+                cropLayer.style.height = DOM.height.value + 'px';
+                cropLayer.style.transform = `scale(${ratio})`;
+            }
             // 미리보기를 확대/축소해도 크롭 툴 손잡이(모서리 점)는 화면상 항상 같은 크기로 보이게 역보정
             const invScale = ratio > 0 ? 1 / ratio : 1;
             document.querySelectorAll('.ov-crop-handle').forEach(h => { h.style.transform = `scale(${invScale})`; });
@@ -2027,7 +2061,7 @@
         }
 
         function toggleDragMode(mode) {
-            const btns = { 'bg': document.getElementById('btn-bg-drag'), 'text': DOM.textDragBtn, 'text-html': DOM.textDragBtnHtml, 'ovMask': document.getElementById('btn-ov-mask-drag'), 'wm': document.getElementById('btn-wm-drag') };
+            const btns = { 'bg': document.getElementById('btn-bg-drag'), 'text': DOM.textDragBtn, 'text-html': DOM.textDragBtnHtml, 'wm': document.getElementById('btn-wm-drag') };
             Object.values(btns).forEach(b => b && b.classList.remove('drag-active'));
             if (dragMode === mode) { dragMode = null; DOM.preview.style.cursor = 'default'; hideToast(); }
             else {
@@ -2035,7 +2069,8 @@
                 if(mode === 'text' && btns['text-html']) btns['text-html'].classList.add('drag-active');
                 DOM.preview.style.cursor = 'move';
                 if (typeof clearTagHelperHighlight === 'function') clearTagHelperHighlight();
-                const msgs = { 'bg': '배경을 움직이거나 휠로 크기를 조절하세요. (ESC 취소)', 'text': '마우스 드래그로 요소 위치를 조절하세요. (ESC 취소)', 'ovMask': '마스크 틀 자체를 이동합니다. (ESC 취소)', 'wm': '워터마크 위치를 이동합니다. (ESC 취소)' };
+                if (typeof setOvEditMode === 'function') setOvEditMode(false);
+                const msgs = { 'bg': '배경을 움직이거나 휠로 크기를 조절하세요. (ESC 취소)', 'text': '마우스 드래그로 요소 위치를 조절하세요. (ESC 취소)', 'wm': '워터마크 위치를 이동합니다. (ESC 취소)' };
                 showToast(msgs[mode]);
             }
         }
@@ -2044,7 +2079,6 @@
             if(!isDragging) return; isDragging = false;
             if(dragMode === 'bg') { bgOffsetX = origX; bgOffsetY = origY; updateBgLayer(); }
             else if(dragMode === 'text') { DOM.textX.value = origX; DOM.textY.value = origY; updateUI(); showVisualGuide(false); }
-            else if(dragMode === 'ovMask') { DOM.ovX.value = origX; DOM.ovY.value = origY; updateUI(); }
             else if(dragMode === 'wm') { DOM.wmX.value = origX; DOM.wmY.value = origY; updateUI(); }
             showToast('이동이 취소되었습니다.');
         }
@@ -2054,11 +2088,9 @@
         DOM.preview.addEventListener('mousedown', (e) => {
             if (!dragMode) return;
             if (dragMode === 'bg' && !currentBgImageDataUrl) return;
-            if (dragMode === 'ovMask' && !currentOvImageDataUrl) return;
             isDragging = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
             if(dragMode === 'bg') { origX = bgOffsetX; origY = bgOffsetY; }
             else if(dragMode === 'text') { origX = parseFloat(DOM.textX.value)||0; origY = parseFloat(DOM.textY.value)||0; showVisualGuide(true); }
-            else if(dragMode === 'ovMask') { origX = parseFloat(DOM.ovX.value)||0; origY = parseFloat(DOM.ovY.value)||0; }
             else if(dragMode === 'wm') { origX = parseFloat(DOM.wmX.value)||0; origY = parseFloat(DOM.wmY.value)||0; }
         });
 
@@ -2069,7 +2101,6 @@
 
             if (dragMode === 'bg') { const bgDx = (e.clientX - startMouseX) / (previewScale * bgScale); const bgDy = (e.clientY - startMouseY) / (previewScale * bgScale); bgOffsetX = origX + bgDx; bgOffsetY = origY + bgDy; updateBgLayer(); } 
             else if (dragMode === 'text') { DOM.textX.value = Math.round(origX + dx); DOM.textY.value = Math.round(origY + dyMath); updateUI(); showVisualGuide(true); }
-            else if (dragMode === 'ovMask') { DOM.ovX.value = Math.round(origX + dx); DOM.ovY.value = Math.round(origY + dyMath); updateUI(); }
             else if (dragMode === 'wm') { DOM.wmX.value = Math.round(origX + dx); DOM.wmY.value = Math.round(origY + dyMath); updateUI(); }
         });
 
@@ -2089,19 +2120,44 @@
             }
         }, { passive: false });
 
-        // ── 오버레이 이미지 크롭 툴: 미리보기 위 파란 틀에서 직접 조절 ──────────
-        // 모서리 4점 드래그 = 틀 크기 조절(반대쪽 모서리는 고정), 틀 내부 드래그 = 안쪽 이미지 이동,
-        // 틀 위에서 휠 = 안쪽 이미지 확대축소. 버튼을 눌러 "모드 진입"할 필요 없이 항상 바로 작동함.
+        // ── 오버레이 이미지 크롭 툴: "이미지 편집" 모드일 때만 작동 ──────────────
+        // 모서리 4점 드래그 = 틀 크기 조절, 틀 내부 드래그 = 틀 위치 이동.
+        // 이미지 자체는 카드 위에서 "가만히 있고", 틀만 그 위를 움직이는 것처럼 보이도록
+        // 틀이 움직이거나 커질 때마다 "이미지 위치(ov-in-x/y)" 값을 자동으로 반대 방향 보정함.
+        function setOvEditMode(on) {
+            ovEditMode = !!on;
+            const btn = document.getElementById('btn-ov-edit-mode');
+            if (btn) {
+                btn.classList.toggle('drag-active', ovEditMode);
+                btn.innerHTML = ovEditMode
+                    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg> 편집 종료'
+                    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg> 편집 시작';
+            }
+            updateUI();
+        }
+
+        function toggleOvEditMode() {
+            if (!ovEditMode && !currentOvImageDataUrl) { showToast('먼저 오버레이 이미지를 업로드하세요.'); return; }
+            if (!ovEditMode) {
+                // 다른 위치이동 모드와 동시에 켜져 있으면 헷갈리니 정리
+                dragMode = null; DOM.preview.style.cursor = 'default';
+                document.querySelectorAll('.action-btn.drag-active').forEach(b => b.classList.remove('drag-active'));
+                if (typeof clearTagHelperHighlight === 'function') clearTagHelperHighlight();
+            }
+            setOvEditMode(!ovEditMode);
+        }
+
         (function setupOvCropTool() {
             const frame = document.getElementById('ov-crop-frame');
             if (!frame) return;
-            let mode = null; // 'resize' | 'pan'
+            let mode = null; // 'resize' | 'move'
             let corner = null;
             let startX = 0, startY = 0;
             let origW = 0, origH = 0, origOvX = 0, origOvY = 0, origInX = 0, origInY = 0;
 
             frame.querySelectorAll('.ov-crop-handle').forEach(handle => {
                 handle.addEventListener('mousedown', (e) => {
+                    if (!ovEditMode) return;
                     e.preventDefault(); e.stopPropagation();
                     mode = 'resize'; corner = handle.dataset.corner;
                     startX = e.clientX; startY = e.clientY;
@@ -2109,25 +2165,28 @@
                     origH = parseFloat(DOM.ovMaskH.value) || 0;
                     origOvX = parseFloat(DOM.ovX.value) || 0;
                     origOvY = parseFloat(DOM.ovY.value) || 0;
+                    origInX = parseFloat(DOM.ovInX.value) || 0;
+                    origInY = parseFloat(DOM.ovInY.value) || 0;
                 });
             });
 
             frame.addEventListener('mousedown', (e) => {
+                if (!ovEditMode) return;
                 if (e.target.closest('.ov-crop-handle')) return; // 손잡이는 위에서 이미 처리됨
-                if (!currentOvImageDataUrl) return;
                 e.preventDefault(); e.stopPropagation();
-                mode = 'pan';
+                mode = 'move';
                 startX = e.clientX; startY = e.clientY;
+                origOvX = parseFloat(DOM.ovX.value) || 0;
+                origOvY = parseFloat(DOM.ovY.value) || 0;
                 origInX = parseFloat(DOM.ovInX.value) || 0;
                 origInY = parseFloat(DOM.ovInY.value) || 0;
             });
 
             window.addEventListener('mousemove', (e) => {
-                if (!mode) return;
+                if (!mode || !ovEditMode) return;
                 const previewScale = parseFloat(DOM.scale.value) || 1;
                 const dxRight = (e.clientX - startX) / previewScale;   // + = 오른쪽으로 이동
                 const dyDown = (e.clientY - startY) / previewScale;    // + = 아래로 이동
-                const dyUp = -dyDown;                                   // + = 위로 이동 (기존 다른 드래그 기능과 같은 부호 규칙)
 
                 if (mode === 'resize') {
                     const h = (corner === 'ne' || corner === 'se') ? 1 : -1; // 동쪽 모서리를 오른쪽으로 끌면 폭 증가
@@ -2139,15 +2198,24 @@
                     // 옮겨지고 반대쪽 변은 그대로이므로 중심 이동량은 항상 "옮긴 거리의 절반"
                     // (모서리 방향(h, v)을 여기서 다시 곱하면 부호가 두 번 꼬여 서/북쪽 모서리에서 반대로
                     // 튕겨나가는 버그가 생김 — 아래처럼 방향 곱 없이 그대로 절반만 적용해야 정확함)
+                    const deltaOvX = dxRight / 2;
+                    const deltaOvY = -dyDown / 2;
                     DOM.ovMaskW.value = Math.round(newW);
                     DOM.ovMaskH.value = Math.round(newH);
-                    DOM.ovX.value = Math.round(origOvX + dxRight / 2);
-                    DOM.ovY.value = Math.round(origOvY - dyDown / 2);
+                    DOM.ovX.value = Math.round(origOvX + deltaOvX);
+                    DOM.ovY.value = Math.round(origOvY + deltaOvY);
+                    // 이미지는 카드 위에서 그대로 있어야 하므로, 틀 중심이 옮겨간 만큼 반대로 보정
+                    DOM.ovInX.value = Math.round(origInX - deltaOvX);
+                    DOM.ovInY.value = Math.round(origInY - deltaOvY);
                     updateUI();
-                } else if (mode === 'pan') {
-                    const s = ovScale || 1;
-                    DOM.ovInX.value = Math.round(origInX + dxRight / s);
-                    DOM.ovInY.value = Math.round(origInY + dyUp / s);
+                } else if (mode === 'move') {
+                    const deltaOvX = dxRight;
+                    const deltaOvY = dyDown; // ovY는 -dyDown 이 아니라, 아래 식에서 부호를 직접 반영
+                    DOM.ovX.value = Math.round(origOvX + deltaOvX);
+                    DOM.ovY.value = Math.round(origOvY - deltaOvY);
+                    // 틀이 이동한 만큼 이미지 위치도 반대로 보정해서, 이미지는 카드 위에서 안 움직이는 것처럼 보이게 함
+                    DOM.ovInX.value = Math.round(origInX - deltaOvX);
+                    DOM.ovInY.value = Math.round(origInY + deltaOvY);
                     updateUI();
                 }
             });
@@ -2155,7 +2223,7 @@
             window.addEventListener('mouseup', () => { mode = null; corner = null; });
 
             frame.addEventListener('wheel', (e) => {
-                if (!currentOvImageDataUrl) return;
+                if (!ovEditMode || !currentOvImageDataUrl) return;
                 e.preventDefault(); e.stopPropagation();
                 ovScale -= e.deltaY * wheelZoomSensitivity;
                 ovScale = Math.max(0.1, Math.min(ovScale, 10));
@@ -2249,6 +2317,7 @@
                 wmChar: DOM.wmChar.value, wmCreator: DOM.wmCreator.value, wmSize: DOM.wmSize.value, wmColor: DOM.wmColor.value, wmX: DOM.wmX.value, wmY: DOM.wmY.value,
                 ovImg: currentOvImageDataUrl, ovMaskW: DOM.ovMaskW.value, ovMaskH: DOM.ovMaskH.value, ovMaskR: DOM.ovMaskR.value, 
                 ovScale: ovScale, ovX: DOM.ovX.value, ovY: DOM.ovY.value, ovInX: DOM.ovInX.value, ovInY: DOM.ovInY.value,
+                ovAboveText: !!(DOM.ovAboveText && DOM.ovAboveText.checked),
                 ovFColor: DOM.ovFColor.value, ovFOpacity: DOM.ovFOpacity.value,
                 tsColor: DOM.tsColor.value, tsOpacity: DOM.tsOpacity.value, tsBlur: DOM.tsBlur.value, tsY: DOM.tsY.value
             };
@@ -2275,6 +2344,7 @@
 
             DOM.ovMaskW.value = config.ovMaskW || 300; DOM.ovMaskH.value = config.ovMaskH || 300; DOM.ovMaskR.value = config.ovMaskR || 0;
             ovScale = config.ovScale || 1.0; DOM.ovFColor.value = config.ovFColor || '#000000'; DOM.ovFOpacity.value = config.ovFOpacity || 0;
+            if (DOM.ovAboveText) DOM.ovAboveText.checked = !!config.ovAboveText;
             DOM.tsColor.value = config.tsColor || '#000000'; DOM.tsOpacity.value = config.tsOpacity || 0;
             DOM.tsBlur.value = config.tsBlur || 5; DOM.tsY.value = config.tsY || 2;
 
@@ -2425,7 +2495,6 @@
 
             cloneEl.querySelectorAll('img').forEach(img => { const src = img.getAttribute('src'); if (!src || src.trim() === '') img.parentNode.removeChild(img); });
             const guideText = cloneEl.querySelector('#guide-overlay-text'); if (guideText) guideText.parentNode.removeChild(guideText);
-            const cropFrameClone = cloneEl.querySelector('#ov-crop-frame'); if (cropFrameClone) cropFrameClone.parentNode.removeChild(cropFrameClone);
             cloneEl.querySelectorAll('[data-tag-hover]').forEach(el => el.removeAttribute('data-tag-hover'));
             cloneEl.style.transform = 'none'; cloneEl.style.boxShadow = 'none';
 
