@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.7.3 UX 개선버전)</title>
+    <title>네카이브 (v3.8 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -513,6 +513,44 @@
 
         #toast { position: fixed; bottom: var(--sp-8); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 14px var(--sp-6); border-radius: var(--radius-pill); font-size: var(--fs-base); font-weight: 500; box-shadow: 0 12px 32px rgba(0,0,0,0.2); opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s; z-index: 10500; cursor: pointer; }
         #toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-10px); }
+
+        /* ══════════════════════════════════════════════════════════════
+           모바일 반응형 (≤860px): 미리보기를 위에, 편집 컨트롤을 아래 탭으로.
+           실시간으로 보면서 편집하는 도구 특성상 미리보기는 항상 고정 노출. ══ */
+        .mobile-tab-bar { display: none; }
+        @media (max-width: 860px) {
+            .app-container { max-width: none; width: 100%; height: 100vh; border-radius: 0; margin: 0; }
+            body.screen-expand .app-container { max-width: none; } /* 화면 확장은 데스크톱 전용 개념 - 모바일은 항상 이미 꽉 참 */
+            body.screen-expand .controls { flex: 1 1 auto; } /* 화면 확장의 2열 사이드바 폭 확대는 모바일에서 무시 */
+            body.screen-expand .ctrl-section:not(:has(> .collapsible-header)),
+            body.screen-expand .collapsible-content { display: block; } /* 모바일에서는 2열 그리드 대신 항상 1열 */
+
+            .page-section { padding: 0; }
+            .page-section.active { flex-direction: column; gap: 0; }
+
+            /* 미리보기를 위쪽에 고정 노출 (DOM 순서는 그대로 두고 시각적 순서만 바꿈) */
+            .preview-container { order: 1; flex: 0 0 auto; height: 42vh; min-height: 220px; padding: var(--sp-3); }
+            .controls { order: 2; flex: 1 1 auto; width: 100%; border-radius: 0; border-left: none; border-right: none; border-bottom: none; }
+
+            /* 터치 기기는 "마우스를 올리면 나타남" 자체가 불가능하므로, 확대축소·전체화면 버튼을
+               호버 없이 항상 노출 (데스크톱의 "메뉴 툴바 항상 표시"와 같은 처리를 강제 적용) */
+            .floating-zoom, .floating-actions { opacity: 1 !important; pointer-events: auto !important; }
+
+            /* 모바일 탭 바 */
+            .mobile-tab-bar {
+                display: flex; gap: 6px; padding: var(--sp-3) var(--sp-3) 0; position: sticky; top: 0;
+                background: var(--paper-soft); z-index: 5; overflow-x: auto;
+            }
+            .mobile-tab-btn {
+                flex: 1 1 0; white-space: nowrap; padding: 10px 8px; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+                border: 1px solid var(--line); border-bottom: none; background: var(--paper); color: var(--ink-soft);
+                font-size: var(--fs-sm); font-weight: 600; cursor: pointer;
+            }
+            .mobile-tab-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+            /* 탭에 안 속한 섹션은 숨김 (JS가 각 섹션에 data-mobile-tab을 보고 이 클래스를 토글) */
+            .ctrl-section.mobile-tab-hidden { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -537,8 +575,16 @@
             <!-- 왼쪽 컨트롤 패널 -->
             <div class="controls">
 
+                <!-- 모바일 전용 탭 바 (좁은 화면에서만 보임) -->
+                <div class="mobile-tab-bar" id="mobile-tab-bar">
+                    <button type="button" class="mobile-tab-btn active" data-tab="input" onclick="setMobileTab('input')">텍스트 입력</button>
+                    <button type="button" class="mobile-tab-btn" data-tab="style" onclick="setMobileTab('style')">텍스트 편집</button>
+                    <button type="button" class="mobile-tab-btn" data-tab="bg" onclick="setMobileTab('bg')">배경</button>
+                    <button type="button" class="mobile-tab-btn" data-tab="system" onclick="setMobileTab('system')">설정</button>
+                </div>
+
                 <!-- 1. 본문 입력 -->
-                <div class="ctrl-section">
+                <div class="ctrl-section" id="section-text-input">
                     <div class="row row-span2">
                         <span class="row-label bold">HTML 뷰어 모드</span>
                         <label class="row-switch">
@@ -735,7 +781,7 @@
                 </div>
 
                 <!-- 4. 오버레이 이미지 -->
-                <div class="ctrl-section">
+                <div class="ctrl-section" id="section-overlay">
                     <div class="collapsible-header" onclick="toggleSection(this)">
                         <div class="ctrl-eyebrow">오버레이 이미지 (크롭 / 필터)</div>
                         <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
@@ -824,7 +870,7 @@
                 </div>
 
                 <!-- 5. 출처 표시 (워터마크) -->
-                <div class="ctrl-section">
+                <div class="ctrl-section" id="section-watermark">
                     <div class="collapsible-header" onclick="toggleSection(this)">
                         <div class="ctrl-eyebrow">출처 표시 (워터마크)</div>
                         <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
@@ -869,7 +915,7 @@
                 </div>
 
                 <!-- 6. 기타 부가기능 -->
-                <div class="ctrl-section">
+                <div class="ctrl-section" id="section-misc">
                     <div class="collapsible-header" onclick="toggleSection(this)">
                         <div class="ctrl-eyebrow">기타 부가기능</div>
                         <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
@@ -939,7 +985,7 @@
                 </div>
 
                 <!-- 7. 시스템 및 서버 캡쳐 설정 -->
-                <div class="ctrl-section">
+                <div class="ctrl-section" id="section-system">
                     <div class="collapsible-header" onclick="toggleSection(this)">
                         <div class="ctrl-eyebrow">시스템 및 서버 캡쳐 설정</div>
                         <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
@@ -1760,6 +1806,22 @@
             }, 1000);
         }
 
+        // ── 모바일 탭 (좁은 화면 전용, 데스크톱에서는 CSS가 이 클래스를 무시함) ──
+        const MOBILE_TAB_MAP = {
+            input: ['section-text-input', 'section-watermark'],
+            style: ['section-typography', 'section-html-layout', 'section-misc'],
+            bg: ['section-overlay'],
+            system: ['section-system'],
+        };
+        function setMobileTab(tab) {
+            document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+            const visibleIds = new Set(MOBILE_TAB_MAP[tab] || []);
+            Object.values(MOBILE_TAB_MAP).flat().forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('mobile-tab-hidden', !visibleIds.has(id));
+            });
+        }
+
         function toggleScreenExpand() {
             const isChecked = document.getElementById('screen-expand-toggle').checked;
             document.body.classList.toggle('screen-expand', isChecked);
@@ -1915,6 +1977,7 @@
 
         window.onload = () => {
             setupFontPicker();
+            setMobileTab('input');
             
             if(localStorage.getItem('archive_toolbar_always') === 'true') {
                 document.getElementById('toolbar-always-toggle').checked = true; document.body.classList.add('toolbar-always');
@@ -2086,29 +2149,67 @@
 
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && isDragging) cancelDrag(); });
 
-        DOM.preview.addEventListener('mousedown', (e) => {
+        // 마우스/터치 공용으로 쓰기 위해 좌표만 받는 형태로 분리
+        function previewPointerDown(clientX, clientY) {
             if (!dragMode) return;
             if (dragMode === 'bg' && !currentBgImageDataUrl) return;
-            isDragging = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
+            isDragging = true; startMouseX = clientX; startMouseY = clientY;
             if(dragMode === 'bg') { origX = bgOffsetX; origY = bgOffsetY; }
             else if(dragMode === 'text') { origX = parseFloat(DOM.textX.value)||0; origY = parseFloat(DOM.textY.value)||0; showVisualGuide(true); }
             else if(dragMode === 'wm') { origX = parseFloat(DOM.wmX.value)||0; origY = parseFloat(DOM.wmY.value)||0; }
-        });
-
-        window.addEventListener('mousemove', (e) => {
+        }
+        function previewPointerMove(clientX, clientY) {
             if (!isDragging) return;
-            const previewScale = parseFloat(DOM.scale.value); 
-            const dx = (e.clientX - startMouseX) / previewScale; const dyMath = (startMouseY - e.clientY) / previewScale; 
-
-            if (dragMode === 'bg') { const bgDx = (e.clientX - startMouseX) / (previewScale * bgScale); const bgDy = (e.clientY - startMouseY) / (previewScale * bgScale); bgOffsetX = origX + bgDx; bgOffsetY = origY + bgDy; updateBgLayer(); } 
+            const previewScale = parseFloat(DOM.scale.value);
+            const dx = (clientX - startMouseX) / previewScale; const dyMath = (startMouseY - clientY) / previewScale;
+            if (dragMode === 'bg') { const bgDx = (clientX - startMouseX) / (previewScale * bgScale); const bgDy = (clientY - startMouseY) / (previewScale * bgScale); bgOffsetX = origX + bgDx; bgOffsetY = origY + bgDy; updateBgLayer(); }
             else if (dragMode === 'text') { DOM.textX.value = Math.round(origX + dx); DOM.textY.value = Math.round(origY + dyMath); updateUI(); showVisualGuide(true); }
             else if (dragMode === 'wm') { DOM.wmX.value = Math.round(origX + dx); DOM.wmY.value = Math.round(origY + dyMath); updateUI(); }
-        });
-
-        window.addEventListener('mouseup', () => {
+        }
+        function previewPointerUp() {
             if (isDragging && dragMode === 'text') showVisualGuide(false);
             isDragging = false;
-        });
+        }
+
+        DOM.preview.addEventListener('mousedown', (e) => { if (dragMode) e.preventDefault(); previewPointerDown(e.clientX, e.clientY); });
+        window.addEventListener('mousemove', (e) => previewPointerMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', previewPointerUp);
+
+        // 터치 버전(한 손가락 = 드래그). 두 손가락은 핀치줌 쪽에서 따로 처리하므로 여기서는 무시.
+        DOM.preview.addEventListener('touchstart', (e) => {
+            if (!dragMode || e.touches.length !== 1) return;
+            const t = e.touches[0]; previewPointerDown(t.clientX, t.clientY); e.preventDefault();
+        }, { passive: false });
+        DOM.preview.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            const t = e.touches[0]; previewPointerMove(t.clientX, t.clientY); e.preventDefault();
+        }, { passive: false });
+        DOM.preview.addEventListener('touchend', previewPointerUp);
+        DOM.preview.addEventListener('touchcancel', previewPointerUp);
+
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX, dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // 메인 미리보기 핀치줌 (두 손가락) — 슬라이더/휠과 같은 DOM.scale 값을 그대로 조작
+        (function setupPreviewPinchZoom() {
+            const wrapperEl = document.querySelector('.preview-canvas-wrapper');
+            let pinchStartDist = null, pinchStartScale = 1;
+            wrapperEl.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) { pinchStartDist = getTouchDistance(e.touches); pinchStartScale = parseFloat(DOM.scale.value) || 1; }
+            }, { passive: true });
+            wrapperEl.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && pinchStartDist) {
+                    e.preventDefault();
+                    const ratio = getTouchDistance(e.touches) / pinchStartDist;
+                    const newScale = Math.max(0.1, Math.min(2.0, pinchStartScale * ratio));
+                    DOM.scale.value = newScale.toFixed(2); updateScale();
+                }
+            }, { passive: false });
+            wrapperEl.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = null; });
+            wrapperEl.addEventListener('touchcancel', () => { pinchStartDist = null; });
+        })();
 
         document.querySelector('.preview-canvas-wrapper').addEventListener('wheel', (e) => {
             if (dragMode === 'bg' && currentBgImageDataUrl) {
@@ -2153,37 +2254,31 @@
             let corner = null;
             let startX = 0, startY = 0;
             let origW = 0, origH = 0, origOvX = 0, origOvY = 0, origInX = 0, origInY = 0;
+            let pinchStartDist = null, pinchStartOvScale = 1;
 
-            frame.querySelectorAll('.ov-crop-handle').forEach(handle => {
-                handle.addEventListener('mousedown', (e) => {
-                    if (!ovEditMode) return;
-                    e.preventDefault(); e.stopPropagation();
-                    mode = 'resize'; corner = handle.dataset.corner;
-                    startX = e.clientX; startY = e.clientY;
-                    origW = parseFloat(DOM.ovMaskW.value) || 0;
-                    origH = parseFloat(DOM.ovMaskH.value) || 0;
-                    origOvX = parseFloat(DOM.ovX.value) || 0;
-                    origOvY = parseFloat(DOM.ovY.value) || 0;
-                    origInX = parseFloat(DOM.ovInX.value) || 0;
-                    origInY = parseFloat(DOM.ovInY.value) || 0;
-                });
-            });
-
-            frame.addEventListener('mousedown', (e) => {
+            function startResize(clientX, clientY, cornerName) {
                 if (!ovEditMode) return;
-                if (e.target.closest('.ov-crop-handle')) return; // 손잡이는 위에서 이미 처리됨
-                e.preventDefault(); e.stopPropagation();
-                mode = 'move';
-                startX = e.clientX; startY = e.clientY;
+                mode = 'resize'; corner = cornerName;
+                startX = clientX; startY = clientY;
+                origW = parseFloat(DOM.ovMaskW.value) || 0;
+                origH = parseFloat(DOM.ovMaskH.value) || 0;
                 origOvX = parseFloat(DOM.ovX.value) || 0;
                 origOvY = parseFloat(DOM.ovY.value) || 0;
-            });
-
-            window.addEventListener('mousemove', (e) => {
+                origInX = parseFloat(DOM.ovInX.value) || 0;
+                origInY = parseFloat(DOM.ovInY.value) || 0;
+            }
+            function startMove(clientX, clientY) {
+                if (!ovEditMode) return;
+                mode = 'move';
+                startX = clientX; startY = clientY;
+                origOvX = parseFloat(DOM.ovX.value) || 0;
+                origOvY = parseFloat(DOM.ovY.value) || 0;
+            }
+            function pointerMove(clientX, clientY) {
                 if (!mode || !ovEditMode) return;
                 const previewScale = parseFloat(DOM.scale.value) || 1;
-                const dxRight = (e.clientX - startX) / previewScale;   // + = 오른쪽으로 이동
-                const dyDown = (e.clientY - startY) / previewScale;    // + = 아래로 이동
+                const dxRight = (clientX - startX) / previewScale;   // + = 오른쪽으로 이동
+                const dyDown = (clientY - startY) / previewScale;    // + = 아래로 이동
 
                 if (mode === 'resize') {
                     const h = (corner === 'ne' || corner === 'se') ? 1 : -1; // 동쪽 모서리를 오른쪽으로 끌면 폭 증가
@@ -2210,9 +2305,60 @@
                     // 이미지 위치는 그대로 둠 → 마스크와 이미지가 한 덩어리처럼 같이 움직임
                     updateUI();
                 }
+            }
+            function pointerEnd() { mode = null; corner = null; }
+
+            frame.querySelectorAll('.ov-crop-handle').forEach(handle => {
+                handle.addEventListener('mousedown', (e) => {
+                    if (!ovEditMode) return;
+                    e.preventDefault(); e.stopPropagation();
+                    startResize(e.clientX, e.clientY, handle.dataset.corner);
+                });
+                handle.addEventListener('touchstart', (e) => {
+                    if (!ovEditMode || e.touches.length !== 1) return;
+                    e.preventDefault(); e.stopPropagation();
+                    const t = e.touches[0]; startResize(t.clientX, t.clientY, handle.dataset.corner);
+                }, { passive: false });
             });
 
-            window.addEventListener('mouseup', () => { mode = null; corner = null; });
+            frame.addEventListener('mousedown', (e) => {
+                if (!ovEditMode) return;
+                if (e.target.closest('.ov-crop-handle')) return; // 손잡이는 위에서 이미 처리됨
+                e.preventDefault(); e.stopPropagation();
+                startMove(e.clientX, e.clientY);
+            });
+            frame.addEventListener('touchstart', (e) => {
+                if (!ovEditMode) return;
+                if (e.target.closest('.ov-crop-handle')) return;
+                if (e.touches.length === 2) {
+                    // 두 손가락 = 마스크 안쪽 이미지 확대축소 (핀치)
+                    e.preventDefault(); e.stopPropagation();
+                    mode = null; // 이동 모드와 동시 진행 방지
+                    pinchStartDist = getTouchDistance(e.touches); pinchStartOvScale = ovScale || 1;
+                    return;
+                }
+                if (e.touches.length !== 1) return;
+                e.preventDefault(); e.stopPropagation();
+                const t = e.touches[0]; startMove(t.clientX, t.clientY);
+            }, { passive: false });
+
+            window.addEventListener('mousemove', (e) => pointerMove(e.clientX, e.clientY));
+            frame.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && pinchStartDist) {
+                    e.preventDefault(); e.stopPropagation();
+                    const ratio = getTouchDistance(e.touches) / pinchStartDist;
+                    ovScale = Math.max(0.1, Math.min(10, pinchStartOvScale * ratio));
+                    updateUI();
+                    return;
+                }
+                if (!mode || e.touches.length !== 1) return;
+                e.preventDefault(); e.stopPropagation();
+                const t = e.touches[0]; pointerMove(t.clientX, t.clientY);
+            }, { passive: false });
+
+            window.addEventListener('mouseup', pointerEnd);
+            frame.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = null; pointerEnd(); });
+            frame.addEventListener('touchcancel', () => { pinchStartDist = null; pointerEnd(); });
 
             frame.addEventListener('wheel', (e) => {
                 if (!ovEditMode || !currentOvImageDataUrl) return;
