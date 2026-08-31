@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.7.2 UX 개선버전)</title>
+    <title>네카이브 (v3.7.3 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -791,26 +791,26 @@
                             <div class="row">
                                 <span class="row-label">마스크 크기 (W · H)</span>
                                 <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-w', -5, 5)">−</button><input type="number" id="ov-mask-w" value="300" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-w', 5, 5)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-h', -5, 5)">−</button><input type="number" id="ov-mask-h" value="300" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-h', 5, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-w', -1, 5)">−</button><input type="number" id="ov-mask-w" value="300" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-w', 1, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-h', -1, 5)">−</button><input type="number" id="ov-mask-h" value="300" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-h', 1, 5)">+</button></div>
                                 </div>
                             </div>
                             <div class="row">
                                 <span class="row-label">마스크 둥글기 (Radius)</span>
-                                <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-r', -5, 5)">−</button><input type="number" id="ov-mask-r" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-r', 5, 5)">+</button></div>
+                                <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-r', -1, 5)">−</button><input type="number" id="ov-mask-r" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-r', 1, 5)">+</button></div>
                             </div>
                             <div class="row">
                                 <span class="row-label">마스크 좌표 (X · Y)</span>
                                 <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-x', -5, 5)">−</button><input type="number" id="ov-x" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-x', 5, 5)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-y', -5, 5)">−</button><input type="number" id="ov-y" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-y', 5, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-x', -1, 5)">−</button><input type="number" id="ov-x" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-x', 1, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-y', -1, 5)">−</button><input type="number" id="ov-y" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-y', 1, 5)">+</button></div>
                                 </div>
                             </div>
                             <div class="row">
                                 <span class="row-label">이미지 위치 (X · Y)</span>
                                 <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -5, 5)">−</button><input type="number" id="ov-in-x" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-x', 5, 5)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -5, 5)">−</button><input type="number" id="ov-in-y" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-y', 5, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -1, 5)">−</button><input type="number" id="ov-in-x" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-x', 1, 5)">+</button></div>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -1, 5)">−</button><input type="number" id="ov-in-y" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-y', 1, 5)">+</button></div>
                                 </div>
                             </div>
                             <div class="section-note">마스크를 옮기면 이미지도 함께 따라와요. 이 값은 마스크 중심과 이미지 중심 사이의 어긋난 정도를 나타내요.</div>
@@ -2152,7 +2152,7 @@
             let mode = null; // 'resize' | 'move'
             let corner = null;
             let startX = 0, startY = 0;
-            let origW = 0, origH = 0, origOvX = 0, origOvY = 0;
+            let origW = 0, origH = 0, origOvX = 0, origOvY = 0, origInX = 0, origInY = 0;
 
             frame.querySelectorAll('.ov-crop-handle').forEach(handle => {
                 handle.addEventListener('mousedown', (e) => {
@@ -2164,6 +2164,8 @@
                     origH = parseFloat(DOM.ovMaskH.value) || 0;
                     origOvX = parseFloat(DOM.ovX.value) || 0;
                     origOvY = parseFloat(DOM.ovY.value) || 0;
+                    origInX = parseFloat(DOM.ovInX.value) || 0;
+                    origInY = parseFloat(DOM.ovInY.value) || 0;
                 });
             });
 
@@ -2191,12 +2193,16 @@
                     const newH = Math.max(minSize, origH + v * dyDown);
                     // 반대쪽 모서리가 고정되도록 중심을 옮김: 어느 모서리를 잡았든, 움직인 그 변(edge)만
                     // 옮겨지고 반대쪽 변은 그대로이므로 중심 이동량은 항상 "옮긴 거리의 절반"
+                    const deltaOvX = dxRight / 2;
+                    const deltaOvY = -dyDown / 2;
                     DOM.ovMaskW.value = Math.round(newW);
                     DOM.ovMaskH.value = Math.round(newH);
-                    DOM.ovX.value = Math.round(origOvX + dxRight / 2);
-                    DOM.ovY.value = Math.round(origOvY - dyDown / 2);
-                    // 이미지 위치(ov-in-x/y)는 건드리지 않음 — 마스크 중심 기준 상대 위치라서,
-                    // 마스크가 움직이는 방향으로 이미지도 자연스럽게 같이 딸려옴
+                    DOM.ovX.value = Math.round(origOvX + deltaOvX);
+                    DOM.ovY.value = Math.round(origOvY + deltaOvY);
+                    // 크기 조절(모서리 드래그)할 땐 이미지는 카드 위에서 그대로 있어야 하므로,
+                    // 마스크 중심이 옮겨간 만큼 이미지 위치를 반대로 보정 (이동 모드와는 다른 동작)
+                    DOM.ovInX.value = Math.round(origInX - deltaOvX);
+                    DOM.ovInY.value = Math.round(origInY - deltaOvY);
                     updateUI();
                 } else if (mode === 'move') {
                     DOM.ovX.value = Math.round(origOvX + dxRight);
