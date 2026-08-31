@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.8 UX 개선버전)</title>
+    <title>네카이브 (v3.8.1 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -407,6 +407,7 @@
         .toolbar-divider { width: 1px; height: 32px; background: var(--line); }
         .toolbar-item { display: flex; flex-direction: column; gap: 6px; }
         .toolbar-item label { font-size: var(--fs-xs); color: var(--ink-soft); font-weight: 700; margin: 0; letter-spacing: 0.01em; }
+        .mobile-only-block { display: none; }
 
         .preview-canvas-wrapper {
             position: relative; flex: 1; display: flex; flex-direction: column;
@@ -520,21 +521,32 @@
         .mobile-tab-bar { display: none; }
         @media (max-width: 860px) {
             .app-container { max-width: none; width: 100%; height: 100vh; border-radius: 0; margin: 0; }
-            body.screen-expand .app-container { max-width: none; } /* 화면 확장은 데스크톱 전용 개념 - 모바일은 항상 이미 꽉 참 */
-            body.screen-expand .controls { flex: 1 1 auto; } /* 화면 확장의 2열 사이드바 폭 확대는 모바일에서 무시 */
+
+            /* 화면 확장은 데스크톱 전용 개념(넓은 화면에서 여백 없애기) — 모바일은 이미 항상 꽉 차 있어서
+               의미가 없고, 2열 그리드가 오히려 좁은 화면에서 답답해지므로 관련 UI 자체를 숨김 */
+            body.screen-expand .app-container { max-width: none; }
+            body.screen-expand .controls { flex: 1 1 auto; }
             body.screen-expand .ctrl-section:not(:has(> .collapsible-header)),
-            body.screen-expand .collapsible-content { display: block; } /* 모바일에서는 2열 그리드 대신 항상 1열 */
+            body.screen-expand .collapsible-content { display: block; }
+            #screen-expand-row { display: none; }
 
             .page-section { padding: 0; }
             .page-section.active { flex-direction: column; gap: 0; }
 
-            /* 미리보기를 위쪽에 고정 노출 (DOM 순서는 그대로 두고 시각적 순서만 바꿈) */
-            .preview-container { order: 1; flex: 0 0 auto; height: 42vh; min-height: 220px; padding: var(--sp-3); }
+            /* 미리보기를 위쪽에 크게, 넉넉히 노출 */
+            .preview-container { order: 1; flex: 0 0 auto; height: 50vh; min-height: 260px; padding: var(--sp-2); }
             .controls { order: 2; flex: 1 1 auto; width: 100%; border-radius: 0; border-left: none; border-right: none; border-bottom: none; }
 
-            /* 터치 기기는 "마우스를 올리면 나타남" 자체가 불가능하므로, 확대축소·전체화면 버튼을
-               호버 없이 항상 노출 (데스크톱의 "메뉴 툴바 항상 표시"와 같은 처리를 강제 적용) */
-            .floating-zoom, .floating-actions { opacity: 1 !important; pointer-events: auto !important; }
+            /* 드래그(패닝)를 흉내내려는 손가락 제스처를, 브라우저가 "텍스트 선택"이나
+               "페이지 스크롤/확대"로 가로채 가는 걸 막음 — 이게 빠지면 특히 텍스트 위에서
+               드래그가 먹통이 되기 쉬움(네이티브 텍스트 선택이 제스처를 가로챔) */
+            #card-preview, #card-preview * { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+            /* 확대축소·전체화면 버튼: 호버가 없는 터치 기기라 "항상 보이게"가 아니라
+               "미리보기를 만지고 있을 때만" 보이게 함 (JS가 preview-touch-active 클래스를 토글) */
+            .floating-zoom, .floating-actions { transition: opacity 0.25s ease; }
+            body.preview-touch-active .floating-zoom,
+            body.preview-touch-active .floating-actions { opacity: 1 !important; pointer-events: auto !important; }
 
             /* 모바일 탭 바 */
             .mobile-tab-bar {
@@ -542,14 +554,48 @@
                 background: var(--paper-soft); z-index: 5; overflow-x: auto;
             }
             .mobile-tab-btn {
-                flex: 1 1 0; white-space: nowrap; padding: 10px 8px; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+                flex: 1 1 0; white-space: nowrap; padding: 12px 8px; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
                 border: 1px solid var(--line); border-bottom: none; background: var(--paper); color: var(--ink-soft);
-                font-size: var(--fs-sm); font-weight: 600; cursor: pointer;
+                font-size: var(--fs-base); font-weight: 700; cursor: pointer;
             }
             .mobile-tab-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
             /* 탭에 안 속한 섹션은 숨김 (JS가 각 섹션에 data-mobile-tab을 보고 이 클래스를 토글) */
             .ctrl-section.mobile-tab-hidden { display: none !important; }
+
+            /* 탭으로 이미 나눠놨으니, 그 안에서 또 접었다 펼치는 구조는 필요 없음 → 항상 펼쳐진 상태로 */
+            .collapsible-content { display: block !important; }
+            .collapsible-header { cursor: default; pointer-events: none; }
+            .collapsible-header .collapsible-icon { display: none; }
+
+            /* 터치에 맞게 컨트롤 자체를 확대: 버튼/입력창 높이, 글자 크기, 여백 전부 상향 */
+            .controls { --ctrl-h: 44px; --fs-base: 0.95rem; --fs-sm: 0.875rem; }
+            .ctrl-section, .collapsible-header, .collapsible-content { padding: var(--sp-5) var(--sp-4); }
+            .row { min-height: 44px; margin-bottom: var(--sp-4); flex-wrap: wrap; row-gap: 8px; }
+            .row-label { font-size: var(--fs-base); }
+            .action-btn { padding: 0 16px; font-size: var(--fs-base); }
+            .row-switch { width: 48px; height: 28px; }
+            .swatch { width: 36px; height: 36px; }
+            input[type="number"] { min-width: 56px; }
+            .ctrl-eyebrow { font-size: 1rem; }
+
+            /* 상단 배경 툴바가 JS로 이 자리에 옮겨왔을 때, 다른 섹션들과 같은 "세로로 쌓인 row" 모양으로 보이게 재구성 */
+            .mobile-only-block { display: block; }
+            #mobile-bg-toolbar-slot #preview-bg-toolbar {
+                display: block; box-shadow: none; border: none; padding: 0; margin: 0 0 var(--sp-4);
+            }
+            #mobile-bg-toolbar-slot .toolbar-group {
+                flex-direction: column; align-items: stretch; gap: 0;
+            }
+            #mobile-bg-toolbar-slot .toolbar-divider { display: none; }
+            #mobile-bg-toolbar-slot .toolbar-item {
+                flex-direction: row; align-items: center; justify-content: space-between;
+                min-height: 44px; margin-bottom: var(--sp-4); max-width: none !important; flex: none !important;
+            }
+            #mobile-bg-toolbar-slot .toolbar-item label {
+                font-size: var(--fs-base); color: var(--ink); font-weight: 500; letter-spacing: normal;
+            }
+        }
         }
     </style>
 </head>
@@ -782,6 +828,11 @@
 
                 <!-- 4. 오버레이 이미지 -->
                 <div class="ctrl-section" id="section-overlay">
+                    <!-- 모바일에서만 쓰임: 데스크톱의 상단 배경 툴바(카드 크기/배경색/배경이미지/어둡기)가
+                         JS로 이 자리에 옮겨와서, 다른 메뉴들과 같은 섹션 형태로 보임 -->
+                    <div id="mobile-bg-toolbar-slot" class="mobile-only-block">
+                        <div class="ctrl-eyebrow">카드 크기 · 배경</div>
+                    </div>
                     <div class="collapsible-header" onclick="toggleSection(this)">
                         <div class="ctrl-eyebrow">오버레이 이미지 (크롭 / 필터)</div>
                         <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
@@ -992,7 +1043,7 @@
                     </div>
                     <div class="collapsible-content">
                         <!-- 시스템 설정 -->
-                        <div class="row-group">
+                        <div class="row-group" id="screen-expand-row">
                             <div class="row">
                                 <span class="row-label bold">화면 확장</span>
                                 <label class="row-switch">
@@ -1079,7 +1130,8 @@
             <!-- 오른쪽 미리보기 패널 -->
             <div class="preview-container">
                 
-                <div class="preview-toolbar">
+                <div id="preview-bg-toolbar-anchor"></div>
+                <div class="preview-toolbar" id="preview-bg-toolbar">
                     <div class="toolbar-group">
                         <div class="toolbar-item">
                             <label>가로 (px)</label>
@@ -1813,6 +1865,26 @@
             bg: ['section-overlay'],
             system: ['section-system'],
         };
+        // ── 상단 배경 툴바를 화면 폭에 따라 실제로 옮김 ──────────────────────
+        // (같은 input/버튼을 그대로 옮기는 거라 id 중복 없이 하나의 소스로 양쪽에서 다 씀)
+        function relocateBgToolbar() {
+            const toolbar = document.getElementById('preview-bg-toolbar');
+            const mobileSlot = document.getElementById('mobile-bg-toolbar-slot');
+            const desktopAnchor = document.getElementById('preview-bg-toolbar-anchor');
+            if (!toolbar || !mobileSlot || !desktopAnchor) return;
+            const isMobile = window.matchMedia('(max-width: 860px)').matches;
+            if (isMobile && toolbar.parentElement !== mobileSlot) {
+                mobileSlot.appendChild(toolbar);
+            } else if (!isMobile && toolbar.parentElement !== desktopAnchor.parentElement) {
+                desktopAnchor.parentElement.insertBefore(toolbar, desktopAnchor.nextSibling);
+            }
+        }
+        let bgToolbarResizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(bgToolbarResizeTimer);
+            bgToolbarResizeTimer = setTimeout(relocateBgToolbar, 150);
+        });
+
         function setMobileTab(tab) {
             document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
             const visibleIds = new Set(MOBILE_TAB_MAP[tab] || []);
@@ -1978,6 +2050,7 @@
         window.onload = () => {
             setupFontPicker();
             setMobileTab('input');
+            relocateBgToolbar();
             
             if(localStorage.getItem('archive_toolbar_always') === 'true') {
                 document.getElementById('toolbar-always-toggle').checked = true; document.body.classList.add('toolbar-always');
@@ -2192,23 +2265,49 @@
             return Math.sqrt(dx * dx + dy * dy);
         }
 
-        // 메인 미리보기 핀치줌 (두 손가락) — 슬라이더/휠과 같은 DOM.scale 값을 그대로 조작
+        // 메인 미리보기 핀치줌 (두 손가락). 단, 지금 "배경 조절" 드래그 모드 중이면 배경 이미지
+        // 자체의 확대축소(bgScale)를 조작해야 함 — 안 그러면 배경을 확대하려고 핀치했는데
+        // 미리보기 전체가 확대되는 충돌이 생김 (오버레이 이미지 크롭 툴은 자기 영역에서
+        // stopPropagation 하고 있어서 원래도 이 충돌이 없었음)
         (function setupPreviewPinchZoom() {
             const wrapperEl = document.querySelector('.preview-canvas-wrapper');
-            let pinchStartDist = null, pinchStartScale = 1;
+            let pinchStartDist = null, pinchStartScale = 1, pinchTargetIsBg = false;
             wrapperEl.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 2) { pinchStartDist = getTouchDistance(e.touches); pinchStartScale = parseFloat(DOM.scale.value) || 1; }
+                if (e.touches.length === 2) {
+                    pinchStartDist = getTouchDistance(e.touches);
+                    pinchTargetIsBg = (dragMode === 'bg' && !!currentBgImageDataUrl);
+                    pinchStartScale = pinchTargetIsBg ? (bgScale || 1) : (parseFloat(DOM.scale.value) || 1);
+                }
             }, { passive: true });
             wrapperEl.addEventListener('touchmove', (e) => {
                 if (e.touches.length === 2 && pinchStartDist) {
                     e.preventDefault();
                     const ratio = getTouchDistance(e.touches) / pinchStartDist;
-                    const newScale = Math.max(0.1, Math.min(2.0, pinchStartScale * ratio));
-                    DOM.scale.value = newScale.toFixed(2); updateScale();
+                    if (pinchTargetIsBg) {
+                        bgScale = Math.max(0.1, Math.min(10, pinchStartScale * ratio));
+                        updateBgLayer();
+                    } else {
+                        const newScale = Math.max(0.1, Math.min(2.0, pinchStartScale * ratio));
+                        DOM.scale.value = newScale.toFixed(2); updateScale();
+                    }
                 }
             }, { passive: false });
             wrapperEl.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = null; });
             wrapperEl.addEventListener('touchcancel', () => { pinchStartDist = null; });
+        })();
+
+        // 모바일: 미리보기를 만지고 있는 동안에만 확대축소·전체화면 버튼이 보이고,
+        // 손을 떼면 잠시 후 다시 사라짐 (호버가 없는 터치 기기용 대체 동작)
+        (function setupMobilePreviewButtonVisibility() {
+            const wrapperEl = document.querySelector('.preview-canvas-wrapper');
+            let hideTimer = null;
+            function showButtons() {
+                document.body.classList.add('preview-touch-active');
+                clearTimeout(hideTimer);
+                hideTimer = setTimeout(() => document.body.classList.remove('preview-touch-active'), 2500);
+            }
+            wrapperEl.addEventListener('touchstart', showButtons, { passive: true });
+            wrapperEl.addEventListener('touchmove', showButtons, { passive: true });
         })();
 
         document.querySelector('.preview-canvas-wrapper').addEventListener('wheel', (e) => {
