@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.8.1 UX 개선버전)</title>
+    <title>네카이브 (v3.8.2 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -535,7 +535,14 @@
 
             /* 미리보기를 위쪽에 크게, 넉넉히 노출 */
             .preview-container { order: 1; flex: 0 0 auto; height: 50vh; min-height: 260px; padding: var(--sp-2); }
-            .controls { order: 2; flex: 1 1 auto; width: 100%; border-radius: 0; border-left: none; border-right: none; border-bottom: none; }
+            .controls {
+                order: 2; flex: 1 1 auto; width: 100%; border-radius: 0; border-left: none; border-right: none; border-bottom: none;
+                /* 데스크톱 규칙(.controls { height:100% })이 그대로 남아있으면, 세로 flex 배치에서
+                   height가 flex-basis로 쓰여서 미리보기(50vh)와 공간을 두고 충돌함 → 리스트/탭바가
+                   화면 밖으로 밀려나거나 안 보이는 원인이 됨. 명시적으로 무효화. */
+                height: auto; min-height: 0;
+            }
+            .page-section.active { min-height: 0; }
 
             /* 드래그(패닝)를 흉내내려는 손가락 제스처를, 브라우저가 "텍스트 선택"이나
                "페이지 스크롤/확대"로 가로채 가는 걸 막음 — 이게 빠지면 특히 텍스트 위에서
@@ -551,7 +558,7 @@
             /* 모바일 탭 바 */
             .mobile-tab-bar {
                 display: flex; gap: 6px; padding: var(--sp-3) var(--sp-3) 0; position: sticky; top: 0;
-                background: var(--paper-soft); z-index: 5; overflow-x: auto;
+                background: var(--paper-soft); z-index: 5; overflow-x: auto; flex-shrink: 0;
             }
             .mobile-tab-btn {
                 flex: 1 1 0; white-space: nowrap; padding: 12px 8px; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
@@ -575,6 +582,10 @@
             .row-label { font-size: var(--fs-base); }
             .action-btn { padding: 0 16px; font-size: var(--fs-base); }
             .row-switch { width: 48px; height: 28px; }
+            /* 위에서 스위치 트랙 크기를 키웠는데, 체크됐을 때 노브(원)이 이동하는 거리는
+               데스크톱 크기(40px 트랙) 기준 16px로 고정돼 있어서 트랙만 커지고 원 위치는 안 맞았음.
+               새 트랙 크기(48px, 원18px, 여백3px 양쪽)에 맞게 다시 계산: 48-18-3-3=24px */
+            .row-switch input:checked + .track::after { transform: translateX(24px); }
             .swatch { width: 36px; height: 36px; }
             input[type="number"] { min-width: 56px; }
             .ctrl-eyebrow { font-size: 1rem; }
