@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <link rel="icon" href="favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v3.9.1 UX 개선버전)</title>
+    <title>네카이브 (v3.9.2 UX 개선버전)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
@@ -536,7 +537,7 @@
             .page-section.active { flex-direction: column; gap: 0; min-height: 0; }
 
             /* 미리보기 영역 - 편집 공간을 더 확보하기 위해 절반보다 확실히 작게 */
-            .preview-container { order: 1; flex: 0 0 auto; height: 42vh; min-height: 220px; padding: var(--sp-2); transition: height 0.2s ease; }
+            .preview-container { order: 1; flex: 0 0 auto; height: 44vh; min-height: 220px; padding: var(--sp-2); transition: height 0.2s ease; }
             .controls {
                 order: 2; flex: 1 1 auto; width: 100%; border-radius: 0; border-left: none; border-right: none; border-bottom: none;
                 /* 데스크톱 규칙(.controls { height:100% })이 그대로 남아있으면, 세로 flex 배치에서
@@ -594,7 +595,9 @@
             .collapsible-header { cursor: default; pointer-events: none; }
             .collapsible-header .collapsible-icon { display: none; }
 
-            /* 터치에 맞게 컨트롤 자체를 약간 키우되, 여백/버튼은 최소한으로만 (여러 번 피드백 받고 축소) */
+            /* 삼성 인터넷에서 페이지를 90%로 줄였을 때 "딱 맞다"고 확인해주신 크기를 그대로 재현.
+               여러 값을 따로따로 손대는 대신, 실제로 확인해주신 90% 배율 자체를 적용함. */
+            .controls { zoom: 0.9; }
             .controls { --ctrl-h: 34px; --fs-base: 0.875rem; --fs-sm: 0.8125rem; }
             .ctrl-section, .collapsible-header, .collapsible-content { padding: var(--sp-3) var(--sp-4); }
             .row { min-height: 34px; margin-bottom: 8px; flex-wrap: wrap; row-gap: 4px; }
@@ -2082,6 +2085,13 @@
             clearTimeout(guideTimer);
             if (!persistent) guideTimer = setTimeout(() => { textOverlay.style.opacity = '0'; }, 1000);
         }
+        // showVisualGuide(false)는 "지금 즉시 숨김"이 아니라 "1초 후에 숨기도록 예약"이라(타이머가
+        // 끊기면 계속 안 사라짐), 드래그 종료처럼 "확실히 지금 바로 숨겨야 하는" 곳엔 이걸 따로 씀.
+        function hideVisualGuide() {
+            clearTimeout(guideTimer);
+            const textOverlay = document.getElementById('guide-overlay-text');
+            if (textOverlay) textOverlay.style.opacity = '0';
+        }
         [DOM.pad, DOM.lh, DOM.paraGap, DOM.letterSpacing, DOM.hScale2, DOM.size].forEach(el => el.addEventListener('input', showVisualGuide));
         DOM.align.addEventListener('change', showVisualGuide); DOM.charWrap.addEventListener('change', showVisualGuide); DOM.color.addEventListener('input', showVisualGuide);
 
@@ -2238,7 +2248,7 @@
         function toggleDragMode(mode) {
             const btns = { 'bg': document.getElementById('btn-bg-drag'), 'text': DOM.textDragBtn, 'text-html': DOM.textDragBtnHtml, 'wm': document.getElementById('btn-wm-drag') };
             Object.values(btns).forEach(b => b && b.classList.remove('drag-active'));
-            if (dragMode === mode) { dragMode = null; DOM.preview.style.cursor = 'default'; hideToast(); }
+            if (dragMode === mode) { dragMode = null; DOM.preview.style.cursor = 'default'; hideToast(); if (mode === 'text') hideVisualGuide(); }
             else {
                 dragMode = mode; if(btns[mode]) btns[mode].classList.add('drag-active');
                 if(mode === 'text' && btns['text-html']) btns['text-html'].classList.add('drag-active');
@@ -2254,7 +2264,7 @@
         function cancelDrag() {
             if(!isDragging) return; isDragging = false;
             if(dragMode === 'bg') { bgOffsetX = origX; bgOffsetY = origY; updateBgLayer(); }
-            else if(dragMode === 'text') { DOM.textX.value = origX; DOM.textY.value = origY; updateUI(); showVisualGuide(false); }
+            else if(dragMode === 'text') { DOM.textX.value = origX; DOM.textY.value = origY; updateUI(); hideVisualGuide(); }
             else if(dragMode === 'wm') { DOM.wmX.value = origX; DOM.wmY.value = origY; updateUI(); }
             showToast('이동이 취소되었습니다.');
         }
@@ -2292,7 +2302,7 @@
         }
         function previewPointerUp() {
             const wasDragging = isDragging, mode = dragMode;
-            if (isDragging && dragMode === 'text') showVisualGuide(false);
+            if (isDragging && dragMode === 'text') hideVisualGuide();
             isDragging = false;
             // 드래그 중엔 가벼운 갱신만 했으니, 손 뗄 때 한 번 전체 상태(자동저장 포함)를 맞춰줌
             if (wasDragging && (mode === 'text' || mode === 'wm')) updateUI();
