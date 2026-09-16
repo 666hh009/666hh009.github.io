@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.0.2)</title>
+    <title>네카이브 (v4.1.0)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -1100,6 +1100,27 @@
                             <div class="section-note">켜면 미리보기 우측 아이콘들이 투명해지지 않고 항상 켜져있습니다.</div>
                         </div>
 
+                        <!-- 다운로드 파일명 형식 -->
+                        <div class="row-group row-span2">
+                            <div class="row">
+                                <span class="row-label bold">다운로드 파일명 형식</span>
+                            </div>
+                            <div class="section-note" style="margin-bottom:12px;">YYYY(연도4), YY(연도2), MM(월), DD(일), hh(시), mm(분), ss(초)를 넣으면 실제 값으로 바뀌고, 나머지 글자는 그대로 사용됩니다.</div>
+                            <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                                <input type="text" id="filename-format" placeholder="네카이브-YYYY-MM-DD_hhmmss" oninput="onFilenameFormatChanged()" style="font-family: var(--mono);">
+                            </div>
+                            <p id="filename-format-preview" class="section-note" style="margin-top:8px; margin-bottom:0;"></p>
+                            <p id="filename-format-error" class="section-note" style="margin-top:4px; margin-bottom:0; font-weight:600; color:var(--danger); display:none;"></p>
+                            <div class="row" style="margin-top:14px;">
+                                <span class="row-label">캐릭터명으로 자동 대체</span>
+                                <label class="row-switch">
+                                    <input type="checkbox" id="filename-use-charname" onchange="onFilenameFormatChanged()">
+                                    <span class="track"></span>
+                                </label>
+                            </div>
+                            <div class="section-note">켜면 형식 맨 앞의 글자(기본값 기준 '네카이브')가 출처 표시에 입력한 캐릭터 이름으로 자동 대체됩니다. 캐릭터 이름이 비어있으면 원래 글자를 그대로 씁니다.</div>
+                        </div>
+
                         <div class="row-group">
                             <div class="row">
                                 <span class="row-label bold">휠 확대축소 민감도</span>
@@ -1371,6 +1392,11 @@
         let bgOffsetX = 0, bgOffsetY = 0;
         let ovScale = 1.0;
         let wheelZoomSensitivity = parseFloat(localStorage.getItem('archive_wheel_zoom_sensitivity')) || 0.0002;
+
+        const DEFAULT_FILENAME_FORMAT = '네카이브-YYYY-MM-DD_hhmmss';
+        const FILENAME_TOKEN_ORDER = ['YYYY', 'YY', 'MM', 'DD', 'hh', 'mm', 'ss'];
+        const FILENAME_TOKEN_ALPHABET = /[YMDhms]/;
+        const FILENAME_FORBIDDEN_CHARS = /[\\/:*?"<>|]/;
         
         let origX = 0, origY = 0;
         let startMouseX = 0, startMouseY = 0;
@@ -1405,6 +1431,7 @@
             scale: document.getElementById('preview-scale'), scaleVal: document.getElementById('scale-value'), scrollArea: document.getElementById('preview-scroll-area'),
             
             wmChar: document.getElementById('wm-char'), wmCreator: document.getElementById('wm-creator'),
+            filenameFormat: document.getElementById('filename-format'), filenameUseCharname: document.getElementById('filename-use-charname'),
             wmSize: document.getElementById('wm-size'), wmColor: document.getElementById('wm-color'),
             wmX: document.getElementById('wm-x'), wmY: document.getElementById('wm-y'),
             
@@ -1692,6 +1719,7 @@
 
         function updateUI() {
           try {
+            updateFilenameFormatPreview();
             syncHighlight();
             DOM.preview.style.width = DOM.width.value + 'px';
             DOM.preview.style.height = DOM.height.value + 'px';
@@ -2109,6 +2137,11 @@
 
             document.getElementById('wheel-sensitivity-slider').value = wheelZoomSensitivity;
             document.getElementById('wheel-sensitivity-readout').textContent = wheelZoomSensitivity;
+
+            const savedFilenameFormat = localStorage.getItem('archive_filename_format');
+            if (savedFilenameFormat !== null) DOM.filenameFormat.value = savedFilenameFormat;
+            DOM.filenameUseCharname.checked = localStorage.getItem('archive_filename_use_charname') === 'true';
+            updateFilenameFormatPreview();
 
             const savedServerUrl = localStorage.getItem('archive_capture_server_url');
             const savedServerSecret = localStorage.getItem('archive_capture_server_secret');
@@ -2937,6 +2970,110 @@
             return await captureInSandbox(scaleRatio, isPng);
         }
 
+        // 파일명 형식 문자열을 리터럴/토큰 조각들로 분해한다.
+        // 예: "네카이브-YYYY-MM-DD" -> [{type:'literal', text:'네카이브-'}, {type:'token', name:'YYYY'}, ...]
+        // 반환값의 valid가 false면 error에 이유가 담긴다 (팝업이 아니라 인라인 표시용).
+        function parseFilenameFormatTemplate(format) {
+            if (FILENAME_FORBIDDEN_CHARS.test(format)) {
+                return { valid: false, error: '파일명에 사용할 수 없는 문자가 포함되어 있어요: \\ / : * ? " < > |', segments: null };
+            }
+            const segments = [];
+            const runRegex = /[YMDhms]+|[^YMDhms]+/g;
+            let match;
+            while ((match = runRegex.exec(format)) !== null) {
+                const run = match[0];
+                if (!FILENAME_TOKEN_ALPHABET.test(run[0])) {
+                    segments.push({ type: 'literal', text: run });
+                    continue;
+                }
+                // 토큰 알파벳으로만 이루어진 구간 -> 알려진 토큰들로 완전히 쪼개지는지 검사
+                let rest = run;
+                const tokensInRun = [];
+                while (rest.length > 0) {
+                    const found = FILENAME_TOKEN_ORDER.find(t => rest.startsWith(t));
+                    if (!found) {
+                        return { valid: false, error: `형식을 인식할 수 없어요: "${run}" — 기본 이름으로 저장돼요.`, segments: null };
+                    }
+                    tokensInRun.push(found);
+                    rest = rest.slice(found.length);
+                }
+                tokensInRun.forEach(name => segments.push({ type: 'token', name }));
+            }
+            return { valid: true, error: null, segments };
+        }
+
+        // YYYY/YY/MM/DD/hh/mm/ss 토큰이 지금 시각 기준으로 어떤 값이 되는지 매핑을 만든다.
+        function buildFilenameTokenValues(now) {
+            const pad2 = (n) => String(n).padStart(2, '0');
+            const yyyy = String(now.getFullYear());
+            return {
+                YYYY: yyyy, YY: yyyy.slice(-2),
+                MM: pad2(now.getMonth() + 1), DD: pad2(now.getDate()),
+                hh: pad2(now.getHours()), mm: pad2(now.getMinutes()), ss: pad2(now.getSeconds())
+            };
+        }
+
+        // 조각(segments) 배열을 실제 문자열로 조립한다. useCharName이 켜져 있고 charName이 있으면
+        // 맨 앞 리터럴 조각의 "글자 부분"만 캐릭터 이름으로 바꾸고, 구분자(-, _, 공백)는 그대로 둔다.
+        function resolveFilenameSegments(segments, now, useCharName, charName) {
+            const cloned = segments.map(s => ({ ...s }));
+            const trimmedCharName = (charName || '').trim();
+            if (useCharName && trimmedCharName && cloned.length > 0 && cloned[0].type === 'literal') {
+                const label = cloned[0].text.replace(/[-_\s]+$/, '');
+                const separator = cloned[0].text.slice(label.length);
+                if (label.length > 0) {
+                    cloned[0].text = trimmedCharName + separator;
+                }
+            }
+            const tokenValues = buildFilenameTokenValues(now);
+            const result = cloned.map(s => s.type === 'literal' ? s.text : (tokenValues[s.name] || '')).join('');
+            // 캐릭터 이름 등 동적으로 들어간 값에 혹시 파일명 금지 문자가 섞여 있으면 조용히 치환 (여긴 사용자가 직접
+            // 형식란에 타이핑한 게 아니라서 에러로 알리지 않고 그냥 안전하게 정리만 한다).
+            return result.replace(FILENAME_FORBIDDEN_CHARS, '_');
+        }
+
+        // 다운로드용 최종 파일명(.png 포함)을 만든다. 형식이 애매하면 기본 형식으로 조용히 대체한다.
+        function buildExportFilename(charName) {
+            const rawFormat = (DOM.filenameFormat && DOM.filenameFormat.value.trim()) || DEFAULT_FILENAME_FORMAT;
+            const useCharName = !!(DOM.filenameUseCharname && DOM.filenameUseCharname.checked);
+            let parsed = parseFilenameFormatTemplate(rawFormat);
+            if (!parsed.valid) {
+                parsed = parseFilenameFormatTemplate(DEFAULT_FILENAME_FORMAT);
+            }
+            const name = resolveFilenameSegments(parsed.segments, new Date(), useCharName, charName);
+            return `${name || DEFAULT_FILENAME_FORMAT}.png`;
+        }
+
+        // 설정 화면의 형식 입력창/체크박스가 바뀔 때마다: localStorage에 저장하고, 미리보기 또는
+        // 인라인 에러 메시지를 갱신한다.
+        function onFilenameFormatChanged() {
+            if (!DOM.filenameFormat) return;
+            localStorage.setItem('archive_filename_format', DOM.filenameFormat.value);
+            localStorage.setItem('archive_filename_use_charname', DOM.filenameUseCharname.checked ? 'true' : 'false');
+            updateFilenameFormatPreview();
+        }
+
+        function updateFilenameFormatPreview() {
+            if (!DOM.filenameFormat) return;
+            const rawFormat = DOM.filenameFormat.value.trim() || DEFAULT_FILENAME_FORMAT;
+            const useCharName = DOM.filenameUseCharname.checked;
+            const charName = DOM.wmChar ? DOM.wmChar.value : '';
+            const parsed = parseFilenameFormatTemplate(rawFormat);
+            const errorEl = document.getElementById('filename-format-error');
+            const previewEl = document.getElementById('filename-format-preview');
+            if (!parsed.valid) {
+                errorEl.textContent = '✗ ' + parsed.error;
+                errorEl.style.display = 'block';
+                const fallback = parseFilenameFormatTemplate(DEFAULT_FILENAME_FORMAT);
+                const fallbackName = resolveFilenameSegments(fallback.segments, new Date(), useCharName, charName);
+                previewEl.textContent = `예시 (기본값 사용): ${fallbackName}.png`;
+            } else {
+                errorEl.style.display = 'none';
+                const name = resolveFilenameSegments(parsed.segments, new Date(), useCharName, charName);
+                previewEl.textContent = `예시: ${name}.png`;
+            }
+        }
+
         async function downloadCard() {
             if (isCapturing) return;
             isCapturing = true; showToast('📸 캡쳐중입니다... 잠시만 기다려주세요.', true);
@@ -2945,7 +3082,7 @@
             
             try {
                 const dataUrl = await captureImage(1, true); 
-                const link = document.createElement('a'); link.download = `archive_${Date.now()}.png`; link.href = dataUrl; link.click();
+                const link = document.createElement('a'); link.download = buildExportFilename(DOM.wmChar ? DOM.wmChar.value : ''); link.href = dataUrl; link.click();
                 hideToast(); showToast('다운로드가 완료되었습니다!');
             } catch (err) { hideToast(); showToast('캡처 중 오류가 발생했습니다.'); console.error(err);
             } finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
@@ -3028,7 +3165,7 @@
             };
         }
 
-        function downloadFromArchive(id) { const item = loadedItems.find(i => i.id === id); if(item) { const link = document.createElement('a'); link.download = `archive_saved_${id}.png`; link.href = item.image; link.click(); } }
+        function downloadFromArchive(id) { const item = loadedItems.find(i => i.id === id); if(item) { const link = document.createElement('a'); link.download = buildExportFilename(item.config ? item.config.wmChar : ''); link.href = item.image; link.click(); } }
         async function editFromArchive(id) { 
             const item = loadedItems.find(i => i.id === id); 
             if(item && item.config) { switchTab('extractor'); await applyConfig(item.config, true); showToast('저장된 세팅값을 불러왔습니다.'); } 
