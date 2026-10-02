@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.1.0)</title>
+    <title>네카이브 (v4.2.0)</title>
     <link rel="icon" href="favicon.png">
     
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" />
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/css/all.css" />
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.7.0/dist/index.js"></script>
@@ -80,6 +81,7 @@
             color: var(--ink);
             margin: 0;
             height: 100vh;
+            height: 100dvh;
             display: flex;
             justify-content: center;
             font-size: var(--fs-base);
@@ -107,13 +109,13 @@
 
         /* 메인 레이아웃 컨테이너 */
         .app-container {
-            width: 100%; max-width: 1400px; height: 100vh;
+            width: 100%; max-width: 1400px; height: 100vh; height: 100dvh;
             display: flex; flex-direction: column; background: var(--paper);
             border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(20,20,20,0.10), 0 4px 20px rgba(20,20,20,0.05);
             overflow: hidden;
         }
         @media (min-width: 1440px) {
-            .app-container { margin: var(--sp-6) 0; height: calc(100vh - 48px); border-radius: 18px; }
+            .app-container { margin: var(--sp-6) 0; height: calc(100vh - 48px); height: calc(100dvh - 48px); border-radius: 18px; }
         }
 
         /* ── 화면 확장: 양옆 여백 없애고 사이드바를 넓혀서 2열로 배치 ── */
@@ -170,16 +172,17 @@
         .page-section.active { display: flex; gap: var(--sp-6); }
 
         /* 공통 폼 컨트롤 */
-        input[type="text"], textarea, select, input[type="number"] {
+        input[type="text"], input[type="search"], input[type="password"], textarea, select, input[type="number"] {
             width: 100%; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line);
             border-radius: var(--radius-sm); font-family: inherit; font-size: var(--fs-base);
             background: var(--paper); color: var(--ink); transition: border-color 0.15s, box-shadow 0.15s;
         }
-        input[type="text"]:focus, textarea:focus, select:focus, input[type="number"]:focus {
+        input[type="text"]:focus, input[type="search"]:focus, input[type="password"]:focus, textarea:focus, select:focus, input[type="number"]:focus {
             outline: none; border-color: var(--ink); box-shadow: var(--focus-ring);
         }
         textarea { resize: vertical; line-height: 1.6; }
-        input[type="text"]::placeholder, textarea::placeholder { color: var(--ink-faint); }
+        input[type="text"]::placeholder, input[type="search"]::placeholder, input[type="password"]::placeholder, textarea::placeholder { color: var(--ink-faint); }
+        input[type="search"]::-webkit-search-cancel-button { cursor: pointer; }
 
         /* 숫자 조절 컨트롤 (Stepper) */
         .stepper { display: flex; align-items: center; height: var(--ctrl-h); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--paper); transition: border-color 0.15s; }
@@ -199,12 +202,12 @@
             appearance: none; -webkit-appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6d76' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right var(--sp-3) center; background-size: 12px;
-            padding-right: var(--sp-8); cursor: pointer; height: var(--ctrl-h);
+            padding-top: 0; padding-bottom: 0; padding-right: var(--sp-8); cursor: pointer; height: var(--ctrl-h); line-height: 1;
         }
 
         .custom-font-picker { position: relative; width: 100%; font-size: var(--fs-base); outline: none; }
         .picker-trigger {
-            border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 7px var(--sp-3);
+            display: flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0 var(--sp-3);
             background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6d76' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right var(--sp-3) center;
             background-size: 12px; cursor: pointer; height: var(--ctrl-h); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: var(--sp-8);
             transition: border-color 0.15s;
@@ -218,7 +221,10 @@
         .picker-options.open { display: block; }
         .picker-opt { padding: 10px var(--sp-3); cursor: pointer; border-bottom: 1px solid var(--line-soft); font-size: var(--fs-base); transition: background 0.12s; }
         .picker-opt:last-child { border-bottom: none; }
-        .picker-opt:hover { background: var(--paper-muted); }
+        .picker-opt:hover, .picker-opt:focus-visible { background: var(--paper-muted); outline: none; }
+        .picker-opt.selected { font-weight: 700; background: var(--paper-soft); }
+        .picker-group { padding: 8px var(--sp-3) 4px; font-size: var(--fs-2xs); font-weight: 700; color: var(--ink-soft); letter-spacing: 0.02em; background: var(--paper-soft); border-bottom: 1px solid var(--line-soft); position: sticky; top: 0; z-index: 1; }
+        .picker-opt .picker-opt-meta { float: right; font-family: var(--font-ui); font-size: var(--fs-2xs); color: var(--ink-faint); font-weight: 500; margin-top: 3px; }
 
         /* 색상 및 범위 슬라이더 */
         .swatch-ctrl { display: flex; align-items: center; gap: var(--sp-2); }
@@ -235,6 +241,13 @@
             color: var(--ink); cursor: pointer; transition: all 0.15s; height: 30px;
         }
         input[type="file"]::file-selector-button:hover { background: var(--paper-muted); border-color: var(--ink-soft); }
+        /* 커스텀 파일 선택 버튼: 브라우저 기본 "Choose File / No file chosen" 대신 한글 버튼 + 파일명 표시.
+           실제 input은 화면에서만 숨기고(label로 연결) 그대로 두기 때문에 기존 change 이벤트는 그대로 동작함 */
+        .file-pick { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; max-width: 100%; }
+        .file-pick input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+        .file-pick .file-pick-name { font-size: var(--fs-xs); color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 110px; }
+        .file-pick .file-pick-name.has-file { color: var(--ink); font-weight: 500; }
+        .file-pick:focus-within .action-btn { border-color: var(--ink); box-shadow: var(--focus-ring); }
 
         /* 공통 버튼 */
         .btn {
@@ -259,6 +272,22 @@
         .action-btn:hover { border-color: var(--ink); background: var(--paper-muted); }
         .action-btn:active { transform: translateY(1px); }
         .action-btn.drag-active { background: var(--ink) !important; color: var(--paper) !important; border-color: var(--ink) !important; }
+        .action-btn.icon-only { width: var(--ctrl-h); padding: 0; }
+        .action-btn.is-warn { color: var(--accent); border-color: var(--accent-soft); }
+        .action-btn.is-warn:hover { background: var(--accent-soft); border-color: var(--accent); }
+        .action-btn.is-danger { color: var(--danger); border-color: var(--accent-soft); }
+        .action-btn.is-danger:hover { background: var(--accent-soft); border-color: var(--danger); }
+        .action-btn.block { width: 100%; }
+        .btn-row { display: flex; gap: var(--sp-3); }
+        .btn-row > * { flex: 1; }
+
+        /* 키보드로 이동할 때만 보이는 포커스 표시 (마우스 클릭 시에는 안 보임) */
+        .btn:focus-visible, .action-btn:focus-visible, .tab-btn:focus-visible, .mobile-tab-btn:focus-visible,
+        .segmented button:focus-visible, .stepper button:focus-visible, .picker-trigger:focus-visible,
+        .overlay-actions button:focus-visible, .tag-chip:focus-visible {
+            outline: 2px solid var(--tag-hover); outline-offset: 2px;
+        }
+        .row-switch input:focus-visible + .track { box-shadow: 0 0 0 3px var(--tag-hover-soft); }
 
         /* 토글 스위치 */
         .row-switch { position: relative; width: 40px; height: 24px; flex-shrink: 0; cursor: pointer; }
@@ -436,6 +465,12 @@
             position: absolute; bottom: var(--sp-5); right: var(--sp-5); z-index: 100; display: flex; gap: var(--sp-3); align-items: center;
             opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
         }
+        .capture-chip {
+            display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); font-weight: 700; color: var(--ink);
+            background: var(--paper); padding: 0 14px; height: 34px; border-radius: var(--radius-md); border: 1px solid var(--line);
+            box-shadow: var(--shadow-float); cursor: pointer; user-select: none; margin: 0;
+        }
+        .capture-chip input { margin: 0; width: 16px; height: 16px; accent-color: var(--ink); cursor: pointer; }
         .floating-actions .btn {
             box-shadow: var(--shadow-float); padding: 0; font-size: var(--fs-base);
             display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--radius-md); height: 34px; width: 34px;
@@ -472,6 +507,10 @@
         .search-wrap { position: relative; max-width: 360px; flex: 1; min-width: 240px; }
         .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-soft); pointer-events: none; }
         .search-wrap input { padding-left: 38px; height: 36px; border-radius: var(--radius-pill); }
+        .archive-tools { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: wrap; }
+        .archive-tools select { width: 120px; height: 36px; }
+        .archive-tools .btn { height: 36px; padding: 0 var(--sp-4); margin: 0; }
+        .archive-count { font-size: var(--fs-sm); color: var(--ink-soft); font-weight: 500; white-space: nowrap; }
         #gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--sp-6); padding-bottom: var(--sp-8); }
 
         .gallery-item {
@@ -485,9 +524,13 @@
             position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(22, 23, 27, 0.9); color: var(--paper);
             display: flex; flex-direction: column; justify-content: space-between; padding: var(--sp-5); opacity: 0; visibility: hidden; transition: opacity 0.2s ease; z-index: 10;
         }
-        .gallery-item:hover .item-overlay { opacity: 1; visibility: visible; }
+        .gallery-item:hover .item-overlay, .gallery-item:focus-within .item-overlay { opacity: 1; visibility: visible; }
         .overlay-tags { display: flex; flex-wrap: wrap; margin-bottom: var(--sp-3); }
-        .tag-chip { display: inline-block; background: rgba(255,255,255,0.15); color: #fff; font-size: var(--fs-xs); padding: 4px 10px; border-radius: var(--radius-pill); margin: 0 6px 6px 0; }
+        .tag-chip { display: inline-block; background: rgba(255,255,255,0.15); color: #fff; font-size: var(--fs-xs); padding: 4px 10px; border-radius: var(--radius-pill); margin: 0 6px 6px 0; border: none; font-family: inherit; line-height: 1.4; }
+        button.tag-chip { cursor: pointer; transition: background 0.15s; }
+        button.tag-chip:hover { background: rgba(255,255,255,0.3); }
+        .tag-chip.is-empty { opacity: 0.5; border: 1px dashed rgba(255,255,255,0.4); }
+        .overlay-date { font-size: var(--fs-xs); color: rgba(255,255,255,0.6); font-family: var(--mono); margin-bottom: var(--sp-2); }
         .overlay-memo { font-family: 'Noto Serif KR', serif; font-size: var(--fs-md); line-height: 1.7; color: #f4f4f2; white-space: pre-wrap; flex: 1; overflow-y: auto; }
 
         .overlay-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); }
@@ -503,8 +546,29 @@
         .empty-state svg { color: var(--ink-faint); margin-bottom: var(--sp-2); }
         .empty-state p { margin: 0; font-size: var(--fs-xl); color: var(--ink); font-weight: 700; }
 
+        /* 터치 기기(마우스 호버 없음): 호버로 버튼을 띄울 수 없으니, 정보·버튼을 이미지 아래에 항상 보이게 배치 */
+        @media (hover: none) {
+            .gallery-item { aspect-ratio: auto; display: flex; flex-direction: column; }
+            .gallery-item:hover { transform: none; }
+            .gallery-item > img { aspect-ratio: 1 / 1; height: auto; }
+            .item-overlay {
+                position: static; opacity: 1; visibility: visible; flex: 1; justify-content: flex-start;
+                padding: var(--sp-3); background: var(--paper); color: var(--ink); border-top: 1px solid var(--line);
+            }
+            .overlay-date { color: var(--ink-soft); margin-bottom: var(--sp-1); }
+            .tag-chip { background: var(--paper-muted); color: var(--ink); }
+            button.tag-chip:hover { background: var(--line); }
+            .tag-chip.is-empty { border-color: var(--line); }
+            .overlay-tags { margin-bottom: 0; }
+            .overlay-memo { flex: 0 1 auto; color: var(--ink-soft); font-size: var(--fs-sm); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+            .overlay-actions { margin-top: var(--sp-3); gap: var(--sp-1); }
+            .overlay-actions button { padding: 8px 0; font-size: var(--fs-sm); }
+            .btn-overlay-save { background: var(--paper-muted); color: var(--ink); }
+            .btn-overlay-edit { background: var(--ink); color: var(--paper); }
+        }
+
         #save-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(22,23,27,0.4); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; }
-        .modal-content { background: var(--paper); padding: var(--sp-8); border-radius: var(--radius-lg); width: 420px; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,0.15); }
+        .modal-content { background: var(--paper); padding: var(--sp-8); border-radius: var(--radius-lg); width: min(420px, calc(100vw - 32px)); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,0.15); }
         .modal-content h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-xl); font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
         .modal-content .modal-hint { font-size: var(--fs-base); color: var(--ink-soft); margin: 0 0 var(--sp-6); line-height: 1.5; }
         .modal-content .control-group { margin-bottom: var(--sp-4); }
@@ -512,8 +576,12 @@
         .modal-content #modal-memo { height: 100px; }
         .modal-actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-6); }
         .modal-actions .btn { flex: 1; padding: var(--sp-2) var(--sp-3); font-size: var(--fs-base); }
+        .modal-overwrite { display: none; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-4); background: var(--paper-muted); border-radius: var(--radius-sm); font-size: var(--fs-sm); font-weight: 600; }
+        .modal-overwrite.show { display: flex; }
+        .modal-shortcut { margin: var(--sp-3) 0 0; text-align: center; font-size: var(--fs-xs); color: var(--ink-soft); }
+        kbd { font-family: var(--mono); font-size: 0.7rem; padding: 1px 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--paper-soft); color: var(--ink); }
 
-        #toast { position: fixed; bottom: var(--sp-8); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 14px var(--sp-6); border-radius: var(--radius-pill); font-size: var(--fs-base); font-weight: 500; box-shadow: 0 12px 32px rgba(0,0,0,0.2); opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s; z-index: 10500; cursor: pointer; }
+        #toast { position: fixed; bottom: var(--sp-8); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); text-align: center; word-break: keep-all; background: var(--ink); color: var(--paper); padding: 14px var(--sp-6); border-radius: var(--radius-pill); font-size: var(--fs-base); font-weight: 500; box-shadow: 0 12px 32px rgba(0,0,0,0.2); opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s; z-index: 10500; cursor: pointer; }
         #toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-10px); }
 
         /* ══════════════════════════════════════════════════════════════
@@ -522,7 +590,7 @@
         .mobile-tab-bar { display: none; }
         #mobile-edit-exit-btn { display: none; }
         @media (max-width: 860px) {
-            .app-container { max-width: none; width: 100%; height: 100vh; border-radius: 0; margin: 0; }
+            .app-container { max-width: none; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; margin: 0; }
             header { padding: 0 var(--sp-4); height: 46px; }
 
             /* 화면 확장은 데스크톱 전용 개념(넓은 화면에서 여백 없애기) — 모바일은 이미 항상 꽉 차 있어서
@@ -534,6 +602,12 @@
             #screen-expand-row { display: none; }
 
             .page-section { padding: 0; }
+            #archive-page { padding: var(--sp-4); }
+            .archive-header { gap: var(--sp-3); margin-bottom: var(--sp-4); }
+            .search-wrap { max-width: none; flex: 1 1 100%; min-width: 0; }
+            .archive-tools { width: 100%; }
+            .archive-tools select { flex: 1; width: auto; }
+            #gallery-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--sp-3); }
             .page-section.active { flex-direction: column; gap: 0; min-height: 0; }
 
             /* 미리보기 영역 - 편집 공간을 더 확보하기 위해 절반보다 확실히 작게 */
@@ -566,7 +640,7 @@
                결과물 관련 버튼은 편집 중엔 방해만 되니 숨김. 나가기는 미리보기 위 버튼 하나로. */
             body.mobile-edit-mode .mobile-tab-bar,
             body.mobile-edit-mode .controls > .ctrl-section { display: none !important; }
-            body.mobile-edit-mode .preview-container { height: 82vh; }
+            body.mobile-edit-mode .preview-container { height: 82vh; height: 82dvh; }
             body.mobile-edit-mode .floating-actions { display: none !important; }
             body.mobile-edit-mode #mobile-edit-exit-btn {
                 display: flex; align-items: center; gap: 6px; position: absolute; left: 50%; bottom: 14px;
@@ -599,7 +673,9 @@
                여러 값을 따로따로 손대는 대신, 실제로 확인해주신 90% 배율 자체를 적용함. */
             .controls { zoom: 0.9; }
             .controls { --ctrl-h: 34px; --fs-base: 0.875rem; --fs-sm: 0.8125rem; }
-            .ctrl-section, .collapsible-header, .collapsible-content { padding: var(--sp-3) var(--sp-4); }
+            .ctrl-section { padding: var(--sp-3) var(--sp-4); }
+            .collapsible-header { padding: var(--sp-1) 0; }
+            .collapsible-content { padding: 0; }
             .row { min-height: 34px; margin-bottom: 8px; flex-wrap: wrap; row-gap: 4px; }
             .row-label { font-size: var(--fs-base); }
             .action-btn { padding: 0 12px; font-size: var(--fs-base); }
@@ -627,7 +703,6 @@
             #mobile-bg-toolbar-slot .toolbar-item label {
                 font-size: var(--fs-base); color: var(--ink); font-weight: 500; letter-spacing: normal;
             }
-        }
         }
     </style>
 </head>
@@ -695,26 +770,20 @@
                         <div class="row">
                             <span class="row-label">폰트</span>
                             <div class="custom-font-picker" id="font-picker-wrapper" style="width: 180px;">
-                                <div class="picker-trigger" id="font-picker-trigger" style="font-family: 'Noto Serif KR', serif;">명조체</div>
-                                <div class="picker-options" id="font-picker-options">
-                                    <div class="picker-opt" data-val="'Noto Serif KR', serif" style="font-family: 'Noto Serif KR', serif">명조체</div>
-                                    <div class="picker-opt" data-val="'Noto Sans KR', sans-serif" style="font-family: 'Noto Sans KR', sans-serif">고딕체</div>
-                                    <div class="picker-opt" data-val="'Gowun Dodum', sans-serif" style="font-family: 'Gowun Dodum', sans-serif">고운돋움</div>
-                                    <div class="picker-opt" data-val="'Nanum Myeongjo', serif" style="font-family: 'Nanum Myeongjo', serif">나눔명조</div>
-                                    <div class="picker-opt" data-val="'Pretendard', sans-serif" style="font-family: 'Pretendard', sans-serif">프리텐다드</div>
-                                    <div class="picker-opt" data-val="'IBM Plex Sans KR', sans-serif" style="font-family: 'IBM Plex Sans KR', sans-serif">아이비엠 플렉스</div>
-                                    <div class="picker-opt" data-val="'Nanum Gothic', sans-serif" style="font-family: 'Nanum Gothic', sans-serif">나눔고딕</div>
-                                    <div class="picker-opt" data-val="'Gothic A1', sans-serif" style="font-family: 'Gothic A1', sans-serif">고딕 A1</div>
-                                    <div class="picker-opt" data-val="'Do Hyeon', sans-serif" style="font-family: 'Do Hyeon', sans-serif">도현체</div>
-                                    <div class="picker-opt" data-val="'Song Myung', serif" style="font-family: 'Song Myung', serif">송명체</div>
-                                    <div class="picker-opt" data-val="'Galmuri11', sans-serif" style="font-family: 'Galmuri11', sans-serif">도트체</div>
+                                <div class="picker-trigger" id="font-picker-trigger" tabindex="0" role="button" aria-haspopup="listbox" style="font-family: 'Noto Serif KR', serif;">명조체</div>
+                                <div class="picker-options" id="font-picker-options" role="listbox">
+                                    <!-- 폰트 목록은 JS(FONT_GROUPS)에서 돋움·고딕 / 바탕·명조 / 그 외 순서로 채움 -->
                                 </div>
                             </div>
+                        </div>
+                        <div class="row" id="font-weight-row" style="display:none;">
+                            <span class="row-label">글자 두께</span>
+                            <select id="input-font-weight" style="width: 180px;" onchange="onFontWeightChange()"></select>
                         </div>
                         <div class="row">
                             <span class="row-label">내 폰트 업로드</span>
                             <div class="row-control">
-                                <input type="file" id="input-custom-font" accept=".ttf,.otf,.woff" style="max-width:180px;">
+                                <input type="file" id="input-custom-font" accept=".ttf,.otf,.woff,.woff2" data-pick-label="폰트 파일 선택">
                             </div>
                         </div>
                         <div class="row">
@@ -809,7 +878,7 @@
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
                                 드래그
                             </button>
-                            <button type="button" class="action-btn" onclick="resetTextOffset()" title="텍스트 위치 초기화">↺</button>
+                            <button type="button" class="action-btn icon-only" onclick="resetTextOffset()" title="텍스트 위치 초기화" aria-label="텍스트 위치 초기화"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg></button>
                         </div>
                     </div>
                     <div class="row">
@@ -849,7 +918,7 @@
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
                                 드래그
                             </button>
-                            <button type="button" class="action-btn" onclick="resetTextOffset()" title="텍스트 위치 초기화">↺</button>
+                            <button type="button" class="action-btn icon-only" onclick="resetTextOffset()" title="텍스트 위치 초기화" aria-label="텍스트 위치 초기화"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg></button>
                         </div>
                     </div>
                     <div class="row">
@@ -876,11 +945,11 @@
                         <div class="row-group">
                             <div class="row">
                                 <span class="row-label">이미지 업로드</span>
-                                <input type="file" id="ov-upload" accept="image/*" style="max-width:180px;">
+                                <input type="file" id="ov-upload" accept="image/*" data-pick-label="이미지 선택">
                             </div>
                             <div class="row">
                                 <span class="row-label"></span>
-                                <button class="action-btn" onclick="removeOvImg()" style="width: 180px;">이미지 지우기</button>
+                                <button class="action-btn" onclick="removeOvImg()">이미지 지우기</button>
                             </div>
                         </div>
 
@@ -948,8 +1017,10 @@
                             <div class="section-note">마스크를 옮기면 이미지도 함께 따라와요. 이 값은 마스크 중심과 이미지 중심 사이의 어긋난 정도를 나타내요.</div>
                             <div class="row" style="margin-top:8px;">
                                 <span class="row-label"></span>
-                                <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="마스크 위치 초기화">마스크 위치 초기화</button>
-                                <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="이미지 위치 초기화" style="margin-left:8px;">이미지 초기화</button>
+                                <div class="row-control">
+                                    <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="마스크 위치 초기화">마스크 위치 초기화</button>
+                                    <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="이미지 위치 초기화">이미지 초기화</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -987,7 +1058,7 @@
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
                                     드래그
                                 </button>
-                                <button type="button" class="action-btn" onclick="resetWatermarkOffset()" title="출처 위치 초기화">↺</button>
+                                <button type="button" class="action-btn icon-only" onclick="resetWatermarkOffset()" title="출처 위치 초기화" aria-label="출처 위치 초기화"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg></button>
                             </div>
                         </div>
                         <div class="row">
@@ -1029,7 +1100,7 @@
                                 <span class="swatch" style="background:#a3e635;"><input type="color" id="hl-color" value="#a3e635"></span>
                                 <input type="range" id="hl-opacity" min="0.1" max="1.0" step="0.1" value="0.5" style="flex:1; margin:0 8px;">
                                 <button class="action-btn" onclick="applyHighlight()">칠하기</button>
-                                <button class="action-btn" onclick="clearHighlights()" style="color:var(--danger); border-color:var(--accent-soft);">삭제</button>
+                                <button class="action-btn is-danger" onclick="clearHighlights()">삭제</button>
                             </div>
                         </div>
 
@@ -1144,17 +1215,17 @@
                             </div>
                             <div class="row" style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px;">
                                 <span class="row-label" style="font-size:var(--fs-sm);">보안 토큰 (선택)</span>
-                                <input type="text" id="capture-server-secret" placeholder="워커 코드에 넣은 값과 동일하게" style="font-family: var(--mono);">
+                                <input type="password" id="capture-server-secret" placeholder="워커 코드에 넣은 값과 동일하게" autocomplete="off" style="font-family: var(--mono);">
                             </div>
-                            <div style="display:flex; gap:12px; margin-top:16px;">
-                                <button class="action-btn" onclick="saveCaptureServerSettings()" style="flex:1;">저장</button>
-                                <button class="action-btn" onclick="testCaptureServer()" style="flex:1;">연결 테스트</button>
+                            <div class="btn-row" style="margin-top:16px;">
+                                <button class="action-btn" onclick="saveCaptureServerSettings()">저장</button>
+                                <button class="action-btn" onclick="testCaptureServer()">연결 테스트</button>
                             </div>
                             <p id="capture-server-status" class="section-note" style="margin-top:12px; margin-bottom:0; font-weight:600;"></p>
 
                             <div class="row" style="margin-top:16px; padding-top:16px; border-top: 1px solid var(--line-soft);">
                                 <span class="row-label">오늘 사용량</span>
-                                <button class="action-btn" onclick="refreshCaptureUsage()" style="height:28px; padding:0 12px; font-size:var(--fs-xs);">새로고침</button>
+                                <button class="action-btn" onclick="refreshCaptureUsage()">새로고침</button>
                             </div>
                             <p id="capture-usage-status" class="section-note">아직 조회 안 함</p>
                         </div>
@@ -1166,15 +1237,15 @@
                             </div>
                             <div class="section-note" style="margin-bottom:16px;">설정된 값을 초기화하거나 기본값으로 저장합니다.</div>
                             <div style="display: flex; flex-direction: column; gap: 12px;">
-                                <div style="display: flex; gap: 12px;">
-                                    <button class="action-btn" onclick="saveTypoDefault()" style="flex: 1;" title="현재의 폰트, 여백, 정렬 상태를 기본값으로 저장">타이포 기본값 저장</button>
-                                    <button class="action-btn" onclick="saveBgDefault()" style="flex: 1;" title="현재의 배경, 배율, 부가기능 상태를 기본값으로 저장">배경영역 기본값 저장</button>
+                                <div class="btn-row">
+                                    <button class="action-btn" onclick="saveTypoDefault()" title="현재의 폰트, 여백, 정렬 상태를 기본값으로 저장">타이포 기본값 저장</button>
+                                    <button class="action-btn" onclick="saveBgDefault()" title="현재의 배경, 배율, 부가기능 상태를 기본값으로 저장">배경 기본값 저장</button>
                                 </div>
-                                <div style="display: flex; gap: 12px;">
-                                    <button class="action-btn" onclick="resetTypography()" style="flex: 1; color:var(--accent); border-color:var(--accent-soft);" title="지정한 '타이포 기본값'으로 텍스트 관련 설정만 되돌립니다">타이포 초기화</button>
-                                    <button class="action-btn" onclick="resetBackground()" style="flex: 1; color:var(--accent); border-color:var(--accent-soft);" title="지정한 '배경영역 기본값'으로 배경 및 부가기능만 되돌립니다">배경 초기화</button>
+                                <div class="btn-row">
+                                    <button class="action-btn is-warn" onclick="resetTypography()" title="지정한 '타이포 기본값'으로 텍스트 관련 설정만 되돌립니다">타이포 초기화</button>
+                                    <button class="action-btn is-warn" onclick="resetBackground()" title="지정한 '배경 기본값'으로 배경 및 부가기능만 되돌립니다">배경 초기화</button>
                                 </div>
-                                <button class="action-btn" onclick="resetAllSettings()" style="width: 100%; color:var(--danger); border-color:var(--accent-soft);" title="모든 설정을 공장 초기화 상태로 완전히 리셋합니다.">전체 공장 초기화</button>
+                                <button class="action-btn is-danger block" onclick="resetAllSettings()" title="모든 설정을 공장 초기화 상태로 완전히 리셋합니다.">전체 공장 초기화</button>
                             </div>
                             <p class="section-note" style="text-align: center; margin-top: 12px;">작성한 대화 내용과 코드는 지워지지 않습니다.</p>
                         </div>
@@ -1217,7 +1288,7 @@
                         <div class="toolbar-item" style="flex: 1; max-width: 280px;">
                             <label>배경 이미지</label>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <input type="file" id="input-bg" accept="image/*">
+                                <input type="file" id="input-bg" accept="image/*" data-pick-label="이미지 선택">
                                 <button class="action-btn" onclick="removeBgImage()">지우기</button>
                             </div>
                         </div>
@@ -1228,12 +1299,12 @@
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
                                     드래그 & 휠
                                 </button>
-                                <button class="action-btn" onclick="resetBgPos()" title="배경 위치/배율 초기화">↺</button>
+                                <button type="button" class="action-btn icon-only" onclick="resetBgPos()" title="배경 위치/배율 초기화" aria-label="배경 위치/배율 초기화"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg></button>
                             </div>
                         </div>
                         <div class="toolbar-item">
                             <label>어둡기 (Dim)</label>
-                            <input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 120px; margin-top: 10px;">
+                            <div style="display:flex; align-items:center; height: var(--ctrl-h);"><input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 120px;"></div>
                         </div>
                     </div>
                 </div>
@@ -1242,7 +1313,7 @@
 
                     <div class="hover-zone-tr"></div>
                     <div class="floating-zoom">
-                        <button class="btn" onclick="openFullscreen()" style="padding: 6px; width:34px; height:34px;" title="전체화면 모드">
+                        <button class="btn" onclick="openFullscreen()" style="padding: 6px; width:34px; height:34px;" title="전체화면 모드" aria-label="전체화면 모드">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                         </button>
                         <label>
@@ -1261,18 +1332,18 @@
 
                     <div class="hover-zone-br"></div>
                     <div class="floating-actions">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 700; color: var(--ink); background: var(--paper); padding: 0 14px; height: 38px; border-radius: var(--radius-md); border: 1px solid var(--line); box-shadow: var(--shadow-float); cursor: pointer; user-select: none;">
-                            <input type="checkbox" id="capture-server-enabled-toggle" onchange="toggleCaptureServerEnabled()" style="margin: 0; width: 16px; height: 16px; accent-color: var(--ink); cursor: pointer;">
+                        <label class="capture-chip" title="켜면 설정한 서버에서 캡처합니다 (설정 › 서버 캡쳐 설정)">
+                            <input type="checkbox" id="capture-server-enabled-toggle" onchange="toggleCaptureServerEnabled()">
                             서버 캡쳐
                         </label>
                         
-                        <button class="btn" onclick="copyToClipboard()" title="클립보드 복사">
+                        <button class="btn" onclick="copyToClipboard()" title="클립보드 복사" aria-label="클립보드 복사">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                         </button>
-                        <button class="btn" onclick="downloadCard()" title="다운로드">
+                        <button class="btn" onclick="downloadCard()" title="PNG 다운로드 (Ctrl+S)" aria-label="PNG 다운로드">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </button>
-                        <button class="btn btn-accent" onclick="openModal()" title="아카이브 저장">
+                        <button class="btn btn-accent" onclick="openModal()" title="아카이브에 저장 (Ctrl+Shift+S)" aria-label="아카이브에 저장">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
                         </button>
                     </div>
@@ -1335,14 +1406,15 @@
             <div class="archive-header">
                 <div class="search-wrap">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="search-input" placeholder="태그 · 메모 검색" oninput="loadGallery()">
+                    <input type="search" id="search-input" placeholder="태그 · 메모 검색" oninput="debouncedLoadGallery()">
                 </div>
-                <div style="display: flex; gap: 16px; align-items: center;">
-                    <select id="sort-select" onchange="loadGallery()" style="width: 140px;">
+                <div class="archive-tools">
+                    <span class="archive-count" id="archive-count"></span>
+                    <select id="sort-select" onchange="loadGallery()">
                         <option value="desc">최신순</option><option value="asc">오래된순</option>
                     </select>
                     <button class="btn" onclick="exportData()">백업 저장</button>
-                    <label class="btn btn-primary" style="margin: 0; display: flex; align-items: center; cursor: pointer;">
+                    <label class="btn btn-primary">
                         데이터 복구
                         <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
                     </label>
@@ -1353,10 +1425,17 @@
     </main>
 </div> 
 
-    <div id="save-modal">
+    <div id="save-modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
         <div class="modal-content">
-            <h3>아카이브에 저장</h3>
+            <h3 id="save-modal-title">아카이브에 저장</h3>
             <p class="modal-hint">텍스트, 배경, 폰트 등 현재 설정값이 함께 저장됩니다.</p>
+            <label class="modal-overwrite" id="modal-overwrite-row">
+                <span>불러온 기존 카드를 덮어쓰기</span>
+                <span class="row-switch">
+                    <input type="checkbox" id="modal-overwrite" checked>
+                    <span class="track"></span>
+                </span>
+            </label>
             <div class="control-group">
                 <label>태그 (쉼표로 구분)</label>
                 <input type="text" id="modal-tags" placeholder="#태그입력">
@@ -1369,6 +1448,7 @@
                 <button class="btn btn-primary" onclick="saveToIndexedDB()">저장</button>
                 <button class="btn" onclick="closeModal()">취소</button>
             </div>
+            <p class="modal-shortcut"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 저장 · <kbd>Esc</kbd> 닫기</p>
         </div>
     </div>
 
@@ -1376,6 +1456,69 @@
 
     <script>
         let currentFontVal = "'Noto Serif KR', serif";
+        let currentFontWeight = 400;
+
+        // ── 폰트 목록 ─────────────────────────────────────────────
+        // val: 실제 CSS font-family 값 (저장된 설정/아카이브와 호환되도록 기존 값 유지)
+        // weights: 이 폰트가 제공하는 두께. 2개 이상이면 "글자 두께" 설정이 나타남
+        // css: 캡처할 때 폰트 파일을 이미지에 넣기 위해 읽는 CSS 주소 (페이지의 <link>와 같은 폰트)
+        const GOOGLE_FONT_CSS = (family, weights) => `https://fonts.googleapis.com/css2?family=${family}${weights ? ':wght@' + weights.join(';') : ''}&display=swap`;
+        const KOPUB_CSS = 'https://cdn.jsdelivr.net/npm/font-kopubworld@1.0.3/css/all.css';
+        const FONT_GROUPS = [
+            { title: '돋움 · 고딕', fonts: [
+                { name: 'Noto Sans KR', label: '고딕체', val: "'Noto Sans KR', sans-serif", weights: [300, 400, 500, 600, 700, 900], css: GOOGLE_FONT_CSS('Noto+Sans+KR', [300, 400, 500, 600, 700, 900]) },
+                { name: 'Pretendard', label: '프리텐다드', val: "'Pretendard', sans-serif", weights: [100, 200, 300, 400, 500, 600, 700, 800, 900], css: 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css' },
+                { name: 'KoPubWorld Dotum', label: 'KoPub 돋움', val: "'KoPubWorld Dotum', sans-serif", weights: [300, 400, 700], css: KOPUB_CSS },
+                { name: 'Nanum Gothic', label: '나눔고딕', val: "'Nanum Gothic', sans-serif", weights: [400, 700, 800], css: GOOGLE_FONT_CSS('Nanum+Gothic', [400, 700, 800]) },
+                { name: 'Gothic A1', label: '고딕 A1', val: "'Gothic A1', sans-serif", weights: [300, 400, 500, 700, 900], css: GOOGLE_FONT_CSS('Gothic+A1', [300, 400, 500, 700, 900]) },
+                { name: 'IBM Plex Sans KR', label: '아이비엠 플렉스', val: "'IBM Plex Sans KR', sans-serif", weights: [300, 400, 500, 600, 700], css: GOOGLE_FONT_CSS('IBM+Plex+Sans+KR', [300, 400, 500, 600, 700]) },
+                { name: 'Gowun Dodum', label: '고운돋움', val: "'Gowun Dodum', sans-serif", weights: [400], css: GOOGLE_FONT_CSS('Gowun+Dodum') },
+            ]},
+            { title: '바탕 · 명조', fonts: [
+                { name: 'Noto Serif KR', label: '명조체', val: "'Noto Serif KR', serif", weights: [300, 400, 600, 700, 900], css: GOOGLE_FONT_CSS('Noto+Serif+KR', [300, 400, 600, 700, 900]) },
+                { name: 'KoPubWorld Batang', label: 'KoPub 바탕', val: "'KoPubWorld Batang', serif", weights: [300, 400, 700], css: KOPUB_CSS },
+                { name: 'Nanum Myeongjo', label: '나눔명조', val: "'Nanum Myeongjo', serif", weights: [400, 700, 800], css: GOOGLE_FONT_CSS('Nanum+Myeongjo', [400, 700, 800]) },
+                { name: 'Song Myung', label: '송명체', val: "'Song Myung', serif", weights: [400], css: GOOGLE_FONT_CSS('Song+Myung') },
+            ]},
+            { title: '그 외', fonts: [
+                { name: 'Do Hyeon', label: '도현체', val: "'Do Hyeon', sans-serif", weights: [400], css: GOOGLE_FONT_CSS('Do+Hyeon') },
+                { name: 'Galmuri11', label: '도트체', val: "'Galmuri11', sans-serif", weights: [400, 700], css: 'https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css' },
+            ]},
+        ];
+        const FONT_LIST = FONT_GROUPS.flatMap(g => g.fonts);
+        const FONT_WEIGHT_NAMES = { 100: '가장 얇게', 200: '아주 얇게', 300: '얇게', 400: '보통', 500: '중간', 600: '약간 굵게', 700: '굵게', 800: '아주 굵게', 900: '가장 굵게' };
+        function findFontByVal(val) { return FONT_LIST.find(f => f.val === val) || null; }
+        // CSS 폰트 매칭 규칙(가까운 두께 고르기)을 단순화해서 적용: 원하는 두께가 없으면 가장 가까운 두께
+        function nearestWeight(weights, wanted) {
+            if (!weights || !weights.length) return wanted;
+            if (weights.includes(wanted)) return wanted;
+            return weights.slice().sort((a, b) => (Math.abs(a - wanted) - Math.abs(b - wanted)) || (wanted >= 500 ? b - a : a - b))[0];
+        }
+        function renderFontOptions() {
+            const box = document.getElementById('font-picker-options');
+            box.querySelectorAll('.picker-group, .picker-opt:not([data-custom])').forEach(el => el.remove());
+            const frag = document.createDocumentFragment();
+            FONT_GROUPS.forEach(group => {
+                const head = document.createElement('div'); head.className = 'picker-group'; head.textContent = group.title; frag.appendChild(head);
+                group.fonts.forEach(f => {
+                    const opt = document.createElement('div'); opt.className = 'picker-opt'; opt.tabIndex = -1; opt.setAttribute('role', 'option');
+                    opt.dataset.val = f.val; opt.dataset.label = f.label; opt.style.fontFamily = f.val; opt.textContent = f.label;
+                    if (f.weights.length > 1) { const meta = document.createElement('span'); meta.className = 'picker-opt-meta'; meta.textContent = `두께 ${f.weights.length}종`; opt.appendChild(meta); }
+                    frag.appendChild(opt);
+                });
+            });
+            box.insertBefore(frag, box.firstChild);
+        }
+        // 선택된 폰트에 맞춰 "글자 두께" 목록을 다시 채움. 두께가 1종뿐인 폰트(또는 내 폰트)면 항목 자체를 숨김.
+        function refreshFontWeightOptions() {
+            const font = findFontByVal(currentFontVal); const row = document.getElementById('font-weight-row'); const sel = document.getElementById('input-font-weight');
+            const weights = font ? font.weights : [400];
+            currentFontWeight = nearestWeight(weights, parseInt(currentFontWeight, 10) || 400);
+            sel.innerHTML = weights.map(w => `<option value="${w}">${FONT_WEIGHT_NAMES[w] || w} (${w})</option>`).join('');
+            sel.value = String(currentFontWeight);
+            row.style.display = weights.length > 1 ? '' : 'none';
+        }
+        function onFontWeightChange() { currentFontWeight = parseInt(document.getElementById('input-font-weight').value, 10) || 400; updateUI(); }
         
         let currentBgImageDataUrl = '';
         let currentOvImageDataUrl = '';
@@ -1748,7 +1891,7 @@
                 const pr = DOM.marginRight.value || 0;
                 DOM.preview.style.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
 
-                DOM.contentWrapper.style.fontFamily = '';
+                DOM.contentWrapper.style.fontFamily = ''; DOM.contentWrapper.style.fontWeight = '';
                 DOM.contentWrapper.style.color = '';
                 DOM.pText.style.fontSize = '';
                 DOM.pText.style.lineHeight = ''; 
@@ -1775,6 +1918,7 @@
                 DOM.preview.style.padding = DOM.pad.value + 'px';
                 
                 DOM.contentWrapper.style.fontFamily = currentFontVal;
+                DOM.contentWrapper.style.fontWeight = currentFontWeight;
                 DOM.contentWrapper.style.color = DOM.color.value;
                 DOM.pText.style.fontSize = DOM.size.value + 'px';
                 DOM.pText.style.lineHeight = DOM.lh.value;
@@ -1987,7 +2131,7 @@
 
         function saveTypoDefault() {
             let config = getCurrentConfig(); let defs = JSON.parse(localStorage.getItem('archive_default_typo')) || {};
-            ['font','color','size','lh','paraGap','pad','align','charWrap','marginTop','marginBottom','marginLeft','marginRight','htmlScale','textX','textY'].forEach(k => defs[k] = config[k]);
+            ['font','fontWeight','color','size','lh','paraGap','pad','align','charWrap','letterSpacing','hScale2','marginTop','marginBottom','marginLeft','marginRight','htmlScale','textX','textY'].forEach(k => defs[k] = config[k]);
             localStorage.setItem('archive_default_typo', JSON.stringify(defs)); showToast('타이포그래피 설정이 기본값으로 저장되었습니다.');
         }
 
@@ -2012,7 +2156,8 @@
             const fontTrigger = document.getElementById('font-picker-trigger');
             fontTrigger.style.fontFamily = currentFontVal;
             const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
-            if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent; else fontTrigger.textContent = '명조체';
+            if (matchedOpt) fontTrigger.textContent = matchedOpt.dataset.label || matchedOpt.textContent; else fontTrigger.textContent = '명조체';
+            markSelectedFontOption(); currentFontWeight = parseInt(defs.fontWeight, 10) || 400; refreshFontWeightOptions();
 
             DOM.marginTop.value = defs.marginTop || 0; DOM.marginBottom.value = defs.marginBottom || 0;
             DOM.marginLeft.value = defs.marginLeft || 0; DOM.marginRight.value = defs.marginRight || 0;
@@ -2123,8 +2268,32 @@
         [DOM.pad, DOM.lh, DOM.paraGap, DOM.letterSpacing, DOM.hScale2, DOM.size].forEach(el => el.addEventListener('input', () => showVisualGuide()));
         DOM.align.addEventListener('change', () => showVisualGuide()); DOM.charWrap.addEventListener('change', () => showVisualGuide()); DOM.color.addEventListener('input', () => showVisualGuide());
 
+        // 브라우저 기본 파일 선택 UI("Choose File / No file chosen")를 앱 스타일의 한글 버튼으로 교체.
+        // input 자체는 그대로 두고 label로 연결하기 때문에 기존 change 이벤트 처리는 바뀌지 않음.
+        function enhanceFileInputs() {
+            document.querySelectorAll('input[type="file"][data-pick-label]').forEach(input => {
+                if (input.closest('.file-pick')) return;
+                const wrap = document.createElement('label'); wrap.className = 'file-pick';
+                const btn = document.createElement('span'); btn.className = 'action-btn'; btn.textContent = input.dataset.pickLabel;
+                const name = document.createElement('span'); name.className = 'file-pick-name';
+                input.parentNode.insertBefore(wrap, input);
+                wrap.append(input, btn, name);
+                input.addEventListener('change', () => syncFilePickName(input));
+                syncFilePickName(input);
+            });
+        }
+        function syncFilePickName(input) {
+            const nameEl = input && input.parentNode && input.parentNode.querySelector('.file-pick-name'); if (!nameEl) return;
+            const file = input.files && input.files[0];
+            nameEl.textContent = file ? file.name : '선택 안 함'; nameEl.title = file ? file.name : '';
+            nameEl.classList.toggle('has-file', !!file);
+        }
+
         window.onload = () => {
+            enhanceFileInputs();
+            renderFontOptions();
             setupFontPicker();
+            refreshFontWeightOptions();
             setMobileTab('input');
             relocateBgToolbar();
             
@@ -2259,7 +2428,7 @@
                 reader.readAsDataURL(file);
             }
         });
-        function removeBgImage() { currentBgImageDataUrl = ''; DOM.bgImg.value = ''; originalBgWidth = 0; originalBgHeight = 0; resetBgPos(); updateUI(); }
+        function removeBgImage() { currentBgImageDataUrl = ''; DOM.bgImg.value = ''; syncFilePickName(DOM.bgImg); originalBgWidth = 0; originalBgHeight = 0; resetBgPos(); updateUI(); }
 
         DOM.ovUpload.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -2274,7 +2443,7 @@
             }
         });
         function removeOvImg() { 
-            currentOvImageDataUrl = ''; DOM.ovUpload.value = ''; DOM.ovInX.value = 0; DOM.ovInY.value = 0; ovScale = 1.0;
+            currentOvImageDataUrl = ''; DOM.ovUpload.value = ''; syncFilePickName(DOM.ovUpload); DOM.ovInX.value = 0; DOM.ovInY.value = 0; ovScale = 1.0;
             document.getElementById('overlay-img-content').src = ''; document.getElementById('overlay-img-content').style.display = 'none'; updateUI(); 
         }
 
@@ -2602,6 +2771,25 @@
 
         const fontPicker = document.getElementById('font-picker-wrapper'); const fontTrigger = document.getElementById('font-picker-trigger'); const fontOptions = document.getElementById('font-picker-options');
         fontTrigger.addEventListener('click', () => fontOptions.classList.toggle('open'));
+        // 키보드로도 폰트를 고를 수 있게: Enter/Space/↓로 열고, ↑↓로 이동, Enter로 선택, Esc로 닫기
+        fontTrigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault(); fontOptions.classList.add('open');
+                const target = fontOptions.querySelector('.picker-opt.selected') || fontOptions.querySelector('.picker-opt');
+                if (target) target.focus();
+            } else if (e.key === 'Escape') { fontOptions.classList.remove('open'); }
+        });
+        fontOptions.addEventListener('keydown', (e) => {
+            const opts = Array.from(fontOptions.querySelectorAll('.picker-opt')); const idx = opts.indexOf(document.activeElement);
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault(); const next = opts[Math.min(opts.length - 1, Math.max(0, idx + (e.key === 'ArrowDown' ? 1 : -1)))];
+                if (next) { next.focus(); DOM.pText.style.fontFamily = next.dataset.val; }
+            } else if ((e.key === 'Enter' || e.key === ' ') && idx >= 0) { e.preventDefault(); opts[idx].click(); fontTrigger.focus(); }
+            else if (e.key === 'Escape') { e.preventDefault(); fontOptions.classList.remove('open'); DOM.pText.style.fontFamily = currentFontVal; fontTrigger.focus(); }
+        });
+        function markSelectedFontOption() {
+            document.querySelectorAll('.picker-opt').forEach(o => o.classList.toggle('selected', o.dataset.val === currentFontVal));
+        }
         document.addEventListener('click', (e) => { if (!fontPicker.contains(e.target)) fontOptions.classList.remove('open'); });
 
         function setupFontPicker() {
@@ -2610,11 +2798,12 @@
                 newOpt.addEventListener('mouseenter', () => { DOM.pText.style.fontFamily = newOpt.dataset.val; });
                 newOpt.addEventListener('mouseleave', () => { DOM.pText.style.fontFamily = currentFontVal; });
                 newOpt.addEventListener('click', () => {
-                    currentFontVal = newOpt.dataset.val; fontTrigger.textContent = newOpt.textContent;
+                    currentFontVal = newOpt.dataset.val; fontTrigger.textContent = newOpt.dataset.label || newOpt.textContent;
                     fontTrigger.style.fontFamily = currentFontVal; fontOptions.classList.remove('open');
-                    updateUI(); showVisualGuide();
+                    markSelectedFontOption(); refreshFontWeightOptions(); updateUI(); showVisualGuide();
                 });
             });
+            markSelectedFontOption();
         }
 
         // 커스텀 폰트를 실제로 브라우저에 등록(FontFace)하고 폰트 선택 목록에 옵션을 추가.
@@ -2625,10 +2814,13 @@
             const label = `내 폰트 (${displayFileName || '업로드된 폰트'})`;
             let opt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === fontName);
             if (!opt) {
-                opt = document.createElement('div'); opt.className = 'picker-opt'; opt.dataset.val = fontName; opt.style.fontFamily = fontName;
+                if (!fontOptions.querySelector('.picker-group-custom')) {
+                    const head = document.createElement('div'); head.className = 'picker-group picker-group-custom'; head.textContent = '내 폰트'; fontOptions.appendChild(head);
+                }
+                opt = document.createElement('div'); opt.className = 'picker-opt'; opt.tabIndex = -1; opt.setAttribute('role', 'option'); opt.dataset.val = fontName; opt.dataset.custom = '1'; opt.style.fontFamily = fontName;
                 fontOptions.appendChild(opt);
             }
-            opt.textContent = label;
+            opt.textContent = label; opt.dataset.label = label;
             setupFontPicker();
             return label;
         }
@@ -2642,7 +2834,7 @@
                 try {
                     const label = await registerCustomFont(fontName, window.currentCustomFontBase64, file.name);
                     currentFontVal = fontName; fontTrigger.textContent = label; fontTrigger.style.fontFamily = fontName;
-                    fontOptions.classList.remove('open'); updateUI(); showToast('폰트가 적용되었습니다.');
+                    fontOptions.classList.remove('open'); markSelectedFontOption(); refreshFontWeightOptions(); updateUI(); showToast('폰트가 적용되었습니다.');
                 } catch (err) { showToast('폰트를 불러올 수 없습니다.'); }
             };
             reader.readAsDataURL(file);
@@ -2657,7 +2849,7 @@
                 isHtmlMode: DOM.htmlToggle.checked, 
                 marginTop: DOM.marginTop.value, marginBottom: DOM.marginBottom.value, marginLeft: DOM.marginLeft.value, marginRight: DOM.marginRight.value,
                 htmlScale: DOM.htmlScale.value,
-                font: currentFontVal, color: DOM.color.value, size: DOM.size.value, pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value,
+                font: currentFontVal, fontWeight: currentFontWeight, color: DOM.color.value, size: DOM.size.value, pad: DOM.pad.value, lh: DOM.lh.value, align: DOM.align.value,
                 // 커스텀 업로드 폰트는 세션 한정 이름표만으론 나중에 복원이 안 되므로, 실제 폰트 파일 데이터/원래 파일명도 같이 저장
                 customFontData: currentFontVal.startsWith('Custom_') ? (window.currentCustomFontBase64 || null) : null,
                 customFontFileName: currentFontVal.startsWith('Custom_') ? (window.currentCustomFontFileName || null) : null,
@@ -2708,10 +2900,11 @@
                 } else {
                     if (!currentFontVal.startsWith('Custom_')) { window.currentCustomFontBase64 = null; window.currentCustomFontFileName = null; }
                     const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
-                    if (matchedOpt) fontTrigger.textContent = matchedOpt.textContent;
+                    if (matchedOpt) fontTrigger.textContent = matchedOpt.dataset.label || matchedOpt.textContent;
                 }
-                fontTrigger.style.fontFamily = currentFontVal;
+                fontTrigger.style.fontFamily = currentFontVal; markSelectedFontOption();
             }
+            currentFontWeight = parseInt(config.fontWeight, 10) || 400; refreshFontWeightOptions();
 
             const bgPromise = new Promise(resolve => {
                 if (config.bgImg) {
@@ -2741,8 +2934,37 @@
             document.getElementById(tabName + '-page').classList.add('active');
             if(tabName === 'archive') loadGallery();
         }
-        function openModal() { document.getElementById('modal-tags').value = ''; document.getElementById('modal-memo').value = ''; document.getElementById('save-modal').style.display = 'flex'; }
+        // 아카이브에서 "수정"으로 불러온 카드의 id. 저장할 때 이 카드를 덮어쓸지 새로 저장할지 고를 수 있음.
+        let editingArchiveItem = null;
+        function isModalOpen() { return document.getElementById('save-modal').style.display === 'flex'; }
+        function openModal() {
+            const tagsEl = document.getElementById('modal-tags'); const memoEl = document.getElementById('modal-memo');
+            const overwriteRow = document.getElementById('modal-overwrite-row');
+            if (editingArchiveItem) {
+                tagsEl.value = editingArchiveItem.tags || ''; memoEl.value = editingArchiveItem.memo || '';
+                document.getElementById('modal-overwrite').checked = true; overwriteRow.classList.add('show');
+            } else { tagsEl.value = ''; memoEl.value = ''; overwriteRow.classList.remove('show'); }
+            document.getElementById('save-modal').style.display = 'flex';
+            setTimeout(() => tagsEl.focus(), 0);
+        }
         function closeModal() { document.getElementById('save-modal').style.display = 'none'; }
+        document.getElementById('save-modal').addEventListener('mousedown', e => { if (e.target.id === 'save-modal') closeModal(); });
+
+        // 단축키: Ctrl(⌘)+S 다운로드, Ctrl(⌘)+Shift+S 아카이브 저장, 모달에서 Ctrl+Enter 저장 / Esc 닫기
+        document.addEventListener('keydown', e => {
+            const mod = e.ctrlKey || e.metaKey;
+            if (isModalOpen()) {
+                if (e.key === 'Escape') { e.preventDefault(); closeModal(); }
+                else if (mod && e.key === 'Enter') { e.preventDefault(); saveToIndexedDB(); }
+                return;
+            }
+            if (e.key === 'Escape' && document.body.classList.contains('fullscreen-mode')) { closeFullscreen(); return; }
+            if (!document.getElementById('extractor-page').classList.contains('active')) return;
+            if (mod && !e.altKey && (e.key === 's' || e.key === 'S')) {
+                e.preventDefault();
+                if (e.shiftKey) openModal(); else downloadCard();
+            }
+        });
         
         let toastTimeout;
         function showToast(msg, persistent = false) {
@@ -2753,42 +2975,128 @@
         }
         function hideToast() { clearTimeout(toastTimeout); document.getElementById('toast').classList.remove('show'); }
 
-        const preloadedFontsCSS = {};
-        async function ensureFontLoaded(fontFamilyStr) {
-            if (preloadedFontsCSS[fontFamilyStr]) return preloadedFontsCSS[fontFamilyStr];
-            
-            let cssUrl = '';
-            if (fontFamilyStr.includes('Noto Serif KR')) cssUrl = 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&display=swap';
-            else if (fontFamilyStr.includes('Noto Sans KR')) cssUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap';
-            else if (fontFamilyStr.includes('Gowun Dodum')) cssUrl = 'https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap';
-            else if (fontFamilyStr.includes('Nanum Myeongjo')) cssUrl = 'https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap';
-            else if (fontFamilyStr.includes('Pretendard')) cssUrl = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css';
-            else if (fontFamilyStr.includes('IBM Plex Sans KR')) cssUrl = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap';
-            else if (fontFamilyStr.includes('Nanum Gothic')) cssUrl = 'https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap';
-            else if (fontFamilyStr.includes('Gothic A1')) cssUrl = 'https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;900&display=swap';
-            else if (fontFamilyStr.includes('Do Hyeon')) cssUrl = 'https://fonts.googleapis.com/css2?family=Do+Hyeon&display=swap';
-            else if (fontFamilyStr.includes('Song Myung')) cssUrl = 'https://fonts.googleapis.com/css2?family=Song+Myung&display=swap';
-            else if (fontFamilyStr.includes('Galmuri')) cssUrl = 'https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css';
-            if (!cssUrl) return '';
+        // ── 캡처용 폰트 임베드 ─────────────────────────────────────
+        // modern-screenshot은 카드를 SVG 이미지로 다시 그리는데, SVG 이미지 안에서는 인터넷에서 폰트를
+        // 받아올 수 없어서 폰트 파일을 data URL로 직접 넣어줘야 함(빠지면 기본 폰트로 대체돼 두께·크기가 달라짐).
+        // 한글 웹폰트는 수십~백여 개의 조각(unicode-range)으로 나뉘어 있으므로, 카드에 "실제로 쓰인 글자"가
+        // 들어 있는 조각과 "실제로 쓰인 두께"만 골라서 넣음 → 정확하면서도 넣는 양이 작아 빠름.
+        const fontFaceListCache = {};   // css 주소 -> Promise<@font-face 정보 배열>
+        const fontFileDataCache = {};   // 폰트 파일 주소 -> Promise<data URL | null>
 
-            try {
-                const res = await fetch(cssUrl); const cssText = await res.text();
-                const urlRegex = /url\((?:['"]?)(https:\/\/[^'")]+\.woff2)(?:['"]?)\)/g;
-                let finalCss = cssText; let match; const fetchPromises = [];
-                
-                while ((match = urlRegex.exec(cssText)) !== null && fetchPromises.length < 10) {
-                    const url = match[1];
-                    fetchPromises.push(
-                        fetch(url).then(r => r.blob()).then(blob => new Promise(resolve => {
-                            const reader = new FileReader(); reader.onload = () => resolve({ url, base64: reader.result });
-                            reader.readAsDataURL(blob);
-                        })).catch(() => null)
-                    );
+        function parseUnicodeRange(str) {
+            if (!str) return null;
+            return str.split(',').map(part => {
+                const t = part.trim().replace(/^U\+/i, '');
+                if (t.includes('?')) return [parseInt(t.replace(/\?/g, '0'), 16), parseInt(t.replace(/\?/g, 'F'), 16)];
+                const [lo, hi] = t.split('-'); return [parseInt(lo, 16), parseInt(hi || lo, 16)];
+            }).filter(r => !isNaN(r[0]) && !isNaN(r[1]));
+        }
+        function parseFontWeightRange(str) {
+            const map = { normal: 400, bold: 700 };
+            const parts = (str || '400').trim().split(/\s+/).map(v => map[v] || parseInt(v, 10)).filter(v => !isNaN(v));
+            return parts.length ? [parts[0], parts[parts.length - 1]] : [400, 400];
+        }
+        function parseFontFaces(cssText, baseUrl) {
+            const faces = []; const re = /@font-face\s*{([^}]*)}/g; let m;
+            const FORMAT_RANK = { woff2: 0, woff: 1, truetype: 2, opentype: 3 };
+            while ((m = re.exec(cssText)) !== null) {
+                const body = m[1];
+                const get = (prop) => { const r = new RegExp('(?:^|;|\\s)' + prop + '\\s*:\\s*([^;]+)', 'i').exec(body); return r ? r[1].trim() : ''; };
+                const family = get('font-family').replace(/['"]/g, '').trim(); if (!family) continue;
+                // src 중 local()은 빼고, 가장 가벼운 형식(woff2 우선)의 파일 하나만 고름
+                const srcs = []; const srcRe = /url\(\s*['"]?([^'")]+)['"]?\s*\)(?:\s*format\(\s*['"]?([^'")]+)['"]?\s*\))?/g; let sm;
+                const src = get('src');
+                while ((sm = srcRe.exec(src)) !== null) {
+                    let url; try { url = new URL(sm[1], baseUrl).href; } catch (e) { continue; }
+                    const fmt = (sm[2] || (url.match(/\.(woff2|woff|ttf|otf)(\?|$)/i) || [])[1] || '').toLowerCase().replace('ttf', 'truetype').replace('otf', 'opentype');
+                    srcs.push({ url, fmt });
                 }
-                const results = await Promise.all(fetchPromises);
-                for (const item of results) { if (item) finalCss = finalCss.replace(new RegExp(item.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), item.base64); }
-                preloadedFontsCSS[fontFamilyStr] = finalCss; return finalCss;
-            } catch(e) { return ''; }
+                if (!srcs.length) continue;
+                srcs.sort((x, y) => (FORMAT_RANK[x.fmt] ?? 9) - (FORMAT_RANK[y.fmt] ?? 9));
+                const weightRaw = get('font-weight') || '400';
+                faces.push({
+                    family, weightRaw, weight: parseFontWeightRange(weightRaw),
+                    style: get('font-style') || 'normal', stretch: get('font-stretch') || 'normal',
+                    rangeRaw: get('unicode-range'), ranges: parseUnicodeRange(get('unicode-range')),
+                    url: srcs[0].url, format: srcs[0].fmt
+                });
+            }
+            return faces;
+        }
+        function loadFontFaceList(cssUrl) {
+            if (!fontFaceListCache[cssUrl]) {
+                fontFaceListCache[cssUrl] = fetch(cssUrl).then(r => r.ok ? r.text() : '').then(css => parseFontFaces(css, cssUrl))
+                    .catch(() => { delete fontFaceListCache[cssUrl]; return []; });
+            }
+            return fontFaceListCache[cssUrl];
+        }
+        function loadFontFileAsDataUrl(url) {
+            if (!fontFileDataCache[url]) {
+                fontFileDataCache[url] = fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+                    .then(blob => new Promise(resolve => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => resolve(null); reader.readAsDataURL(blob); }))
+                    .catch(() => { delete fontFileDataCache[url]; return null; });
+            }
+            return fontFileDataCache[url];
+        }
+        // font-family 목록(예: "'Noto Serif KR', serif")에서 앞쪽부터 보고, 우리가 아는 웹폰트 중 처음 나오는 것을 찾음
+        function resolveKnownFont(fontFamilyCss) {
+            const names = (fontFamilyCss || '').split(',').map(n => n.trim().replace(/['"]/g, ''));
+            for (const n of names) { const f = FONT_LIST.find(x => x.name === n); if (f) return f; }
+            return null;
+        }
+        // 카드 안의 글자들을 훑어서 "폰트별로 어떤 두께에서 어떤 글자를 썼는지" 모음
+        function collectFontUsage(rootEl) {
+            const usage = new Map();
+            const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
+            let node;
+            while ((node = walker.nextNode())) {
+                const text = node.nodeValue; if (!text || !text.trim()) continue;
+                const el = node.parentElement; if (!el) continue;
+                let cs; try { cs = getComputedStyle(el); } catch (e) { continue; }
+                if (cs.display === 'none') continue;
+                const font = resolveKnownFont(cs.fontFamily); if (!font) continue;
+                if (!usage.has(font.name)) usage.set(font.name, { font, weights: new Set(), chars: new Set() });
+                const u = usage.get(font.name);
+                u.weights.add(parseInt(cs.fontWeight, 10) || 400);
+                for (const ch of text) u.chars.add(ch.codePointAt(0));
+            }
+            return usage;
+        }
+        // CSS 폰트 매칭 규칙에 따라, 원하는 두께에 실제로 쓰일 @font-face 두께를 고름
+        function pickFaceWeight(available, wanted) {
+            const fits = available.find(([lo, hi]) => wanted >= lo && wanted <= hi); if (fits) return fits;
+            const below = available.filter(([, hi]) => hi < wanted).sort((a, b) => b[1] - a[1]);
+            const above = available.filter(([lo]) => lo > wanted).sort((a, b) => a[0] - b[0]);
+            if (wanted >= 400 && wanted <= 500) {
+                const upTo500 = above.filter(([lo]) => lo <= 500);
+                return upTo500[0] || below[0] || above[0] || available[0];
+            }
+            return wanted < 400 ? (below[0] || above[0] || available[0]) : (above[0] || below[0] || available[0]);
+        }
+
+        async function buildEmbeddedFontCss(sourceEl) {
+            let embeddedFontCss = '';
+            if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) { embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }\n`; }
+            let usage; try { usage = collectFontUsage(sourceEl); } catch (e) { usage = new Map(); }
+
+            const faceJobs = [];
+            for (const { font, weights, chars } of usage.values()) {
+                faceJobs.push(loadFontFaceList(font.css).then(allFaces => {
+                    const faces = allFaces.filter(f => f.family === font.name && f.style === 'normal' && (f.stretch === 'normal' || f.stretch === '100%'));
+                    if (!faces.length) return [];
+                    const availableWeights = []; faces.forEach(f => { if (!availableWeights.some(w => w[0] === f.weight[0] && w[1] === f.weight[1])) availableWeights.push(f.weight); });
+                    const chosen = new Set(Array.from(weights).map(w => pickFaceWeight(availableWeights, w).join('-')));
+                    return faces.filter(f => chosen.has(f.weight.join('-')))
+                        .filter(f => !f.ranges || Array.from(chars).some(c => f.ranges.some(([lo, hi]) => c >= lo && c <= hi)));
+                }));
+            }
+            const neededFaces = (await Promise.all(faceJobs)).flat();
+            const rules = await Promise.all(neededFaces.map(async f => {
+                const dataUrl = await loadFontFileAsDataUrl(f.url); if (!dataUrl) return '';
+                return `@font-face { font-family: '${f.family}'; font-style: normal; font-weight: ${f.weightRaw}; src: url(${dataUrl})${f.format ? ` format('${f.format}')` : ''};${f.rangeRaw ? ` unicode-range: ${f.rangeRaw};` : ''} }`;
+            }));
+            embeddedFontCss += rules.filter(Boolean).join('\n');
+            return embeddedFontCss;
         }
 
         function neutralizeProblematicLineBreaks(idoc) {
@@ -2851,20 +3159,6 @@
             idoc.close();
             neutralizeProblematicLineBreaks(idoc);
             return { iframe, idoc, sourceEl, w, h };
-        }
-
-        async function buildEmbeddedFontCss(sourceEl) {
-            let embeddedFontCss = '';
-            if (currentFontVal.startsWith('Custom_') && window.currentCustomFontBase64) { embeddedFontCss = `@font-face { font-family: '${currentFontVal}'; src: url(${window.currentCustomFontBase64}); }`; }
-            const KNOWN_WEB_FONTS = ['Noto Serif KR', 'Noto Sans KR', 'Gowun Dodum', 'Nanum Myeongjo', 'Pretendard'];
-            const fontsInUse = new Set();
-            if (!currentFontVal.startsWith('Custom_')) fontsInUse.add(currentFontVal);
-            try { const allNodes = [sourceEl, ...sourceEl.querySelectorAll('*')]; allNodes.forEach(node => { const ff = getComputedStyle(node).fontFamily; if (ff) fontsInUse.add(ff); }); } catch (e) { }
-
-            const fontCssParts = await Promise.all(
-                Array.from(fontsInUse).flatMap(ffValue => KNOWN_WEB_FONTS.filter(known => ffValue.includes(known)).map(known => ensureFontLoaded(known)))
-            );
-            embeddedFontCss += fontCssParts.filter(Boolean).join('\n'); return embeddedFontCss;
         }
 
         function captureInSandbox(scaleRatio, isPng) {
@@ -3108,7 +3402,7 @@
         let db;
         const request = indexedDB.open("AIArchiveDB", 2); 
         request.onupgradeneeded = e => { db = e.target.result; if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' }); };
-        request.onsuccess = e => db = e.target.result;
+        request.onsuccess = e => { db = e.target.result; if (document.getElementById('archive-page').classList.contains('active')) loadGallery(); };
 
         async function saveToIndexedDB() {
             if (isCapturing) return;
@@ -3119,14 +3413,25 @@
             
             try {
                 const imgData = await captureImage(1, false); 
-                const newItem = { id: Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
-                const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').add(newItem);
-                tx.oncomplete = () => { closeModal(); hideToast(); showToast('아카이브에 저장되었습니다!'); loadGallery(); };
+                const overwrite = !!editingArchiveItem && document.getElementById('modal-overwrite').checked;
+                const newItem = { id: overwrite ? editingArchiveItem.id : Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
+                const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').put(newItem);
+                tx.oncomplete = () => {
+                    editingArchiveItem = { id: newItem.id, tags: newItem.tags, memo: newItem.memo };
+                    closeModal(); hideToast(); showToast(overwrite ? '기존 카드를 덮어썼습니다!' : '아카이브에 저장되었습니다!'); loadGallery();
+                };
+                tx.onerror = () => { hideToast(); showToast('아카이브 저장에 실패했습니다. (저장 공간이 부족할 수 있어요)'); };
             } catch (err) { hideToast(); showToast('이미지 저장 중 오류가 발생했습니다.');
             } finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
         }
 
         let loadedItems = []; 
+        function escapeHtml(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        let galleryDebounceTimer;
+        function debouncedLoadGallery() { clearTimeout(galleryDebounceTimer); galleryDebounceTimer = setTimeout(loadGallery, 200); }
+        function searchByTag(tag) { document.getElementById('search-input').value = tag; loadGallery(); }
         function loadGallery() {
             if(!db) return;
             const grid = document.getElementById('gallery-grid');
@@ -3136,11 +3441,17 @@
             const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
             req.onsuccess = function(e) {
                 let album = e.target.result;
+                const total = album.length;
                 if (keyword) album = album.filter(item => (item.tags||'').toLowerCase().includes(keyword) || (item.memo||'').toLowerCase().includes(keyword));
                 album.sort((a, b) => sortOrder === 'asc' ? a.id - b.id : b.id - a.id);
                 loadedItems = album;
+                document.getElementById('archive-count').textContent = keyword ? `${album.length} / ${total}개` : (total ? `${total}개` : '');
                 if(album.length === 0) {
-                    grid.innerHTML = `<div class="empty-state">
+                    grid.innerHTML = keyword
+                        ? `<div class="empty-state">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <p>검색 결과가 없습니다</p><span>다른 태그나 메모 내용으로 검색해보세요.</span></div>`
+                        : `<div class="empty-state">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
                         <p>저장된 기록이 없습니다</p><span>발췌기에서 카드를 만들고 저장해보세요.</span></div>`;
                     return;
@@ -3148,18 +3459,22 @@
                 album.forEach(item => {
                     const div = document.createElement('div'); div.className = 'gallery-item';
                     const tagList = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
-                    const tagsHtml = tagList.length ? tagList.map(t => `<span class="tag-chip">#${t}</span>`).join('') : '<span class="tag-chip" style="opacity:0.5; border:1px dashed rgba(255,255,255,0.4);">태그 없음</span>';
+                    const tagsHtml = tagList.length
+                        ? tagList.map(t => { const clean = t.replace(/^#/, ''); return `<button type="button" class="tag-chip" data-tag="${escapeHtml(clean)}" title="이 태그로 검색">#${escapeHtml(clean)}</button>`; }).join('')
+                        : '<span class="tag-chip is-empty">태그 없음</span>';
                     div.innerHTML = `
-                        <img src="${item.image}" alt="Archive Card">
+                        <img src="${escapeHtml(item.image || '')}" alt="${escapeHtml(tagList.join(', ') || '아카이브 카드')}" loading="lazy">
                         <div class="item-overlay">
+                            ${item.date ? `<div class="overlay-date">${escapeHtml(item.date)}</div>` : ''}
                             <div class="overlay-tags">${tagsHtml}</div>
-                            <div class="overlay-memo">${item.memo || '메모 없음'}</div>
+                            <div class="overlay-memo">${item.memo ? escapeHtml(item.memo) : '메모 없음'}</div>
                             <div class="overlay-actions">
                                 <button class="btn-overlay-save" onclick="downloadFromArchive(${item.id})">저장</button>
                                 <button class="btn-overlay-edit" onclick="editFromArchive(${item.id})">수정</button>
                                 <button class="btn-overlay-delete" onclick="deleteFromIndexedDB(${item.id})">삭제</button>
                             </div>
                         </div>`;
+                    div.querySelectorAll('button.tag-chip').forEach(chip => chip.addEventListener('click', () => searchByTag(chip.dataset.tag)));
                     grid.appendChild(div);
                 });
             };
@@ -3168,21 +3483,31 @@
         function downloadFromArchive(id) { const item = loadedItems.find(i => i.id === id); if(item) { const link = document.createElement('a'); link.download = buildExportFilename(item.config ? item.config.wmChar : ''); link.href = item.image; link.click(); } }
         async function editFromArchive(id) { 
             const item = loadedItems.find(i => i.id === id); 
-            if(item && item.config) { switchTab('extractor'); await applyConfig(item.config, true); showToast('저장된 세팅값을 불러왔습니다.'); } 
+            if(item && item.config) {
+                if (DOM.text.value.trim() && !confirm('지금 작업 중인 내용이 이 카드의 내용과 설정으로 바뀝니다. 불러올까요?')) return;
+                editingArchiveItem = { id: item.id, tags: item.tags, memo: item.memo };
+                switchTab('extractor'); await applyConfig(item.config, true); showToast('저장된 카드를 불러왔습니다. 저장하면 덮어쓸 수 있어요.');
+            } 
             else { showToast('구버전 데이터라 수정할 수 없습니다.'); } 
         }
-        function deleteFromIndexedDB(id) { if(confirm('이 기록을 삭제하시겠습니까?')) { const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').delete(id); tx.oncomplete = () => loadGallery(); } }
+        function deleteFromIndexedDB(id) {
+            if(!confirm('이 기록을 삭제하시겠습니까? 삭제한 카드는 되돌릴 수 없어요.')) return;
+            const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').delete(id);
+            tx.oncomplete = () => { if (editingArchiveItem && editingArchiveItem.id === id) editingArchiveItem = null; loadGallery(); showToast('삭제되었습니다.'); };
+        }
 
         async function exportData() {
             try {
                 const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
                 req.onsuccess = function(e) {
                     const archive = e.target.result; const exportObj = { archive: archive };
-                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+                    // data: URL은 용량이 크면(이미지가 많으면) 브라우저가 다운로드를 거부하므로 Blob URL 사용
+                    const blobUrl = URL.createObjectURL(new Blob([JSON.stringify(exportObj)], { type: 'application/json' }));
                     const downloadAnchorNode = document.createElement('a');
-                    downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", `archive_backup_${Date.now()}.json`);
+                    downloadAnchorNode.setAttribute("href", blobUrl); downloadAnchorNode.setAttribute("download", `archive_backup_${Date.now()}.json`);
                     document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
-                    showToast('모든 데이터가 백업 파일로 저장되었습니다.');
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                    showToast(`카드 ${archive.length}개를 백업 파일로 저장했습니다.`);
                 };
             } catch (err) { showToast('데이터 백업 중 오류가 발생했습니다.'); }
         }
@@ -3196,9 +3521,11 @@
                     if (data.archive && Array.isArray(data.archive)) {
                         const tx = db.transaction(['cards'], 'readwrite'); const store = tx.objectStore('cards');
                         data.archive.forEach(item => { store.put(item); });
-                        tx.oncomplete = () => { loadGallery(); showToast('데이터가 성공적으로 복구되었습니다!'); event.target.value = ''; };
+                        tx.oncomplete = () => { loadGallery(); showToast(`카드 ${data.archive.length}개를 복구했습니다!`); };
+                        tx.onerror = () => showToast('복구 중 오류가 발생했습니다. (저장 공간이 부족할 수 있어요)');
                     } else { showToast('유효하지 않은 백업 파일 포맷입니다.'); }
                 } catch (err) { showToast('파일을 읽는 중 오류가 발생했습니다.'); }
+                event.target.value = '';
             };
             reader.readAsText(file);
         }
