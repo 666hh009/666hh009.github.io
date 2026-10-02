@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.0)</title>
+    <title>네카이브 (v4.2.1)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -243,8 +243,10 @@
         input[type="file"]::file-selector-button:hover { background: var(--paper-muted); border-color: var(--ink-soft); }
         /* 커스텀 파일 선택 버튼: 브라우저 기본 "Choose File / No file chosen" 대신 한글 버튼 + 파일명 표시.
            실제 input은 화면에서만 숨기고(label로 연결) 그대로 두기 때문에 기존 change 이벤트는 그대로 동작함 */
-        .file-pick { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; max-width: 100%; }
-        .file-pick input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+        /* position: relative가 꼭 필요함: 숨긴 input이 버튼 바로 그 자리에 있어야 함. 없으면 input이 스크롤 영역 밖
+           엉뚱한 곳에 놓여서, 버튼을 누를 때(input에 포커스가 갈 때) 브라우저가 그쪽으로 화면 전체를 끌어올림 */
+        .file-pick { position: relative; display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; max-width: 100%; }
+        .file-pick input[type="file"] { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
         .file-pick .file-pick-name { font-size: var(--fs-xs); color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 110px; }
         .file-pick .file-pick-name.has-file { color: var(--ink); font-weight: 500; }
         .file-pick:focus-within .action-btn { border-color: var(--ink); box-shadow: var(--focus-ring); }
@@ -484,6 +486,8 @@
             background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 24px 24px; padding: var(--sp-8);
         }
 
+        body.ov-editing .preview-area, body.ov-editing #card-preview { cursor: grab !important; }
+        body.ov-editing.ov-panning .preview-area, body.ov-editing.ov-panning #card-preview { cursor: grabbing !important; }
         #card-preview-wrapper { position: relative; transition: width 0.1s, height 0.1s; }
         #card-preview {
             background-color: #ffffff; display: flex; flex-direction: column; justify-content: center; position: relative;
@@ -973,7 +977,7 @@
                                     편집 시작
                                 </button>
                             </div>
-                            <div class="section-note" style="margin-top:-4px;">켜면 미리보기에 크롭 마스크가 나타나요. 모서리를 드래그하면 크기를, 안쪽을 드래그하면 마스크와 이미지를 함께 옮길 수 있어요.</div>
+                            <div class="section-note" style="margin-top:-4px;">켜면 미리보기에 크롭 마스크가 나타나요. 모서리를 드래그하면 크기를, 안쪽을 드래그하면 마스크와 이미지를 함께, 마스크 바깥을 드래그하면 이미지만 옮길 수 있어요.</div>
                             <div class="row">
                                 <span class="row-label">이미지를 텍스트 위로</span>
                                 <label class="row-switch">
@@ -2588,7 +2592,8 @@
         }, { passive: false });
 
         // ── 오버레이 이미지 크롭 툴: "이미지 편집" 모드일 때만 작동 ──────────────
-        // 모서리 4점 드래그 = 마스크 크기 조절, 마스크 내부 드래그 = 마스크+이미지 함께 이동.
+        // 모서리 4점 드래그 = 마스크 크기 조절, 마스크 내부 드래그 = 마스크+이미지 함께 이동,
+        // 마스크 바깥 드래그 = 마스크는 그대로 두고 안쪽 이미지 위치만 이동.
         function setOvEditMode(on) {
             ovEditMode = !!on;
             const btn = document.getElementById('btn-ov-edit-mode');
@@ -2598,6 +2603,7 @@
                     ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg> 편집 종료'
                     : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg> 편집 시작';
             }
+            document.body.classList.toggle('ov-editing', ovEditMode);
             updateUI();
             syncMobileEditMode();
         }
@@ -2629,7 +2635,7 @@
         (function setupOvCropTool() {
             const frame = document.getElementById('ov-crop-frame');
             if (!frame) return;
-            let mode = null; // 'resize' | 'move'
+            let mode = null; // 'resize' | 'move' | 'pan'
             let corner = null;
             let startX = 0, startY = 0;
             let origW = 0, origH = 0, origOvX = 0, origOvY = 0, origInX = 0, origInY = 0;
@@ -2652,6 +2658,14 @@
                 startX = clientX; startY = clientY;
                 origOvX = parseFloat(DOM.ovX.value) || 0;
                 origOvY = parseFloat(DOM.ovY.value) || 0;
+            }
+            function startPan(clientX, clientY) {
+                if (!ovEditMode) return;
+                mode = 'pan';
+                startX = clientX; startY = clientY;
+                origInX = parseFloat(DOM.ovInX.value) || 0;
+                origInY = parseFloat(DOM.ovInY.value) || 0;
+                document.body.classList.add('ov-panning');
             }
             function pointerMove(clientX, clientY) {
                 if (!mode || !ovEditMode) return;
@@ -2683,9 +2697,45 @@
                     DOM.ovY.value = Math.round(origOvY - dyDown);
                     // 이미지 위치는 그대로 둠 → 마스크와 이미지가 한 덩어리처럼 같이 움직임
                     updateUI();
+                } else if (mode === 'pan') {
+                    // 마스크는 고정, 안쪽 이미지만 이동 (이미지 위치 X·Y 값과 같은 기준: 오른쪽 +, 위쪽 +)
+                    DOM.ovInX.value = Math.round(origInX + dxRight);
+                    DOM.ovInY.value = Math.round(origInY - dyDown);
+                    updateUI();
                 }
             }
-            function pointerEnd() { mode = null; corner = null; }
+            function pointerEnd() { mode = null; corner = null; document.body.classList.remove('ov-panning'); }
+
+            // 마스크 바깥(미리보기 빈 곳 포함)을 드래그하면 이미지 위치만 옮김.
+            // 미리보기 위의 버튼들(배율, 저장, 편집 종료 등)을 누른 건 제외.
+            const previewWrapperEl = document.querySelector('.preview-canvas-wrapper');
+            const isPanExcluded = (target) => !!target.closest('#ov-crop-frame, .floating-zoom, .floating-actions, #mobile-edit-exit-btn, button, input, label, select');
+            previewWrapperEl.addEventListener('mousedown', (e) => {
+                if (!ovEditMode || e.button !== 0 || isPanExcluded(e.target)) return;
+                e.preventDefault();
+                startPan(e.clientX, e.clientY);
+            });
+            // 터치 이벤트는 처음 손가락을 댄 요소로만 계속 전달되는데, 그 요소(예: 본문 줄)는 화면을 다시 그릴 때
+            // 새로 만들어져 문서에서 떨어져 나감 → 위로 전달(버블링)이 끊기므로, 시작한 요소에 직접 연결해서 받음
+            previewWrapperEl.addEventListener('touchstart', (e) => {
+                if (!ovEditMode || isPanExcluded(e.target)) return;
+                if (e.touches.length !== 1) { if (mode === 'pan') pointerEnd(); return; } // 두 손가락은 기존 미리보기 핀치줌
+                e.preventDefault();
+                const t = e.touches[0]; startPan(t.clientX, t.clientY);
+                const target = e.target;
+                const onMove = (ev) => {
+                    if (mode !== 'pan' || ev.touches.length !== 1) return;
+                    ev.preventDefault();
+                    const tt = ev.touches[0]; pointerMove(tt.clientX, tt.clientY);
+                };
+                const onEnd = (ev) => {
+                    if (ev.type === 'touchend' && ev.touches.length > 0) return;
+                    if (mode === 'pan') pointerEnd();
+                    target.removeEventListener('touchmove', onMove); target.removeEventListener('touchend', onEnd); target.removeEventListener('touchcancel', onEnd);
+                };
+                target.addEventListener('touchmove', onMove, { passive: false });
+                target.addEventListener('touchend', onEnd); target.addEventListener('touchcancel', onEnd);
+            }, { passive: false });
 
             frame.querySelectorAll('.ov-crop-handle').forEach(handle => {
                 handle.addEventListener('mousedown', (e) => {
