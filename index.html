@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.2)</title>
+    <title>네카이브 (v4.2.3)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -1841,83 +1841,145 @@
         }
 
         // ── 스크립트가 들어 있는 코드(React/JSX 등) 실행 ─────────────────────
-        // 앱과 완전히 분리된 iframe(sandbox: 스크립트만 허용, 앱 저장소 접근 불가)에서 실제로 실행한 뒤,
-        // 다 그려진 화면(HTML + 스타일)을 받아와서 카드에 "정지 화면"으로 넣음. 캡처도 이 화면 그대로 찍힘.
-        const scriptRenderCache = new Map(); // 원본 코드 -> { status: 'running'|'done'|'error', html }
-        let scriptRenderFrame = null;
+        // 앱과 분리된 iframe(sandbox: 스크립트만 허용 → 앱의 아카이브·설정에 접근 불가)에서 실제로 실행하고,
+        // 그 iframe을 카드 안에 그대로 띄워서 클릭·애니메이션이 살아 있게 함.
+        // 캡처할 때만 "지금 이 순간"의 화면(HTML + 스타일)을 iframe에서 받아와 잠깐 바꿔 끼운 뒤 찍음.
         function hasExecutableScript(raw) {
             // 주의: 이 파일 안에 "<"+"script"를 그대로 쓰면 브라우저가 앱 스크립트의 끝으로 잘못 읽을 수 있어서 [c]로 쪼개 씀
             return /<s[c]ript\b(?![^>]*\btype\s*=\s*["']?(?:application\/(?:ld\+)?json|text\/template)["']?)[^>]*>/i.test(raw);
         }
         const SCRIPT_TAG_OPEN = '<scr' + 'ipt>', SCRIPT_TAG_CLOSE = '</scr' + 'ipt>';
-        const SCRIPT_SNAPSHOT_REPORTER = SCRIPT_TAG_OPEN + `(function(){
-            var start = Date.now(), last = '', same = 0;
+        // iframe 안에 같이 넣는 도우미: ① 다 그려졌는지 알려줌 ② 높이를 알려줌 ③ 요청하면 현재 화면을 보내줌
+        const LIVE_FRAME_HELPER = SCRIPT_TAG_OPEN + `(function(){
+            var start = Date.now(), last = '', same = 0, readySent = false;
+            function kebab(p){ return p.replace(/[A-Z]/g, function(m){ return '-' + m.toLowerCase(); }); }
             function snap(){
+                var liveEls = Array.prototype.slice.call(document.body.querySelectorAll('*'));
+                var clone = document.body.cloneNode(true);
+                var cloneEls = clone.querySelectorAll('*');
+                var indexOf = new Map(); liveEls.forEach(function(el, i){ indexOf.set(el, i); });
+                // 입력값·체크 상태·캔버스 그림처럼 HTML 복사만으로는 안 남는 "현재 상태"를 옮겨 적음
+                liveEls.forEach(function(el, i){
+                    var c = cloneEls[i]; if (!c) return;
+                    var tag = el.tagName;
+                    if (tag === 'INPUT') { c.setAttribute('value', el.value); if (el.checked) c.setAttribute('checked', ''); else c.removeAttribute('checked'); }
+                    else if (tag === 'TEXTAREA') { c.textContent = el.value; }
+                    else if (tag === 'SELECT') { Array.prototype.forEach.call(c.options, function(o, k){ if (el.options[k] && el.options[k].selected) o.setAttribute('selected', ''); else o.removeAttribute('selected'); }); }
+                    else if (tag === 'CANVAS') { try { var img = document.createElement('img'); img.src = el.toDataURL(); img.setAttribute('style', (el.getAttribute('style') || '') + ';width:' + el.offsetWidth + 'px;height:' + el.offsetHeight + 'px;'); img.className = el.className; c.parentNode.replaceChild(img, c); } catch (e) {} }
+                });
+                // CSS 애니메이션·트랜지션은 "지금 보이는 값"으로 고정 (안 그러면 캡처에서 처음 상태로 돌아감)
+                try {
+                    document.getAnimations().forEach(function(anim){
+                        var eff = anim.effect; if (!eff || !eff.target || eff.pseudoElement) return;
+                        var i = indexOf.get(eff.target); if (i === undefined) return; var c = cloneEls[i]; if (!c || !c.style) return;
+                        var cs = getComputedStyle(eff.target); var props = {};
+                        (eff.getKeyframes ? eff.getKeyframes() : []).forEach(function(kf){ Object.keys(kf).forEach(function(k){ if (['offset','computedOffset','easing','composite'].indexOf(k) < 0) props[kebab(k)] = 1; }); });
+                        if (anim.transitionProperty) props[anim.transitionProperty] = 1;
+                        Object.keys(props).forEach(function(p){ var v = cs.getPropertyValue(p); if (v) c.style.setProperty(p, v); });
+                        c.style.setProperty('animation', 'none'); c.style.setProperty('transition', 'none');
+                    });
+                } catch (e) {}
                 var styles = [];
                 document.querySelectorAll('style').forEach(function(s){ styles.push(s.textContent); });
                 var links = [];
                 document.querySelectorAll('link[rel~="stylesheet"]').forEach(function(l){ if (l.href) links.push(l.href); });
-                var body = document.body.cloneNode(true);
-                body.querySelectorAll('script, style, link').forEach(function(el){ el.remove(); });
-                return { styles: styles, links: links, html: body.innerHTML, bodyClass: document.body.className || '', bodyStyle: document.body.getAttribute('style') || '' };
+                clone.querySelectorAll('script, style, link').forEach(function(el){ el.remove(); });
+                return { styles: styles, links: links, html: clone.innerHTML, bodyClass: document.body.className || '', bodyStyle: document.body.getAttribute('style') || '' };
+            }
+            function reportHeight(){
+                var b = document.body; if (!b) return;
+                var cs = getComputedStyle(b);
+                var h = Math.ceil(b.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom));
+                parent.postMessage({ nekaiveHeight: h }, '*');
             }
             function tick(){
                 var b = document.body; if (!b) return setTimeout(tick, 150);
                 var sig = b.getElementsByTagName('*').length + '|' + (b.textContent || '').length;
                 var hasContent = Array.prototype.some.call(b.children, function(c){ return c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && (c.children.length || (c.textContent || '').trim()); });
                 same = (sig === last && hasContent) ? same + 1 : 0; last = sig;
-                if (same >= 3 || Date.now() - start > 9000) { parent.postMessage({ nekaiveSnapshot: snap() }, '*'); return; }
+                reportHeight();
+                if (same >= 3 || Date.now() - start > 9000) { readySent = true; parent.postMessage({ nekaiveReady: true }, '*'); return; }
                 setTimeout(tick, 150);
             }
-            if (document.readyState === 'complete') tick(); else window.addEventListener('load', tick);
-        })();` + SCRIPT_TAG_CLOSE;
-        function runScriptedHtml(raw) {
-            if (scriptRenderFrame) scriptRenderFrame.remove();
-            const frame = document.createElement('iframe'); scriptRenderFrame = frame;
-            frame.setAttribute('sandbox', 'allow-scripts');
-            frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
-            const w = Math.max(200, (parseFloat(DOM.width.value) || 700) - (parseFloat(DOM.marginLeft.value) || 0) - (parseFloat(DOM.marginRight.value) || 0));
-            frame.style.cssText = `position:fixed; left:-20000px; top:0; width:${w}px; height:${parseFloat(DOM.height.value) || 700}px; border:0; visibility:hidden; pointer-events:none;`;
-            const doc = /<\/body>/i.test(raw) ? raw.replace(/<\/body>(?![\s\S]*<\/body>)/i, SCRIPT_SNAPSHOT_REPORTER + '</body>') : raw + SCRIPT_SNAPSHOT_REPORTER;
-            const onMessage = (e) => {
-                if (e.source !== frame.contentWindow || !e.data || !e.data.nekaiveSnapshot) return;
-                window.removeEventListener('message', onMessage);
-                const snap = e.data.nekaiveSnapshot;
-                const styleHtml = snap.styles.map(css => `<style>${css.replace(/<\/style/gi, '<\\/style')}</style>`).join('')
-                    + snap.links.map(href => `<link rel="stylesheet" href="${escapeHtml(href)}">`).join('');
-                const bodyAttrs = `${snap.bodyClass ? ` class="${escapeHtml(snap.bodyClass)}"` : ''}${snap.bodyStyle ? ` style="${escapeHtml(snap.bodyStyle)}"` : ''}`;
-                scriptRenderCache.set(raw, { status: 'done', html: styleHtml + `<div data-script-root${bodyAttrs}>${snap.html}</div>` });
-                frame.remove(); if (scriptRenderFrame === frame) scriptRenderFrame = null;
-                if (DOM.text.value === raw) updateUI();
-            };
-            window.addEventListener('message', onMessage);
-            setTimeout(() => {
-                const entry = scriptRenderCache.get(raw);
-                if (entry && entry.status === 'running') {
-                    window.removeEventListener('message', onMessage); frame.remove();
-                    scriptRenderCache.set(raw, { status: 'error', html: '' });
-                    if (DOM.text.value === raw) updateUI();
-                }
-            }, 15000);
-            frame.srcdoc = doc;
-            document.body.appendChild(frame);
-        }
-        let scriptRenderTimer = null;
-        // 스크립트가 있는 코드면 실행 결과(있으면)를, 없으면 원본을 돌려줌. 타이핑 중엔 잠깐 기다렸다 실행.
-        function getRenderableHtml(raw) {
-            if (!hasExecutableScript(raw)) return { html: raw, scripted: false };
-            const entry = scriptRenderCache.get(raw);
-            if (entry && entry.status === 'done') return { html: entry.html, scripted: true };
-            if (entry && entry.status === 'error') return { html: '<div style="padding:16px; color:#b1484a; font:14px sans-serif;">스크립트 실행 결과를 받지 못했어요. (외부 라이브러리를 불러오지 못했거나 코드에 오류가 있을 수 있어요)</div>', scripted: true };
-            if (!entry) {
-                clearTimeout(scriptRenderTimer);
-                scriptRenderTimer = setTimeout(() => {
-                    if (DOM.text.value !== raw || scriptRenderCache.has(raw)) return;
-                    if (scriptRenderCache.size > 10) scriptRenderCache.clear();
-                    scriptRenderCache.set(raw, { status: 'running' }); runScriptedHtml(raw);
-                }, 500);
+            window.addEventListener('message', function(e){
+                if (e.data && e.data.nekaiveSnapshotRequest) parent.postMessage({ nekaiveSnapshot: snap(), requestId: e.data.nekaiveSnapshotRequest }, '*');
+            });
+            function boot(){
+                if (window.ResizeObserver && document.body) new ResizeObserver(reportHeight).observe(document.body);
+                tick();
             }
-            return { html: '<div style="padding:16px; color:#6b6d76; font:14px sans-serif;">스크립트를 실행하는 중이에요…</div>', scripted: true };
+            if (document.readyState === 'complete') boot(); else window.addEventListener('load', boot);
+        })();` + SCRIPT_TAG_CLOSE;
+
+        let liveFrame = null;   // { raw, el, ready(Promise), resolveReady }
+        let liveFrameTimer = null;
+        const liveSnapshotWaiters = new Map();
+        window.addEventListener('message', (e) => {
+            if (!liveFrame || e.source !== liveFrame.el.contentWindow || !e.data) return;
+            if (e.data.nekaiveHeight !== undefined) {
+                const h = Math.max(20, Math.min(20000, e.data.nekaiveHeight | 0));
+                if (liveFrame.el.style.height !== h + 'px') liveFrame.el.style.height = h + 'px';
+            }
+            if (e.data.nekaiveReady) liveFrame.resolveReady();
+            if (e.data.nekaiveSnapshot && liveSnapshotWaiters.has(e.data.requestId)) {
+                liveSnapshotWaiters.get(e.data.requestId)(e.data.nekaiveSnapshot); liveSnapshotWaiters.delete(e.data.requestId);
+            }
+        });
+        function createLiveFrame(raw) {
+            const frame = document.createElement('iframe');
+            frame.setAttribute('sandbox', 'allow-scripts');
+            frame.setAttribute('title', '붙여넣은 코드 실행 화면');
+            frame.className = 'live-script-frame';
+            frame.style.cssText = 'display:block; width:100%; height:40px; border:0; background:transparent; color-scheme:normal;';
+            const doc = /<\/body>/i.test(raw) ? raw.replace(/<\/body>(?![\s\S]*<\/body>)/i, LIVE_FRAME_HELPER + '</body>') : raw + LIVE_FRAME_HELPER;
+            let resolveReady; const ready = new Promise(r => { resolveReady = r; });
+            setTimeout(() => resolveReady(), 12000); // 신호가 안 와도 무한정 기다리지는 않음
+            liveFrame = { raw, el: frame, ready, resolveReady };
+            frame.srcdoc = doc;
+            DOM.pText.innerHTML = ''; DOM.pText.appendChild(frame);
+            syncLiveFramePointer();
+        }
+        // 위치 이동(드래그)·오버레이 편집 중에는 iframe이 마우스를 가로채지 않게 함
+        function syncLiveFramePointer() {
+            if (liveFrame && liveFrame.el) liveFrame.el.style.pointerEvents = (dragMode || ovEditMode) ? 'none' : 'auto';
+        }
+        // HTML 뷰어 렌더링: 스크립트가 있으면 살아 있는 iframe을 (코드가 바뀔 때만 새로) 띄우고, 없으면 기존 방식
+        function renderScriptedHtml(raw) {
+            if (liveFrame && liveFrame.raw === raw && DOM.pText.contains(liveFrame.el)) { syncLiveFramePointer(); return; }
+            clearTimeout(liveFrameTimer);
+            if (!(liveFrame && DOM.pText.contains(liveFrame.el))) {
+                DOM.pText.innerHTML = '<div style="padding:16px; color:#6b6d76; font:14px sans-serif;">스크립트를 실행하는 중이에요…</div>';
+            }
+            // 타이핑하는 동안 매 글자마다 다시 실행하지 않도록 잠깐 기다렸다 실행
+            liveFrameTimer = setTimeout(() => { if (DOM.htmlToggle.checked && DOM.text.value === raw) createLiveFrame(raw); }, 400);
+        }
+        function liveSnapshotToHtml(snap) {
+            const styleHtml = snap.styles.map(css => `<style>${css.replace(/<\/style/gi, '<\\/style')}</style>`).join('')
+                + snap.links.map(href => `<link rel="stylesheet" href="${escapeHtml(href)}">`).join('');
+            const bodyAttrs = `${snap.bodyClass ? ` class="${escapeHtml(snap.bodyClass)}"` : ''}${snap.bodyStyle ? ` style="${escapeHtml(snap.bodyStyle)}"` : ''}`;
+            return styleHtml + `<div data-script-root${bodyAttrs}>${snap.html}</div>`;
+        }
+        function requestLiveSnapshot() {
+            const lf = liveFrame;
+            return lf.ready.then(() => new Promise((resolve, reject) => {
+                const id = 'snap-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+                liveSnapshotWaiters.set(id, resolve);
+                setTimeout(() => { if (liveSnapshotWaiters.has(id)) { liveSnapshotWaiters.delete(id); reject(new Error('LIVE_SNAPSHOT_TIMEOUT')); } }, 5000);
+                lf.el.contentWindow.postMessage({ nekaiveSnapshotRequest: id }, '*');
+            }));
+        }
+        // 캡처하는 동안만 살아 있는 iframe 대신 "지금 화면"의 정지본을 끼워 넣음 (iframe은 숨기기만 해서 상태가 유지됨)
+        async function withLiveFrameSnapshot(fn) {
+            if (!liveFrame || !DOM.htmlToggle.checked || !DOM.pText.contains(liveFrame.el)) return fn();
+            const frameEl = liveFrame.el;
+            const snap = await requestLiveSnapshot();
+            const holder = document.createElement('div'); holder.setAttribute('data-live-snapshot', '');
+            holder.innerHTML = isolateHtml(liveSnapshotToHtml(snap));
+            frameEl.style.display = 'none'; DOM.pText.appendChild(holder);
+            // 끼워 넣은 정지본의 웹폰트가 준비될 때까지 잠깐 기다림
+            try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
+            try { return await fn(); }
+            finally { holder.remove(); frameEl.style.display = 'block'; }
         }
 
         function isTagHelperActive() {
@@ -2089,14 +2151,17 @@
                 DOM.pText.style.transform = `scale(${hScale})`;
                 DOM.pText.style.transformOrigin = 'center center';
                 
-                const renderable = getRenderableHtml(DOM.text.value);
-                let htmlToShow = renderable.html;
-                // 태그 도우미(코드↔미리보기 연결)는 원본 코드를 그대로 보여줄 때만 가능. 스크립트 실행 결과는 원본과 1:1이 아니라 제외.
-                if (!renderable.scripted && DOM.tagHelper && DOM.tagHelper.checked) {
-                    try { htmlToShow = buildAnnotatedHtml(DOM.text.value); } catch (e) { htmlToShow = DOM.text.value; } // 파싱 중 예외가 나도 원래 동작으로 안전하게 폴백
+                if (hasExecutableScript(DOM.text.value)) {
+                    // 스크립트가 있는 코드(React/JSX 등): 실행 화면을 카드 안에 그대로 띄움 (태그 도우미는 원본과 1:1이 아니라 제외)
+                    renderScriptedHtml(DOM.text.value);
+                } else {
+                    let htmlToShow = DOM.text.value;
+                    if (DOM.tagHelper && DOM.tagHelper.checked) {
+                        try { htmlToShow = buildAnnotatedHtml(DOM.text.value); } catch (e) { htmlToShow = DOM.text.value; } // 파싱 중 예외가 나도 원래 동작으로 안전하게 폴백
+                    }
+                    try { DOM.pText.innerHTML = isolateHtml(htmlToShow); }
+                    catch (e) { DOM.pText.innerHTML = ''; }
                 }
-                try { DOM.pText.innerHTML = isolateHtml(htmlToShow); }
-                catch (e) { DOM.pText.innerHTML = ''; }
                 handleForcedPosition();
             } else {
                 DOM.sectionTypography.style.display = 'block';
@@ -2803,6 +2868,7 @@
             const isMobile = window.matchMedia('(max-width: 860px)').matches;
             const active = isMobile && (!!dragMode || ovEditMode);
             document.body.classList.toggle('mobile-edit-mode', active);
+            syncLiveFramePointer();
         }
         function exitMobileEditMode() {
             if (dragMode) toggleDragMode(dragMode); // 같은 모드로 다시 호출하면 꺼짐
@@ -3503,6 +3569,9 @@
         }
 
         async function captureImage(scaleRatio, isPng) {
+            return withLiveFrameSnapshot(() => captureImageInner(scaleRatio, isPng));
+        }
+        async function captureImageInner(scaleRatio, isPng) {
             const serverUrl = localStorage.getItem('archive_capture_server_url');
             const serverEnabled = localStorage.getItem('archive_capture_server_enabled') === 'true';
             if (serverUrl && serverEnabled) {
