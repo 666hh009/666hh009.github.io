@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.1)</title>
+    <title>네카이브 (v4.2.2)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -1739,6 +1739,187 @@
            동시에 봐야 해서 오히려 헷갈린다는 피드백으로 제거함 — 한쪽 방향만 지원) */
         let currentHoverPreviewEl = null;
 
+        // ── HTML 뷰어 격리 ─────────────────────────────────────────
+        // 붙여넣은 코드를 앱 화면에 그대로 끼워 넣으면, 그 안의 <style>(예: html, body { ... }, * { ... })이
+        // 네카이브 화면 전체에 적용돼 UI가 깨짐. 그래서 붙여넣은 CSS의 선택자를 전부 카드 본문(#preview-text)
+        // 안쪽으로 한정(scope)하고, html/body/:root를 노린 규칙은 카드 본문 자체에 적용되게 바꿈.
+        const HTML_SCOPE = '#preview-text';
+        const scopedCssCache = new Map();
+        const externalCssCache = {};   // 외부 CSS 주소 -> 범위 한정된 CSS 텍스트 (불러오는 중이면 null)
+        const extraFontSources = new Map(); // 붙여넣은 코드가 불러온 Google Fonts 이름 -> CSS 주소 (캡처 때 폰트를 넣기 위함)
+
+        function splitTopLevel(str, sep) {
+            const out = []; let depth = 0, quote = null, cur = '';
+            for (const ch of str) {
+                if (quote) { if (ch === quote) quote = null; cur += ch; continue; }
+                if (ch === '"' || ch === "'") { quote = ch; cur += ch; continue; }
+                if (ch === '(' || ch === '[') depth++;
+                else if (ch === ')' || ch === ']') depth--;
+                if (ch === sep && depth === 0) { out.push(cur); cur = ''; continue; }
+                cur += ch;
+            }
+            out.push(cur); return out;
+        }
+        function scopeSelector(selectorText) {
+            return splitTopLevel(selectorText, ',').map(sel => {
+                sel = sel.trim(); if (!sel) return '';
+                // 맨 앞의 html / body / :root (뒤에 붙은 .class 등 포함)를 걷어내고, 그 자리를 카드 본문으로 대신함
+                const rest = sel.replace(/^(?:(?::root|html|body)(?![\w-])[^\s>+~]*\s*[>+~]?\s*)+/i, '').trim();
+                if (rest === sel) return `${HTML_SCOPE} ${sel}`;
+                return rest ? `${HTML_SCOPE} ${rest}` : HTML_SCOPE;
+            }).filter(Boolean).join(', ');
+        }
+        function scopeRuleList(rules) {
+            let out = '';
+            for (const rule of rules) {
+                if (rule instanceof CSSStyleRule) {
+                    const scoped = scopeSelector(rule.selectorText);
+                    out += rule.cssText.replace(rule.selectorText, scoped) + '\n';
+                } else if (rule.cssRules && !(rule instanceof CSSKeyframesRule)) {
+                    // @media, @supports, @container, @layer { } 같은 묶음 규칙은 안쪽 규칙만 한정
+                    const prelude = rule.cssText.slice(0, rule.cssText.indexOf('{')).trim();
+                    out += `${prelude} {\n${scopeRuleList(rule.cssRules)}}\n`;
+                } else {
+                    out += rule.cssText + '\n'; // @font-face, @keyframes 등은 그대로
+                }
+            }
+            return out;
+        }
+        function registerFontImports(cssOrHtml) {
+            const re = /https?:\/\/fonts\.googleapis\.com\/css2?\?[^'")\s<>]+/g; let m;
+            while ((m = re.exec(cssOrHtml)) !== null) {
+                const url = m[0].replace(/&amp;/g, '&');
+                let params; try { params = new URL(url).searchParams.getAll('family'); } catch (e) { continue; }
+                params.forEach(f => { const name = f.split(':')[0].replace(/\+/g, ' ').trim(); if (name && !FONT_LIST.some(x => x.name === name)) extraFontSources.set(name, url); });
+            }
+        }
+        // @import 한 줄 (주소 안의 ; 까지 포함해서 정확히 잡음. 예: ...wght@400;500;600...)
+        const CSS_IMPORT_RE = /@import\s+(?:url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\)|"[^"]*"|'[^']*')[^;]*;/gi;
+        function scopeCss(cssText) {
+            if (scopedCssCache.has(cssText)) return scopedCssCache.get(cssText);
+            registerFontImports(cssText);
+            // @import는 CSSStyleSheet가 읽지 않으므로 따로 빼서 맨 위에 그대로 둠 (주로 웹폰트)
+            const imports = []; const body = cssText.replace(CSS_IMPORT_RE, m => { imports.push(m); return ''; });
+            let result;
+            try {
+                const sheet = new CSSStyleSheet(); sheet.replaceSync(body);
+                result = imports.join('\n') + '\n' + scopeRuleList(sheet.cssRules);
+            } catch (e) {
+                result = imports.join('\n'); // 해석할 수 없는 CSS는 UI를 보호하기 위해 버림
+            }
+            if (scopedCssCache.size > 50) scopedCssCache.clear();
+            scopedCssCache.set(cssText, result); return result;
+        }
+        function loadExternalCss(href) {
+            if (href in externalCssCache) return externalCssCache[href];
+            externalCssCache[href] = null;
+            fetch(href).then(r => r.ok ? r.text() : '').then(css => { externalCssCache[href] = scopeCss(css); updateUI(); })
+                .catch(() => { externalCssCache[href] = ''; });
+            return null;
+        }
+        // 붙여넣은 HTML을 카드에 넣기 좋게 정리: 스크립트·문서용 태그 제거, 스타일은 카드 안쪽으로 한정
+        function isolateHtml(html) {
+            const tpl = document.createElement('template'); tpl.innerHTML = html;
+            const frag = tpl.content;
+            frag.querySelectorAll('script, meta, title, base, noscript').forEach(el => el.remove());
+            const styleBlocks = [];
+            frag.querySelectorAll('style').forEach(el => { styleBlocks.push(scopeCss(el.textContent)); el.remove(); });
+            frag.querySelectorAll('link').forEach(el => {
+                const rel = (el.getAttribute('rel') || '').toLowerCase(); const href = el.getAttribute('href') || '';
+                if (rel.includes('stylesheet') && href) {
+                    if (/fonts\.googleapis\.com/.test(href)) { registerFontImports(href); styleBlocks.push(`@import url("${href}");`); }
+                    else { const css = loadExternalCss(href); if (css) styleBlocks.push(css); }
+                }
+                el.remove();
+            });
+            // @import는 스타일 맨 앞에 있어야 동작하므로 모아서 먼저 둠
+            const all = styleBlocks.join('\n'); const imports = [];
+            const rest = all.replace(CSS_IMPORT_RE, m => { imports.push(m); return ''; });
+            const styleTag = all.trim() ? `<style data-scoped-from-paste>${imports.join('\n')}\n${rest}</style>` : '';
+            const holder = document.createElement('div'); holder.appendChild(frag);
+            return styleTag + holder.innerHTML;
+        }
+
+        // ── 스크립트가 들어 있는 코드(React/JSX 등) 실행 ─────────────────────
+        // 앱과 완전히 분리된 iframe(sandbox: 스크립트만 허용, 앱 저장소 접근 불가)에서 실제로 실행한 뒤,
+        // 다 그려진 화면(HTML + 스타일)을 받아와서 카드에 "정지 화면"으로 넣음. 캡처도 이 화면 그대로 찍힘.
+        const scriptRenderCache = new Map(); // 원본 코드 -> { status: 'running'|'done'|'error', html }
+        let scriptRenderFrame = null;
+        function hasExecutableScript(raw) {
+            // 주의: 이 파일 안에 "<"+"script"를 그대로 쓰면 브라우저가 앱 스크립트의 끝으로 잘못 읽을 수 있어서 [c]로 쪼개 씀
+            return /<s[c]ript\b(?![^>]*\btype\s*=\s*["']?(?:application\/(?:ld\+)?json|text\/template)["']?)[^>]*>/i.test(raw);
+        }
+        const SCRIPT_TAG_OPEN = '<scr' + 'ipt>', SCRIPT_TAG_CLOSE = '</scr' + 'ipt>';
+        const SCRIPT_SNAPSHOT_REPORTER = SCRIPT_TAG_OPEN + `(function(){
+            var start = Date.now(), last = '', same = 0;
+            function snap(){
+                var styles = [];
+                document.querySelectorAll('style').forEach(function(s){ styles.push(s.textContent); });
+                var links = [];
+                document.querySelectorAll('link[rel~="stylesheet"]').forEach(function(l){ if (l.href) links.push(l.href); });
+                var body = document.body.cloneNode(true);
+                body.querySelectorAll('script, style, link').forEach(function(el){ el.remove(); });
+                return { styles: styles, links: links, html: body.innerHTML, bodyClass: document.body.className || '', bodyStyle: document.body.getAttribute('style') || '' };
+            }
+            function tick(){
+                var b = document.body; if (!b) return setTimeout(tick, 150);
+                var sig = b.getElementsByTagName('*').length + '|' + (b.textContent || '').length;
+                var hasContent = Array.prototype.some.call(b.children, function(c){ return c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE' && (c.children.length || (c.textContent || '').trim()); });
+                same = (sig === last && hasContent) ? same + 1 : 0; last = sig;
+                if (same >= 3 || Date.now() - start > 9000) { parent.postMessage({ nekaiveSnapshot: snap() }, '*'); return; }
+                setTimeout(tick, 150);
+            }
+            if (document.readyState === 'complete') tick(); else window.addEventListener('load', tick);
+        })();` + SCRIPT_TAG_CLOSE;
+        function runScriptedHtml(raw) {
+            if (scriptRenderFrame) scriptRenderFrame.remove();
+            const frame = document.createElement('iframe'); scriptRenderFrame = frame;
+            frame.setAttribute('sandbox', 'allow-scripts');
+            frame.setAttribute('aria-hidden', 'true'); frame.tabIndex = -1;
+            const w = Math.max(200, (parseFloat(DOM.width.value) || 700) - (parseFloat(DOM.marginLeft.value) || 0) - (parseFloat(DOM.marginRight.value) || 0));
+            frame.style.cssText = `position:fixed; left:-20000px; top:0; width:${w}px; height:${parseFloat(DOM.height.value) || 700}px; border:0; visibility:hidden; pointer-events:none;`;
+            const doc = /<\/body>/i.test(raw) ? raw.replace(/<\/body>(?![\s\S]*<\/body>)/i, SCRIPT_SNAPSHOT_REPORTER + '</body>') : raw + SCRIPT_SNAPSHOT_REPORTER;
+            const onMessage = (e) => {
+                if (e.source !== frame.contentWindow || !e.data || !e.data.nekaiveSnapshot) return;
+                window.removeEventListener('message', onMessage);
+                const snap = e.data.nekaiveSnapshot;
+                const styleHtml = snap.styles.map(css => `<style>${css.replace(/<\/style/gi, '<\\/style')}</style>`).join('')
+                    + snap.links.map(href => `<link rel="stylesheet" href="${escapeHtml(href)}">`).join('');
+                const bodyAttrs = `${snap.bodyClass ? ` class="${escapeHtml(snap.bodyClass)}"` : ''}${snap.bodyStyle ? ` style="${escapeHtml(snap.bodyStyle)}"` : ''}`;
+                scriptRenderCache.set(raw, { status: 'done', html: styleHtml + `<div data-script-root${bodyAttrs}>${snap.html}</div>` });
+                frame.remove(); if (scriptRenderFrame === frame) scriptRenderFrame = null;
+                if (DOM.text.value === raw) updateUI();
+            };
+            window.addEventListener('message', onMessage);
+            setTimeout(() => {
+                const entry = scriptRenderCache.get(raw);
+                if (entry && entry.status === 'running') {
+                    window.removeEventListener('message', onMessage); frame.remove();
+                    scriptRenderCache.set(raw, { status: 'error', html: '' });
+                    if (DOM.text.value === raw) updateUI();
+                }
+            }, 15000);
+            frame.srcdoc = doc;
+            document.body.appendChild(frame);
+        }
+        let scriptRenderTimer = null;
+        // 스크립트가 있는 코드면 실행 결과(있으면)를, 없으면 원본을 돌려줌. 타이핑 중엔 잠깐 기다렸다 실행.
+        function getRenderableHtml(raw) {
+            if (!hasExecutableScript(raw)) return { html: raw, scripted: false };
+            const entry = scriptRenderCache.get(raw);
+            if (entry && entry.status === 'done') return { html: entry.html, scripted: true };
+            if (entry && entry.status === 'error') return { html: '<div style="padding:16px; color:#b1484a; font:14px sans-serif;">스크립트 실행 결과를 받지 못했어요. (외부 라이브러리를 불러오지 못했거나 코드에 오류가 있을 수 있어요)</div>', scripted: true };
+            if (!entry) {
+                clearTimeout(scriptRenderTimer);
+                scriptRenderTimer = setTimeout(() => {
+                    if (DOM.text.value !== raw || scriptRenderCache.has(raw)) return;
+                    if (scriptRenderCache.size > 10) scriptRenderCache.clear();
+                    scriptRenderCache.set(raw, { status: 'running' }); runScriptedHtml(raw);
+                }, 500);
+            }
+            return { html: '<div style="padding:16px; color:#6b6d76; font:14px sans-serif;">스크립트를 실행하는 중이에요…</div>', scripted: true };
+        }
+
         function isTagHelperActive() {
             return !!(DOM.tagHelper && DOM.tagHelper.checked && DOM.htmlToggle.checked && !dragMode);
         }
@@ -1908,12 +2089,14 @@
                 DOM.pText.style.transform = `scale(${hScale})`;
                 DOM.pText.style.transformOrigin = 'center center';
                 
-                if (DOM.tagHelper && DOM.tagHelper.checked) {
-                    try { DOM.pText.innerHTML = buildAnnotatedHtml(DOM.text.value); }
-                    catch (e) { DOM.pText.innerHTML = DOM.text.value; } // 파싱 중 예외가 나도 원래 동작으로 안전하게 폴백
-                } else {
-                    DOM.pText.innerHTML = DOM.text.value;
+                const renderable = getRenderableHtml(DOM.text.value);
+                let htmlToShow = renderable.html;
+                // 태그 도우미(코드↔미리보기 연결)는 원본 코드를 그대로 보여줄 때만 가능. 스크립트 실행 결과는 원본과 1:1이 아니라 제외.
+                if (!renderable.scripted && DOM.tagHelper && DOM.tagHelper.checked) {
+                    try { htmlToShow = buildAnnotatedHtml(DOM.text.value); } catch (e) { htmlToShow = DOM.text.value; } // 파싱 중 예외가 나도 원래 동작으로 안전하게 폴백
                 }
+                try { DOM.pText.innerHTML = isolateHtml(htmlToShow); }
+                catch (e) { DOM.pText.innerHTML = ''; }
                 handleForcedPosition();
             } else {
                 DOM.sectionTypography.style.display = 'block';
@@ -1944,7 +2127,9 @@
 
                 const gap = DOM.paraGap.value;
                 const lines = DOM.text.value.split('\n');
-                DOM.pText.innerHTML = lines.map(line => `<div style="margin-bottom: ${gap}px">${line || '<br>'}</div>`).join('');
+                // 문단 간격은 줄 "사이"에만 넣음. 마지막 줄 아래에도 넣으면 그만큼 아래 공간이 생겨서
+                // 세로 가운데 정렬이 문단 간격의 절반만큼 위로 치우침
+                DOM.pText.innerHTML = lines.map((line, i) => `<div style="margin-bottom: ${i === lines.length - 1 ? 0 : gap}px">${line || '<br>'}</div>`).join('');
             }
             
             DOM.contentWrapper.style.transform = `translate(${DOM.textX.value}px, ${-DOM.textY.value}px)`;
@@ -2009,7 +2194,10 @@
             const detailEl = document.getElementById('position-warning-detail');
             if (!DOM.htmlToggle.checked) { detailEl.textContent = ''; return; }
 
-            const outer = DOM.pText.firstElementChild;
+            // 맨 앞의 <style> 등은 건너뛰고 실제 화면에 보이는 첫 태그를 검사 (스크립트 실행 결과면 그 안쪽 첫 태그)
+            const NON_VISUAL = /^(STYLE|LINK|META|TITLE|SCRIPT|BASE|NOSCRIPT|TEMPLATE)$/;
+            let outer = Array.from(DOM.pText.children).find(el => !NON_VISUAL.test(el.tagName));
+            if (outer && outer.hasAttribute('data-script-root')) outer = Array.from(outer.children).find(el => !NON_VISUAL.test(el.tagName)) || outer;
             if (!outer) { detailEl.textContent = ''; return; }
 
             const style = outer.getAttribute('style') || '';
@@ -3091,7 +3279,11 @@
         // font-family 목록(예: "'Noto Serif KR', serif")에서 앞쪽부터 보고, 우리가 아는 웹폰트 중 처음 나오는 것을 찾음
         function resolveKnownFont(fontFamilyCss) {
             const names = (fontFamilyCss || '').split(',').map(n => n.trim().replace(/['"]/g, ''));
-            for (const n of names) { const f = FONT_LIST.find(x => x.name === n); if (f) return f; }
+            for (const n of names) {
+                const f = FONT_LIST.find(x => x.name === n); if (f) return f;
+                // HTML 뷰어에 붙여넣은 코드가 직접 불러온 Google Fonts (예: @import ...Teko...)
+                if (extraFontSources.has(n)) return { name: n, css: extraFontSources.get(n) };
+            }
             return null;
         }
         // 카드 안의 글자들을 훑어서 "폰트별로 어떤 두께에서 어떤 글자를 썼는지" 모음
@@ -3107,7 +3299,7 @@
                 const font = resolveKnownFont(cs.fontFamily); if (!font) continue;
                 if (!usage.has(font.name)) usage.set(font.name, { font, weights: new Set(), chars: new Set() });
                 const u = usage.get(font.name);
-                u.weights.add(parseInt(cs.fontWeight, 10) || 400);
+                u.weights.add((parseInt(cs.fontWeight, 10) || 400) + '|' + (cs.fontStyle === 'normal' ? 'normal' : 'italic'));
                 for (const ch of text) u.chars.add(ch.codePointAt(0));
             }
             return usage;
@@ -3132,18 +3324,25 @@
             const faceJobs = [];
             for (const { font, weights, chars } of usage.values()) {
                 faceJobs.push(loadFontFaceList(font.css).then(allFaces => {
-                    const faces = allFaces.filter(f => f.family === font.name && f.style === 'normal' && (f.stretch === 'normal' || f.stretch === '100%'));
-                    if (!faces.length) return [];
-                    const availableWeights = []; faces.forEach(f => { if (!availableWeights.some(w => w[0] === f.weight[0] && w[1] === f.weight[1])) availableWeights.push(f.weight); });
-                    const chosen = new Set(Array.from(weights).map(w => pickFaceWeight(availableWeights, w).join('-')));
-                    return faces.filter(f => chosen.has(f.weight.join('-')))
-                        .filter(f => !f.ranges || Array.from(chars).some(c => f.ranges.some(([lo, hi]) => c >= lo && c <= hi)));
+                    const familyFaces = allFaces.filter(f => f.family === font.name && (f.stretch === 'normal' || f.stretch === '100%'));
+                    const picked = new Set();
+                    for (const key of weights) {
+                        const [w, style] = key.split('|');
+                        // 기울임 글자는 기울임 폰트가 있으면 그걸, 없으면 보통 폰트를 씀 (브라우저와 같은 규칙)
+                        let faces = familyFaces.filter(f => (style === 'italic' ? f.style !== 'normal' : f.style === 'normal'));
+                        if (!faces.length) faces = familyFaces.filter(f => f.style === 'normal');
+                        if (!faces.length) continue;
+                        const availableWeights = []; faces.forEach(f => { if (!availableWeights.some(x => x[0] === f.weight[0] && x[1] === f.weight[1])) availableWeights.push(f.weight); });
+                        const target = pickFaceWeight(availableWeights, parseInt(w, 10)).join('-');
+                        faces.filter(f => f.weight.join('-') === target).forEach(f => picked.add(f));
+                    }
+                    return Array.from(picked).filter(f => !f.ranges || Array.from(chars).some(c => f.ranges.some(([lo, hi]) => c >= lo && c <= hi)));
                 }));
             }
             const neededFaces = (await Promise.all(faceJobs)).flat();
             const rules = await Promise.all(neededFaces.map(async f => {
                 const dataUrl = await loadFontFileAsDataUrl(f.url); if (!dataUrl) return '';
-                return `@font-face { font-family: '${f.family}'; font-style: normal; font-weight: ${f.weightRaw}; src: url(${dataUrl})${f.format ? ` format('${f.format}')` : ''};${f.rangeRaw ? ` unicode-range: ${f.rangeRaw};` : ''} }`;
+                return `@font-face { font-family: '${f.family}'; font-style: ${f.style}; font-weight: ${f.weightRaw}; src: url(${dataUrl})${f.format ? ` format('${f.format}')` : ''};${f.rangeRaw ? ` unicode-range: ${f.rangeRaw};` : ''} }`;
             }));
             embeddedFontCss += rules.filter(Boolean).join('\n');
             return embeddedFontCss;
@@ -3200,6 +3399,10 @@
             });
 
             cloneEl.querySelectorAll('img').forEach(img => { const src = img.getAttribute('src'); if (!src || src.trim() === '') img.parentNode.removeChild(img); });
+            // HTML 뷰어에 붙여넣은 코드의 웹폰트 @import / 폰트 링크는 캡처본에서 뺌 — 캡처에 필요한 폰트는
+            // buildEmbeddedFontCss가 직접 넣어주고, 남겨두면 캡처 라이브러리가 이걸 다시 처리하다 빈 이미지가 나옴
+            cloneEl.querySelectorAll('style').forEach(st => { if (/@import/i.test(st.textContent)) st.textContent = st.textContent.replace(CSS_IMPORT_RE, ''); });
+            cloneEl.querySelectorAll('link').forEach(l => l.remove());
             const guideText = cloneEl.querySelector('#guide-overlay-text'); if (guideText) guideText.parentNode.removeChild(guideText);
             cloneEl.querySelectorAll('[data-tag-hover]').forEach(el => el.removeAttribute('data-tag-hover'));
             cloneEl.style.transform = 'none'; cloneEl.style.boxShadow = 'none';
