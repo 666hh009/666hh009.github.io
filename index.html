@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.3)</title>
+    <title>네카이브 (v4.2.4)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -1760,25 +1760,25 @@
             }
             out.push(cur); return out;
         }
-        function scopeSelector(selectorText) {
+        function scopeSelector(selectorText, scope = HTML_SCOPE) {
             return splitTopLevel(selectorText, ',').map(sel => {
                 sel = sel.trim(); if (!sel) return '';
                 // 맨 앞의 html / body / :root (뒤에 붙은 .class 등 포함)를 걷어내고, 그 자리를 카드 본문으로 대신함
                 const rest = sel.replace(/^(?:(?::root|html|body)(?![\w-])[^\s>+~]*\s*[>+~]?\s*)+/i, '').trim();
-                if (rest === sel) return `${HTML_SCOPE} ${sel}`;
-                return rest ? `${HTML_SCOPE} ${rest}` : HTML_SCOPE;
+                if (rest === sel) return `${scope} ${sel}`;
+                return rest ? `${scope} ${rest}` : scope;
             }).filter(Boolean).join(', ');
         }
-        function scopeRuleList(rules) {
+        function scopeRuleList(rules, scope = HTML_SCOPE) {
             let out = '';
             for (const rule of rules) {
                 if (rule instanceof CSSStyleRule) {
-                    const scoped = scopeSelector(rule.selectorText);
+                    const scoped = scopeSelector(rule.selectorText, scope);
                     out += rule.cssText.replace(rule.selectorText, scoped) + '\n';
                 } else if (rule.cssRules && !(rule instanceof CSSKeyframesRule)) {
                     // @media, @supports, @container, @layer { } 같은 묶음 규칙은 안쪽 규칙만 한정
                     const prelude = rule.cssText.slice(0, rule.cssText.indexOf('{')).trim();
-                    out += `${prelude} {\n${scopeRuleList(rule.cssRules)}}\n`;
+                    out += `${prelude} {\n${scopeRuleList(rule.cssRules, scope)}}\n`;
                 } else {
                     out += rule.cssText + '\n'; // @font-face, @keyframes 등은 그대로
                 }
@@ -1795,20 +1795,21 @@
         }
         // @import 한 줄 (주소 안의 ; 까지 포함해서 정확히 잡음. 예: ...wght@400;500;600...)
         const CSS_IMPORT_RE = /@import\s+(?:url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\)|"[^"]*"|'[^']*')[^;]*;/gi;
-        function scopeCss(cssText) {
-            if (scopedCssCache.has(cssText)) return scopedCssCache.get(cssText);
+        function scopeCss(cssText, scope = HTML_SCOPE) {
+            const cacheKey = scope + '\u0000' + cssText;
+            if (scopedCssCache.has(cacheKey)) return scopedCssCache.get(cacheKey);
             registerFontImports(cssText);
             // @import는 CSSStyleSheet가 읽지 않으므로 따로 빼서 맨 위에 그대로 둠 (주로 웹폰트)
             const imports = []; const body = cssText.replace(CSS_IMPORT_RE, m => { imports.push(m); return ''; });
             let result;
             try {
                 const sheet = new CSSStyleSheet(); sheet.replaceSync(body);
-                result = imports.join('\n') + '\n' + scopeRuleList(sheet.cssRules);
+                result = imports.join('\n') + '\n' + scopeRuleList(sheet.cssRules, scope);
             } catch (e) {
                 result = imports.join('\n'); // 해석할 수 없는 CSS는 UI를 보호하기 위해 버림
             }
             if (scopedCssCache.size > 50) scopedCssCache.clear();
-            scopedCssCache.set(cssText, result); return result;
+            scopedCssCache.set(cacheKey, result); return result;
         }
         function loadExternalCss(href) {
             if (href in externalCssCache) return externalCssCache[href];
@@ -1818,12 +1819,12 @@
             return null;
         }
         // 붙여넣은 HTML을 카드에 넣기 좋게 정리: 스크립트·문서용 태그 제거, 스타일은 카드 안쪽으로 한정
-        function isolateHtml(html) {
+        function isolateHtml(html, scope = HTML_SCOPE) {
             const tpl = document.createElement('template'); tpl.innerHTML = html;
             const frag = tpl.content;
             frag.querySelectorAll('script, meta, title, base, noscript').forEach(el => el.remove());
             const styleBlocks = [];
-            frag.querySelectorAll('style').forEach(el => { styleBlocks.push(scopeCss(el.textContent)); el.remove(); });
+            frag.querySelectorAll('style').forEach(el => { styleBlocks.push(scopeCss(el.textContent, scope)); el.remove(); });
             frag.querySelectorAll('link').forEach(el => {
                 const rel = (el.getAttribute('rel') || '').toLowerCase(); const href = el.getAttribute('href') || '';
                 if (rel.includes('stylesheet') && href) {
@@ -1867,6 +1868,17 @@
                     else if (tag === 'SELECT') { Array.prototype.forEach.call(c.options, function(o, k){ if (el.options[k] && el.options[k].selected) o.setAttribute('selected', ''); else o.removeAttribute('selected'); }); }
                     else if (tag === 'CANVAS') { try { var img = document.createElement('img'); img.src = el.toDataURL(); img.setAttribute('style', (el.getAttribute('style') || '') + ';width:' + el.offsetWidth + 'px;height:' + el.offsetHeight + 'px;'); img.className = el.className; c.parentNode.replaceChild(img, c); } catch (e) {} }
                 });
+                // 안쪽 스크롤 위치(예: 채팅 목록을 맨 아래로 내린 상태)는 HTML 복사로는 안 남으므로,
+                // 스크롤된 만큼 자식들을 translate로 옮겨서 같은 화면이 보이게 함 (레이아웃은 그대로)
+                liveEls.forEach(function(el, i){
+                    if (!el.scrollTop && !el.scrollLeft) return;
+                    var dx = -el.scrollLeft, dy = -el.scrollTop;
+                    Array.prototype.forEach.call(el.children, function(child){
+                        var ci = indexOf.get(child); if (ci === undefined || !cloneEls[ci] || !cloneEls[ci].style) return;
+                        var pos = getComputedStyle(child).position; if (pos === 'sticky' || pos === 'fixed') return;
+                        cloneEls[ci].style.setProperty('translate', dx + 'px ' + dy + 'px');
+                    });
+                });
                 // CSS 애니메이션·트랜지션은 "지금 보이는 값"으로 고정 (안 그러면 캡처에서 처음 상태로 돌아감)
                 try {
                     document.getAnimations().forEach(function(anim){
@@ -1880,18 +1892,25 @@
                     });
                 } catch (e) {}
                 var styles = [];
-                document.querySelectorAll('style').forEach(function(s){ styles.push(s.textContent); });
+                document.querySelectorAll('style').forEach(function(s){ if (s !== hideBar) styles.push(s.textContent); });
                 var links = [];
-                document.querySelectorAll('link[rel~="stylesheet"]').forEach(function(l){ if (l.href) links.push(l.href); });
+                document.querySelectorAll('link[rel~="stylesheet"]').forEach(function(l){ if (l.href && !l.hasAttribute('data-nekaive-app-font')) links.push(l.href); });
                 clone.querySelectorAll('script, style, link').forEach(function(el){ el.remove(); });
                 return { styles: styles, links: links, html: clone.innerHTML, bodyClass: document.body.className || '', bodyStyle: document.body.getAttribute('style') || '' };
             }
+            // 높이는 확대/축소(zoom) 전 기준 CSS px로 알림. 내용이 화면 밖으로 넘치면 그만큼 키움
             function reportHeight(){
                 var b = document.body; if (!b) return;
-                var cs = getComputedStyle(b);
-                var h = Math.ceil(b.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom));
-                parent.postMessage({ nekaiveHeight: h }, '*');
+                var cs = getComputedStyle(b), de = document.documentElement;
+                // html 높이를 기준으로 함: 첫/마지막 요소의 바깥 여백(margin)이 body 밖으로 빠져나가는 경우까지 포함됨
+                var h = Math.max(de.offsetHeight, b.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom));
+                if (de.scrollHeight > de.clientHeight + 1) h = Math.max(h, de.scrollHeight);
+                parent.postMessage({ nekaiveHeight: Math.ceil(h) }, '*');
             }
+            // 문서 전체 스크롤바는 숨김 (스크롤바가 폭을 차지해 글자 줄바꿈이 캡처본과 달라지는 것 방지)
+            var hideBar = document.createElement('style');
+            hideBar.textContent = 'html{scrollbar-width:none}html::-webkit-scrollbar{display:none}';
+            (document.head || document.documentElement).appendChild(hideBar);
             function tick(){
                 var b = document.body; if (!b) return setTimeout(tick, 150);
                 var sig = b.getElementsByTagName('*').length + '|' + (b.textContent || '').length;
@@ -1901,6 +1920,12 @@
                 if (same >= 3 || Date.now() - start > 9000) { readySent = true; parent.postMessage({ nekaiveReady: true }, '*'); return; }
                 setTimeout(tick, 150);
             }
+            // 사용자가 실행 화면을 조작하면(클릭·입력·스크롤 등) 부모에게 알려서, 보이는 화면을 새로 고치게 함
+            var changeTimer = null;
+            function notifyChanged(){ if (changeTimer) return; changeTimer = setTimeout(function(){ changeTimer = null; parent.postMessage({ nekaiveChanged: true }, '*'); }, 60); }
+            ['pointerup', 'click', 'keyup', 'input', 'change', 'wheel'].forEach(function(t){ window.addEventListener(t, notifyChanged, true); });
+            window.addEventListener('scroll', notifyChanged, { capture: true, passive: true });
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(notifyChanged);
             window.addEventListener('message', function(e){
                 if (e.data && e.data.nekaiveSnapshotRequest) parent.postMessage({ nekaiveSnapshot: snap(), requestId: e.data.nekaiveSnapshotRequest }, '*');
             });
@@ -1911,41 +1936,100 @@
             if (document.readyState === 'complete') boot(); else window.addEventListener('load', boot);
         })();` + SCRIPT_TAG_CLOSE;
 
-        let liveFrame = null;   // { raw, el, ready(Promise), resolveReady }
+        let liveFrame = null;   // { raw, el(감싸는 div), view(보이는 정지본), frame(iframe), height, hasStatic, ready(Promise), resolveReady }
         let liveFrameTimer = null;
         const liveSnapshotWaiters = new Map();
         window.addEventListener('message', (e) => {
-            if (!liveFrame || e.source !== liveFrame.el.contentWindow || !e.data) return;
+            if (!liveFrame || e.source !== liveFrame.frame.contentWindow || !e.data) return;
             if (e.data.nekaiveHeight !== undefined) {
-                const h = Math.max(20, Math.min(20000, e.data.nekaiveHeight | 0));
-                if (liveFrame.el.style.height !== h + 'px') liveFrame.el.style.height = h + 'px';
+                liveFrame.height = Math.max(20, Math.min(20000, e.data.nekaiveHeight | 0));
+                layoutLiveFrame();
             }
             if (e.data.nekaiveReady) liveFrame.resolveReady();
+            if (e.data.nekaiveChanged && liveFrame.hasStatic) scheduleLiveStaticRefresh();
             if (e.data.nekaiveSnapshot && liveSnapshotWaiters.has(e.data.requestId)) {
                 liveSnapshotWaiters.get(e.data.requestId)(e.data.nekaiveSnapshot); liveSnapshotWaiters.delete(e.data.requestId);
             }
         });
+        // 보이는 화면 = 캡처와 똑같은 방식으로 만든 "현재 상태의 정지본" → 항상 선명하고 캡처본과 똑같음.
+        // 실제로 실행 중인 iframe은 그 위에 투명하게(opacity 0) 정확히 겹쳐 두어서 클릭·스크롤·입력은 iframe이 받고,
+        // iframe이 "바뀌었다"고 알려오면 정지본을 새로 고침. (iframe을 축소된 카드 안에 그대로 보여주면 흐려지고,
+        //  배율을 따로 맞추면 글자 줄바꿈이 미세하게 달라져서 이렇게 함)
+        function layoutLiveFrame() {
+            if (!liveFrame) return;
+            const { el, frame } = liveFrame;
+            if (!DOM.pText.contains(el)) { liveFrame = null; return; } // 다른 내용으로 바뀌었으면 정리
+            const h = liveFrame.height || 40;
+            frame.style.height = h + 'px';
+            // 정지본이 아직 없으면(처음 실행 중) iframe을 그대로 보여주고, 정지본이 생기면 투명하게 겹침
+            frame.style.opacity = liveFrame.hasStatic ? '0' : '1';
+            if (!liveFrame.hasStatic) el.style.minHeight = h + 'px';
+        }
+        let liveStaticTimers = [];
+        function scheduleLiveStaticRefresh() {
+            // 바로 한 번 + 전환 효과(팝업이 서서히 열리는 등)가 끝날 즈음 한 번 더
+            liveStaticTimers.forEach(clearTimeout);
+            liveStaticTimers = [80, 450].map(ms => setTimeout(refreshLiveStatic, ms));
+        }
+        async function refreshLiveStatic() {
+            const lf = liveFrame; if (!lf || !DOM.pText.contains(lf.el)) return;
+            if (lf.refreshing) { lf.refreshAgain = true; return; }
+            lf.refreshing = true;
+            try {
+                const snap = await requestLiveSnapshot();
+                if (liveFrame !== lf) return;
+                lf.view.innerHTML = LIVE_SNAPSHOT_RESET + isolateHtml(liveSnapshotToHtml(snap), LIVE_SNAPSHOT_SCOPE);
+                lf.hasStatic = true; lf.el.style.minHeight = '';
+                layoutLiveFrame();
+            } catch (e) { /* 실행 화면이 응답하지 않으면 iframe을 그대로 보여줌 */ }
+            finally {
+                lf.refreshing = false;
+                if (lf.refreshAgain) { lf.refreshAgain = false; refreshLiveStatic(); }
+            }
+        }
+        // 붙여넣은 코드가 네카이브에 있는 폰트(Pretendard 등)를 이름만 쓰고 직접 불러오지 않는 경우, 실행 화면에서는
+        // 그 폰트가 없어 기본 폰트로 그려지는데 캡처(네카이브 안)에서는 그 폰트로 그려져서 글자 폭·줄바꿈이 달라짐.
+        // 그래서 네카이브가 쓰는 폰트 CSS를 실행 화면에도 똑같이 넣어줌 (실제로 쓰는 폰트만 내려받아짐).
+        function injectAppFontLinks(doc) {
+            const links = Array.from(document.querySelectorAll('head link[rel="stylesheet"]')).map(l => l.href).filter(Boolean)
+                .map(href => `<link rel="stylesheet" data-nekaive-app-font href="${escapeHtml(href)}">`).join('');
+            if (!links) return doc;
+            if (/<head\b[^>]*>/i.test(doc)) return doc.replace(/<head\b[^>]*>/i, m => m + links);
+            if (/<html\b[^>]*>/i.test(doc)) return doc.replace(/<html\b[^>]*>/i, m => m + '<head>' + links + '</head>');
+            if (/<!doctype[^>]*>/i.test(doc)) return doc.replace(/<!doctype[^>]*>/i, m => m + links);
+            return links + doc;
+        }
         function createLiveFrame(raw) {
-            const frame = document.createElement('iframe');
+            const wrap = document.createElement('div');
+            wrap.className = 'live-script-wrap';
+            wrap.style.cssText = 'position:relative; width:100%;';
+            const view = document.createElement('div');   // 보이는 정지본 (캡처와 같은 방식)
+            view.className = 'live-script-view';
+            // 정지본 안의 z-index가 iframe 위로 올라오지 않게 정지본을 하나의 층으로 묶고, iframe을 그 위에 둠
+            view.style.cssText = 'position:relative; z-index:0;';
+            const frame = document.createElement('iframe');  // 실제 실행 화면 (조작 전용)
             frame.setAttribute('sandbox', 'allow-scripts');
             frame.setAttribute('title', '붙여넣은 코드 실행 화면');
-            frame.className = 'live-script-frame';
-            frame.style.cssText = 'display:block; width:100%; height:40px; border:0; background:transparent; color-scheme:normal;';
-            const doc = /<\/body>/i.test(raw) ? raw.replace(/<\/body>(?![\s\S]*<\/body>)/i, LIVE_FRAME_HELPER + '</body>') : raw + LIVE_FRAME_HELPER;
+            frame.style.cssText = 'position:absolute; left:0; top:0; z-index:1; width:100%; height:40px; display:block; border:0; background:transparent; color-scheme:normal; opacity:1;';
+            wrap.append(view, frame);
+            let doc = /<\/body>/i.test(raw) ? raw.replace(/<\/body>(?![\s\S]*<\/body>)/i, LIVE_FRAME_HELPER + '</body>') : raw + LIVE_FRAME_HELPER;
+            doc = injectAppFontLinks(doc);
             let resolveReady; const ready = new Promise(r => { resolveReady = r; });
             setTimeout(() => resolveReady(), 12000); // 신호가 안 와도 무한정 기다리지는 않음
-            liveFrame = { raw, el: frame, ready, resolveReady };
+            liveFrame = { raw, el: wrap, view, frame, height: 40, hasStatic: false, ready, resolveReady };
+            ready.then(() => { if (liveFrame && liveFrame.frame === frame) refreshLiveStatic(); });
             frame.srcdoc = doc;
-            DOM.pText.innerHTML = ''; DOM.pText.appendChild(frame);
+            DOM.pText.innerHTML = ''; DOM.pText.appendChild(wrap);
+            layoutLiveFrame();
             syncLiveFramePointer();
         }
         // 위치 이동(드래그)·오버레이 편집 중에는 iframe이 마우스를 가로채지 않게 함
         function syncLiveFramePointer() {
-            if (liveFrame && liveFrame.el) liveFrame.el.style.pointerEvents = (dragMode || ovEditMode) ? 'none' : 'auto';
+            if (liveFrame && liveFrame.frame) liveFrame.frame.style.pointerEvents = (dragMode || ovEditMode) ? 'none' : 'auto';
         }
         // HTML 뷰어 렌더링: 스크립트가 있으면 살아 있는 iframe을 (코드가 바뀔 때만 새로) 띄우고, 없으면 기존 방식
         function renderScriptedHtml(raw) {
-            if (liveFrame && liveFrame.raw === raw && DOM.pText.contains(liveFrame.el)) { syncLiveFramePointer(); return; }
+            if (liveFrame && liveFrame.raw === raw && DOM.pText.contains(liveFrame.el)) { layoutLiveFrame(); syncLiveFramePointer(); return; }
             clearTimeout(liveFrameTimer);
             if (!(liveFrame && DOM.pText.contains(liveFrame.el))) {
                 DOM.pText.innerHTML = '<div style="padding:16px; color:#6b6d76; font:14px sans-serif;">스크립트를 실행하는 중이에요…</div>';
@@ -1953,6 +2037,16 @@
             // 타이핑하는 동안 매 글자마다 다시 실행하지 않도록 잠깐 기다렸다 실행
             liveFrameTimer = setTimeout(() => { if (DOM.htmlToggle.checked && DOM.text.value === raw) createLiveFrame(raw); }, 400);
         }
+        // 캡처용 정지본은 네카이브 화면 안에 잠깐 끼워 넣어지므로, 네카이브 자신의 전역 스타일(예: * { box-sizing },
+        // 스크롤바 모양, Tailwind 기본 초기화)이 섞여 들어가 실행 화면과 달라질 수 있음 → 정지본 안에서는 그런 스타일을
+        // 모두 브라우저 기본값으로 되돌리고, 붙여넣은 코드의 스타일만 적용되게 함 (붙여넣은 스타일이 항상 우선)
+        const LIVE_SNAPSHOT_SCOPE = '#preview-text [data-script-root]';
+        const LIVE_SNAPSHOT_RESET = '<style data-live-snapshot-reset>'
+            + '#preview-text [data-script-root] { all: initial; display: block; }'
+            // svg 안쪽은 제외: fill="..." 같은 그림 속성까지 초기화돼서 색이 사라짐
+            + '#preview-text :where([data-script-root] :not(svg, svg *)), #preview-text :where([data-script-root] :not(svg, svg *))::before, #preview-text :where([data-script-root] :not(svg, svg *))::after { all: revert; }'
+            + '#preview-text :where([data-script-root] *)::-webkit-scrollbar, #preview-text :where([data-script-root] *)::-webkit-scrollbar-thumb, #preview-text :where([data-script-root] *)::-webkit-scrollbar-track { all: revert; }'
+            + '</style>';
         function liveSnapshotToHtml(snap) {
             const styleHtml = snap.styles.map(css => `<style>${css.replace(/<\/style/gi, '<\\/style')}</style>`).join('')
                 + snap.links.map(href => `<link rel="stylesheet" href="${escapeHtml(href)}">`).join('');
@@ -1965,21 +2059,17 @@
                 const id = 'snap-' + Date.now() + '-' + Math.random().toString(36).slice(2);
                 liveSnapshotWaiters.set(id, resolve);
                 setTimeout(() => { if (liveSnapshotWaiters.has(id)) { liveSnapshotWaiters.delete(id); reject(new Error('LIVE_SNAPSHOT_TIMEOUT')); } }, 5000);
-                lf.el.contentWindow.postMessage({ nekaiveSnapshotRequest: id }, '*');
+                lf.frame.contentWindow.postMessage({ nekaiveSnapshotRequest: id }, '*');
             }));
         }
-        // 캡처하는 동안만 살아 있는 iframe 대신 "지금 화면"의 정지본을 끼워 넣음 (iframe은 숨기기만 해서 상태가 유지됨)
+        // 캡처 직전에 보이는 정지본을 "지금 이 순간" 상태로 한 번 더 새로 고친 뒤 찍음 (iframe 자체는 캡처본에서 빠짐)
         async function withLiveFrameSnapshot(fn) {
             if (!liveFrame || !DOM.htmlToggle.checked || !DOM.pText.contains(liveFrame.el)) return fn();
-            const frameEl = liveFrame.el;
-            const snap = await requestLiveSnapshot();
-            const holder = document.createElement('div'); holder.setAttribute('data-live-snapshot', '');
-            holder.innerHTML = isolateHtml(liveSnapshotToHtml(snap));
-            frameEl.style.display = 'none'; DOM.pText.appendChild(holder);
-            // 끼워 넣은 정지본의 웹폰트가 준비될 때까지 잠깐 기다림
+            liveStaticTimers.forEach(clearTimeout);
+            await refreshLiveStatic();
+            // 정지본의 웹폰트가 준비될 때까지 잠깐 기다림
             try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
-            try { return await fn(); }
-            finally { holder.remove(); frameEl.style.display = 'block'; }
+            return fn();
         }
 
         function isTagHelperActive() {
@@ -3469,6 +3559,8 @@
             // buildEmbeddedFontCss가 직접 넣어주고, 남겨두면 캡처 라이브러리가 이걸 다시 처리하다 빈 이미지가 나옴
             cloneEl.querySelectorAll('style').forEach(st => { if (/@import/i.test(st.textContent)) st.textContent = st.textContent.replace(CSS_IMPORT_RE, ''); });
             cloneEl.querySelectorAll('link').forEach(l => l.remove());
+            // HTML 뷰어 실행 화면(iframe)은 조작용이라 캡처본에서 뺌 — 보이는 정지본이 대신 찍힘
+            cloneEl.querySelectorAll('iframe').forEach(f => f.remove());
             const guideText = cloneEl.querySelector('#guide-overlay-text'); if (guideText) guideText.parentNode.removeChild(guideText);
             cloneEl.querySelectorAll('[data-tag-hover]').forEach(el => el.removeAttribute('data-tag-hover'));
             cloneEl.style.transform = 'none'; cloneEl.style.boxShadow = 'none';
