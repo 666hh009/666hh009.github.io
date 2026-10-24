@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.4)</title>
+    <title>네카이브 (v4.2.5)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -567,11 +567,11 @@
             .overlay-memo { flex: 0 1 auto; color: var(--ink-soft); font-size: var(--fs-sm); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
             .overlay-actions { margin-top: var(--sp-3); gap: var(--sp-1); }
             .overlay-actions button { padding: 8px 0; font-size: var(--fs-sm); }
-            .btn-overlay-save { background: var(--paper-muted); color: var(--ink); }
+            .btn-overlay-save, .btn-overlay-template { background: var(--paper-muted); color: var(--ink); }
             .btn-overlay-edit { background: var(--ink); color: var(--paper); }
         }
 
-        #save-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(22,23,27,0.4); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; }
+        #save-modal, #template-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(22,23,27,0.4); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; }
         .modal-content { background: var(--paper); padding: var(--sp-8); border-radius: var(--radius-lg); width: min(420px, calc(100vw - 32px)); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,0.15); }
         .modal-content h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-xl); font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
         .modal-content .modal-hint { font-size: var(--fs-base); color: var(--ink-soft); margin: 0 0 var(--sp-6); line-height: 1.5; }
@@ -587,6 +587,25 @@
 
         #toast { position: fixed; bottom: var(--sp-8); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); text-align: center; word-break: keep-all; background: var(--ink); color: var(--paper); padding: 14px var(--sp-6); border-radius: var(--radius-pill); font-size: var(--fs-base); font-weight: 500; box-shadow: 0 12px 32px rgba(0,0,0,0.2); opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s; z-index: 10500; cursor: pointer; }
         #toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-10px); }
+        #toast .toast-action { margin-left: var(--sp-3); background: rgba(255,255,255,0.16); color: var(--paper); border: none; border-radius: var(--radius-pill); padding: 4px 12px; font: inherit; font-weight: 700; cursor: pointer; }
+        #toast .toast-action:hover { background: rgba(255,255,255,0.28); }
+
+        /* 템플릿 불러오기 창 */
+        #template-modal .modal-content { width: min(760px, calc(100vw - 32px)); max-height: min(86vh, 860px); display: flex; flex-direction: column; padding: var(--sp-6); }
+        .template-modal-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+        .template-modal-head h3 { margin: 0; }
+        .template-search { margin: var(--sp-4) 0 var(--sp-3); }
+        .template-search input { height: 36px; border-radius: var(--radius-pill); }
+        #template-grid { flex: 1; min-height: 160px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--sp-3); padding: 2px; align-content: start; }
+        .template-item { border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--paper); overflow: hidden; cursor: pointer; padding: 0; text-align: left; font: inherit; color: inherit; display: flex; flex-direction: column; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+        .template-item:hover:not(:disabled), .template-item:focus-visible { border-color: var(--ink); box-shadow: var(--shadow-soft); transform: translateY(-2px); outline: none; }
+        .template-item:disabled { opacity: 0.45; cursor: not-allowed; }
+        .template-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: contain; background: var(--paper-muted); display: block; }
+        .template-item-meta { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs); color: var(--ink-soft); line-height: 1.4; min-height: 2.8em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .template-empty { grid-column: 1 / -1; text-align: center; color: var(--ink-soft); padding: 48px 0; }
+        .btn-overlay-template { background: rgba(255,255,255,0.2); color: var(--paper); }
+        .btn-overlay-template:hover { background: rgba(255,255,255,0.3); }
+        .overlay-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
 
         /* ══════════════════════════════════════════════════════════════
            모바일 반응형 (≤860px): 미리보기를 위에, 편집 컨트롤을 아래 탭으로.
@@ -742,6 +761,13 @@
 
                 <!-- 1. 본문 입력 -->
                 <div class="ctrl-section" id="section-text-input">
+                    <div class="row row-span2">
+                        <span class="row-label bold">템플릿</span>
+                        <button type="button" class="action-btn" onclick="openTemplatePicker()" title="아카이브에 저장한 카드의 꾸밈 설정만 가져옵니다 (입력한 내용은 그대로)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            아카이브에서 불러오기
+                        </button>
+                    </div>
                     <div class="row row-span2">
                         <span class="row-label bold">HTML 뷰어 모드</span>
                         <label class="row-switch">
@@ -1234,6 +1260,15 @@
                             <p id="capture-usage-status" class="section-note">아직 조회 안 함</p>
                         </div>
 
+                        <!-- 템플릿 적용 항목 -->
+                        <div class="row-group row-span2">
+                            <div class="row">
+                                <span class="row-label bold">템플릿 적용 항목</span>
+                            </div>
+                            <div class="section-note">아카이브의 '템플릿'으로 불러올 때 가져올 설정이에요. 입력한 내용, HTML 뷰어 모드, 캐릭터 이름·제작자는 항상 그대로 유지돼요.</div>
+                            <div id="template-group-settings"></div>
+                        </div>
+
                         <!-- 초기화 및 기본값 저장 -->
                         <div class="row-group row-span2">
                             <div class="row">
@@ -1453,6 +1488,21 @@
                 <button class="btn" onclick="closeModal()">취소</button>
             </div>
             <p class="modal-shortcut"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 저장 · <kbd>Esc</kbd> 닫기</p>
+        </div>
+    </div>
+
+    <div id="template-modal" role="dialog" aria-modal="true" aria-labelledby="template-modal-title">
+        <div class="modal-content">
+            <div class="template-modal-head">
+                <h3 id="template-modal-title">템플릿 불러오기</h3>
+                <button type="button" class="btn" onclick="closeTemplatePicker()">닫기</button>
+            </div>
+            <p class="modal-hint" style="margin: var(--sp-2) 0 0;">입력한 내용은 그대로 두고, 고른 카드의 꾸밈 설정만 가져와요. 가져올 항목은 설정 › 템플릿 적용 항목에서 바꿀 수 있어요.</p>
+            <div class="template-search search-wrap" style="max-width:none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="search" id="template-search-input" placeholder="태그 · 메모 검색" oninput="debouncedRenderTemplateGrid()">
+            </div>
+            <div id="template-grid"></div>
         </div>
     </div>
 
@@ -2638,6 +2688,7 @@
 
         window.onload = () => {
             enhanceFileInputs();
+            renderTemplateGroupSettings();
             renderFontOptions();
             setupFontPicker();
             refreshFontWeightOptions();
@@ -3321,6 +3372,99 @@
             await Promise.all([bgPromise, ovPromise]); updateUI(); 
         }
 
+        // ── 템플릿: 아카이브 카드의 "꾸밈 설정만" 가져오기 ─────────────────
+        // 입력한 내용(본문), HTML 뷰어 모드, 캐릭터 이름·제작자는 절대 바꾸지 않음.
+        // 항목별로 켜고 끌 수 있고(설정 › 템플릿 적용 항목), 기본은 전부 켜짐.
+        const TEMPLATE_GROUPS = [
+            { id: 'typo', label: '타이포그래피', desc: '폰트·두께·크기·색·줄 간격·자간·장평·문단 간격·여백·정렬·줄바꿈',
+              keys: ['font', 'fontWeight', 'customFontData', 'customFontFileName', 'color', 'size', 'lh', 'paraGap', 'pad', 'align', 'charWrap', 'letterSpacing', 'hScale2'] },
+            { id: 'card', label: '카드 크기 · 배경', desc: '가로·세로, 배경색, 배경 이미지와 위치·확대, 어둡기',
+              keys: ['width', 'height', 'bgColor', 'bgImg', 'bgScale', 'bgOffsetX', 'bgOffsetY', 'dim'] },
+            { id: 'overlay', label: '오버레이 이미지', desc: '이미지, 마스크 크기·둥글기·위치, 필터, 텍스트 위/아래',
+              keys: ['ovImg', 'ovMaskW', 'ovMaskH', 'ovMaskR', 'ovScale', 'ovX', 'ovY', 'ovInX', 'ovInY', 'ovAboveText', 'ovFColor', 'ovFOpacity'] },
+            { id: 'effect', label: '텍스트 그림자', desc: '색상·진하기·흐림·Y 위치', keys: ['tsColor', 'tsOpacity', 'tsBlur', 'tsY'] },
+            { id: 'html', label: 'HTML 레이아웃', desc: '상하좌우 여백, 콘텐츠 크기, 위치 강제 해제',
+              keys: ['marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'htmlScale', 'forceCenter'] },
+            { id: 'wm', label: '출처 표시 모양', desc: '글자 크기·색·위치 (캐릭터 이름·제작자 글자는 그대로)', keys: ['wmSize', 'wmColor', 'wmX', 'wmY'] },
+            { id: 'pos', label: '텍스트 위치', desc: '드래그로 옮긴 X·Y 값', keys: ['textX', 'textY'] },
+        ];
+        function getTemplateGroupPrefs() {
+            try { const v = JSON.parse(localStorage.getItem('archive_template_groups')); if (v && typeof v === 'object') return v; } catch (e) { }
+            return {};
+        }
+        function isTemplateGroupOn(id) { return getTemplateGroupPrefs()[id] !== false; } // 저장된 값이 없으면 켜짐
+        function setTemplateGroupOn(id, on) {
+            const prefs = getTemplateGroupPrefs(); prefs[id] = !!on;
+            try { localStorage.setItem('archive_template_groups', JSON.stringify(prefs)); } catch (e) { }
+        }
+        function renderTemplateGroupSettings() {
+            const box = document.getElementById('template-group-settings'); if (!box) return;
+            box.innerHTML = '';
+            TEMPLATE_GROUPS.forEach(g => {
+                const row = document.createElement('div'); row.className = 'row';
+                row.innerHTML = `<span class="row-label">${g.label}<br><span class="section-note" style="margin:0;">${g.desc}</span></span>
+                    <label class="row-switch"><input type="checkbox"><span class="track"></span></label>`;
+                const input = row.querySelector('input'); input.checked = isTemplateGroupOn(g.id);
+                input.setAttribute('aria-label', g.label + ' 적용');
+                input.addEventListener('change', () => setTemplateGroupOn(g.id, input.checked));
+                box.appendChild(row);
+            });
+        }
+        async function applyTemplateFromItem(item) {
+            if (!item || !item.config) { showToast('설정값이 없는 예전 카드라 템플릿으로 쓸 수 없어요.'); return; }
+            const groups = TEMPLATE_GROUPS.filter(g => isTemplateGroupOn(g.id));
+            if (!groups.length) { showToast('설정 › 템플릿 적용 항목에서 하나 이상 켜 주세요.'); return; }
+            const before = getCurrentConfig(); const editingBefore = editingArchiveItem;
+            // 지금 설정을 바탕으로, 켜진 항목의 값만 템플릿 값으로 바꿔서 한 번에 적용
+            // (템플릿에 없는 값은 "수정"으로 불러올 때와 같은 기본값이 쓰임)
+            const merged = { ...before };
+            groups.forEach(g => g.keys.forEach(k => { merged[k] = item.config[k]; }));
+            merged.text = before.text; merged.isHtmlMode = before.isHtmlMode; merged.wmChar = before.wmChar; merged.wmCreator = before.wmCreator;
+            // 템플릿 적용은 "수정"이 아니므로, 이후 저장하면 새 카드로 저장됨 (원본 카드가 덮어써지지 않게)
+            editingArchiveItem = null;
+            switchTab('extractor');
+            await applyConfig(merged, false);
+            showActionToast('템플릿을 적용했어요.', '되돌리기', async () => {
+                await applyConfig(before, false); editingArchiveItem = editingBefore;
+                showToast('템플릿 적용 전으로 되돌렸어요.');
+            });
+        }
+        function templateFromArchive(id) { applyTemplateFromItem(loadedItems.find(i => i.id === id)); }
+
+        // 발췌기 안에서 바로 고르는 템플릿 창
+        let templatePickerItems = [];
+        function isTemplatePickerOpen() { return document.getElementById('template-modal').style.display === 'flex'; }
+        function openTemplatePicker() {
+            if (!db) { showToast('아카이브를 아직 불러오는 중이에요. 잠시 후 다시 눌러 주세요.'); return; }
+            document.getElementById('template-modal').style.display = 'flex';
+            document.getElementById('template-search-input').value = '';
+            const grid = document.getElementById('template-grid'); grid.innerHTML = '<div class="template-empty">불러오는 중…</div>';
+            const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
+            req.onsuccess = (e) => { templatePickerItems = e.target.result.sort((a, b) => b.id - a.id); renderTemplateGrid(); };
+            req.onerror = () => { grid.innerHTML = '<div class="template-empty">아카이브를 불러오지 못했어요.</div>'; };
+            setTimeout(() => document.getElementById('template-search-input').focus(), 0);
+        }
+        function closeTemplatePicker() { document.getElementById('template-modal').style.display = 'none'; }
+        let templateSearchTimer;
+        function debouncedRenderTemplateGrid() { clearTimeout(templateSearchTimer); templateSearchTimer = setTimeout(renderTemplateGrid, 200); }
+        function renderTemplateGrid() {
+            const grid = document.getElementById('template-grid');
+            const keyword = document.getElementById('template-search-input').value.trim().toLowerCase();
+            const list = keyword ? templatePickerItems.filter(it => (it.tags || '').toLowerCase().includes(keyword) || (it.memo || '').toLowerCase().includes(keyword)) : templatePickerItems;
+            grid.innerHTML = '';
+            if (!list.length) { grid.innerHTML = `<div class="template-empty">${templatePickerItems.length ? '검색 결과가 없어요.' : '아카이브에 저장된 카드가 없어요.'}</div>`; return; }
+            list.forEach(it => {
+                const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'template-item';
+                const tags = (it.tags || '').split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
+                const meta = [it.date, tags.length ? tags.map(t => '#' + t).join(' ') : '', it.memo || ''].filter(Boolean).join(' · ');
+                btn.innerHTML = `<img src="${escapeHtml(it.image || '')}" alt="" loading="lazy"><div class="template-item-meta">${escapeHtml(meta || '태그·메모 없음')}</div>`;
+                if (!it.config) { btn.disabled = true; btn.title = '설정값이 없는 예전 카드라 템플릿으로 쓸 수 없어요'; }
+                else btn.addEventListener('click', () => { closeTemplatePicker(); applyTemplateFromItem(it); });
+                grid.appendChild(btn);
+            });
+        }
+        document.getElementById('template-modal').addEventListener('mousedown', e => { if (e.target.id === 'template-modal') closeTemplatePicker(); });
+
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
@@ -3347,6 +3491,10 @@
         // 단축키: Ctrl(⌘)+S 다운로드, Ctrl(⌘)+Shift+S 아카이브 저장, 모달에서 Ctrl+Enter 저장 / Esc 닫기
         document.addEventListener('keydown', e => {
             const mod = e.ctrlKey || e.metaKey;
+            if (isTemplatePickerOpen()) {
+                if (e.key === 'Escape') { e.preventDefault(); closeTemplatePicker(); }
+                return;
+            }
             if (isModalOpen()) {
                 if (e.key === 'Escape') { e.preventDefault(); closeModal(); }
                 else if (mod && e.key === 'Enter') { e.preventDefault(); saveToIndexedDB(); }
@@ -3368,6 +3516,16 @@
             if (!persistent) toastTimeout = setTimeout(() => hideToast(), 2000);
         }
         function hideToast() { clearTimeout(toastTimeout); document.getElementById('toast').classList.remove('show'); }
+        // 버튼이 달린 알림 (예: "템플릿을 적용했어요 [되돌리기]"). 버튼을 누르면 action 실행.
+        function showActionToast(msg, actionLabel, action, duration = 7000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = '';
+            const text = document.createElement('span'); text.textContent = msg;
+            const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'toast-action'; btn.textContent = actionLabel;
+            btn.addEventListener('click', (e) => { e.stopPropagation(); hideToast(); action(); });
+            toast.append(text, btn); toast.classList.add('show');
+            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => hideToast(), duration);
+        }
 
         // ── 캡처용 폰트 임베드 ─────────────────────────────────────
         // modern-screenshot은 카드를 SVG 이미지로 다시 그리는데, SVG 이미지 안에서는 인터넷에서 폰트를
@@ -3883,7 +4041,7 @@
                             <div class="overlay-tags">${tagsHtml}</div>
                             <div class="overlay-memo">${item.memo ? escapeHtml(item.memo) : '메모 없음'}</div>
                             <div class="overlay-actions">
-                                <button class="btn-overlay-save" onclick="downloadFromArchive(${item.id})">저장</button>
+                                <button class="btn-overlay-template" onclick="templateFromArchive(${item.id})" ${item.config ? 'title="입력한 내용은 그대로 두고 이 카드의 꾸밈 설정만 가져와요"' : 'disabled title="설정값이 없는 예전 카드라 템플릿으로 쓸 수 없어요"'}>템플릿</button>
                                 <button class="btn-overlay-edit" onclick="editFromArchive(${item.id})">수정</button>
                                 <button class="btn-overlay-delete" onclick="deleteFromIndexedDB(${item.id})">삭제</button>
                             </div>
