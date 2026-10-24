@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.7)</title>
+    <title>네카이브 (v4.2.8)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -456,7 +456,7 @@
             background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
             padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-md);
             border: 1px solid var(--line); box-shadow: var(--shadow-float);
-            display: flex; align-items: center; gap: var(--sp-3); opacity: 0.45; pointer-events: auto; transition: opacity 0.2s ease;
+            display: flex; align-items: center; gap: var(--sp-3); opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
         }
         .floating-zoom label { font-size: var(--fs-sm); color: var(--ink-soft); display: flex; align-items: center; gap: 6px; font-weight: 700; margin: 0; }
         .floating-zoom input[type="range"] { width: 120px; }
@@ -465,7 +465,7 @@
         /* 플로팅 액션 (하단) */
         .floating-actions {
             position: absolute; bottom: var(--sp-5); right: var(--sp-5); z-index: 100; display: flex; gap: var(--sp-3); align-items: center;
-            opacity: 0.45; pointer-events: auto; transition: opacity 0.2s ease;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
         }
         .capture-chip {
             display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); font-weight: 700; color: var(--ink);
@@ -515,6 +515,15 @@
         .input-toolbar .action-btn { flex: 1; }
         .seg-labels { min-height: 0; margin-bottom: var(--sp-1); gap: var(--sp-2); }
         .seg-labels .row-label { flex: 1; font-size: var(--fs-xs); color: var(--ink-soft); font-weight: 600; }
+        /* 왼쪽 메뉴: 큰 메뉴 제목을 누르면 그 메뉴가 맨 위로, 스크롤은 메뉴 단위로 딱딱 걸리게 (데스크톱) */
+        @media (min-width: 861px) {
+            .controls { scroll-snap-type: y mandatory; }
+            /* 마지막 메뉴까지도 맨 위로 올라올 수 있게 패널 끝에 빈 공간 (메뉴 단위로 걸려서 빈 곳에 멈추지는 않음) */
+            .controls::after { content: ''; display: block; flex: 0 0 auto; height: calc(100% - 140px); }
+            .controls > .ctrl-section { scroll-snap-align: start; scroll-margin-top: 0; }
+            .controls > .ctrl-section > .ctrl-eyebrow, .controls > .ctrl-section > .collapsible-header { cursor: pointer; }
+            .controls > .ctrl-section > .ctrl-eyebrow:hover { color: var(--ink-soft); }
+        }
         /* 슬라이더 옆 값 표시 */
         .range-readout { font-family: var(--mono); font-size: var(--fs-xs); color: var(--ink-soft); min-width: 38px; text-align: right; font-weight: 500; }
         /* 숫자 입력칸: 테두리 없이 깔끔하게 + 왼쪽 라벨이 너무 길게 줄바꿈되지 않게 */
@@ -593,7 +602,7 @@
             .btn-overlay-edit { background: var(--ink); color: var(--paper); }
         }
 
-        #save-modal, #template-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(22,23,27,0.4); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; }
+        #save-modal, #template-modal, #crop-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(22,23,27,0.4); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; }
         .modal-content { background: var(--paper); padding: var(--sp-8); border-radius: var(--radius-lg); width: min(420px, calc(100vw - 32px)); border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,0.15); }
         .modal-content h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-xl); font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
         .modal-content .modal-hint { font-size: var(--fs-base); color: var(--ink-soft); margin: 0 0 var(--sp-6); line-height: 1.5; }
@@ -611,6 +620,33 @@
         #toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-10px); }
         #toast .toast-action { margin-left: var(--sp-3); background: rgba(255,255,255,0.16); color: var(--paper); border: none; border-radius: var(--radius-pill); padding: 4px 12px; font: inherit; font-weight: 700; cursor: pointer; }
         #toast .toast-action:hover { background: rgba(255,255,255,0.28); }
+
+        /* 이미지 삽입 */
+        .img-layer { position: absolute; inset: 0; pointer-events: none; }
+        .ins-img { position: absolute; left: 50%; top: 50%; overflow: hidden; }
+        .ins-img > img { display: block; width: 100%; height: 100%; max-width: none; pointer-events: none; user-select: none; }
+        .ins-img > .ins-img-filter { position: absolute; inset: 0; pointer-events: none; }
+        .img-list { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-2) 0; }
+        .img-thumb { width: 56px; height: 56px; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper-muted); overflow: hidden; cursor: pointer; position: relative; }
+        .img-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        .img-thumb.active { border: 2px solid var(--tag-hover); box-shadow: 0 0 0 2px var(--tag-hover-soft); }
+        .img-thumb .img-thumb-no { position: absolute; left: 3px; top: 3px; font-size: 10px; font-weight: 700; background: rgba(22,23,27,.75); color: #fff; border-radius: 4px; padding: 0 4px; line-height: 15px; }
+        .img-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--sp-3); }
+        /* 자르기 창 */
+        .crop-content { width: min(760px, calc(100vw - 32px)); padding: var(--sp-6); }
+        .crop-content .template-modal-head { flex-wrap: wrap; }
+        #crop-ratio-seg { height: 30px; }
+        #crop-ratio-seg button { white-space: nowrap; padding: 0 10px; }
+        .crop-stage-wrap { margin-top: var(--sp-4); background: repeating-conic-gradient(#e8e8e6 0% 25%, #f6f6f4 0% 50%) 50% / 16px 16px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; padding: var(--sp-3); }
+        #crop-stage { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+        #crop-img { display: block; max-width: none; pointer-events: none; }
+        #crop-box { position: absolute; box-sizing: border-box; border: 2px solid #fff; box-shadow: 0 0 0 9999px rgba(10,10,12,0.55); cursor: move; }
+        #crop-box .crop-grid { position: absolute; inset: 0; pointer-events: none; background:
+            linear-gradient(to right, transparent 33.1%, rgba(255,255,255,.55) 33.3%, transparent 33.6%, transparent 66.4%, rgba(255,255,255,.55) 66.6%, transparent 66.9%),
+            linear-gradient(to bottom, transparent 33.1%, rgba(255,255,255,.55) 33.3%, transparent 33.6%, transparent 66.4%, rgba(255,255,255,.55) 66.6%, transparent 66.9%); }
+        .crop-h { position: absolute; width: 18px; height: 18px; margin: -9px; border-radius: 50%; background: #fff; border: 2px solid var(--tag-hover); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+        .crop-h[data-c="nw"] { left: 0; top: 0; cursor: nwse-resize; } .crop-h[data-c="ne"] { right: 0; top: 0; cursor: nesw-resize; }
+        .crop-h[data-c="sw"] { left: 0; bottom: 0; cursor: nesw-resize; } .crop-h[data-c="se"] { right: 0; bottom: 0; cursor: nwse-resize; }
 
         /* 템플릿 불러오기 창 */
         #template-modal .modal-content { width: min(760px, calc(100vw - 32px)); max-height: min(86vh, 860px); display: flex; flex-direction: column; padding: var(--sp-6); }
@@ -672,8 +708,7 @@
 
             /* 확대축소·전체화면 버튼: 호버가 없는 터치 기기라 "항상 보이게"가 아니라
                "미리보기를 만지고 있을 때만" 보이게 함 (JS가 preview-touch-active 클래스를 토글) */
-            /* 모바일은 화면이 좁아서 평소엔 숨기고, 미리보기를 만질 때만 보이게 (데스크톱은 흐리게 항상 보임) */
-            .floating-zoom, .floating-actions { transition: opacity 0.25s ease; opacity: 0; pointer-events: none; }
+            .floating-zoom, .floating-actions { transition: opacity 0.25s ease; }
             body.preview-touch-active .floating-zoom,
             body.preview-touch-active .floating-actions { opacity: 1 !important; pointer-events: auto !important; }
 
@@ -1052,7 +1087,7 @@
                     </div>
                 </div>
 
-                <!-- 4. 오버레이 이미지 -->
+                <!-- 4. 이미지 삽입 -->
                 <div class="ctrl-section" id="section-overlay">
                     <!-- 모바일에서만 쓰임: 데스크톱의 상단 배경 툴바(카드 크기/배경색/배경이미지/어둡기)가
                          JS로 이 자리에 옮겨와서, 다른 메뉴들과 같은 섹션 형태로 보임 -->
@@ -1060,87 +1095,74 @@
                         <div class="ctrl-eyebrow">카드 크기 · 배경</div>
                     </div>
                     <div class="collapsible-header" onclick="toggleSection(this)">
-                        <div class="ctrl-eyebrow">오버레이 이미지 (크롭 / 필터)</div>
+                        <div class="ctrl-eyebrow">이미지 삽입</div>
                         <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
                     </div>
                     <div class="collapsible-content">
-                        <div class="row-group">
-                            <div class="row">
-                                <span class="row-label">이미지</span>
-                                <div class="row-control">
-                                    <input type="file" id="ov-upload" accept="image/*" data-pick-label="이미지 선택">
-                                    <button class="action-btn" onclick="removeOvImg()">지우기</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row-group">
-                            <div class="row">
-                                <span class="row-label">필터 색상 · 투명도</span>
-                                <div class="row-control">
-                                    <span class="swatch" style="background:#000000;"><input type="color" id="ov-filter-color" value="#000000" oninput="updateUI()"></span>
-                                    <input type="range" id="ov-filter-opacity" min="0" max="1" step="0.05" value="0" style="width:100px;" oninput="updateUI()">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 이미지 편집: 다른 드래그 기능들처럼 버튼으로 켜고 끄는 모드. 켜져 있을 때만
-                             미리보기에 파란 크롭 마스크(모서리 손잡이)이 나타남 -->
-                        <div class="row-group">
-                            <div class="row">
-                                <span class="row-label bold">이미지 편집</span>
-                                <button type="button" class="action-btn" id="btn-ov-edit-mode" onclick="toggleOvEditMode()">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg>
-                                    편집 시작
-                                </button>
-                            </div>
-                            <div class="section-note" style="margin-top:-4px;">켜면 미리보기에 크롭 마스크가 나타나요. 모서리를 드래그하면 크기를, 안쪽을 드래그하면 마스크와 이미지를 함께, 마스크 바깥을 드래그하면 이미지만 옮길 수 있어요.</div>
-                            <div class="row">
-                                <span class="row-label">이미지를 텍스트 위로</span>
-                                <label class="row-switch">
-                                    <input type="checkbox" id="ov-above-text-toggle" onchange="updateUI()">
-                                    <span class="track"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- 세부조절: 크롭 마스크로 직접 조절한 값이 여기 숫자에도 실시간으로 반영됨.
-                             정확한 수치가 필요할 때 직접 입력해도 됨 -->
                         <div class="row-group row-span2">
                             <div class="row">
-                                <span class="row-label bold">세부조절</span>
+                                <span class="row-label">이미지</span>
+                                <label class="action-btn" style="margin:0; cursor:pointer;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                                    이미지 추가
+                                    <input type="file" id="img-add-input" accept="image/*" style="display:none;">
+                                </label>
                             </div>
-                            <div class="row">
-                                <span class="row-label">마스크 크기 (W·H)</span>
-                                <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-w', -1, 5)">−</button><input type="number" id="ov-mask-w" value="300" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-w', 1, 5)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-h', -1, 5)">−</button><input type="number" id="ov-mask-h" value="300" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-h', 1, 5)">+</button></div>
+                            <div class="img-list" id="img-list"></div>
+                            <div class="section-note" id="img-empty-note">사진을 고르면 먼저 자르기 화면이 나와요. 넣은 뒤에는 '편집 시작'으로 카드 위에서 옮기고 크기를 바꿀 수 있어요.</div>
+                        </div>
+
+                        <!-- 선택한 이미지 설정 (이미지가 있을 때만 보임) -->
+                        <div id="img-detail" style="display:none;">
+                            <div class="row-group row-span2">
+                                <div class="row">
+                                    <span class="row-label bold" id="img-detail-title">선택한 이미지</span>
                                 </div>
-                            </div>
-                            <div class="row">
-                                <span class="row-label">마스크 둥글기</span>
-                                <div class="stepper"><button type="button" onclick="adjustNum('ov-mask-r', -1, 5)">−</button><input type="number" id="ov-mask-r" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-mask-r', 1, 5)">+</button></div>
-                            </div>
-                            <div class="row">
-                                <span class="row-label">마스크 위치 (X·Y)</span>
-                                <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-x', -1, 5)">−</button><input type="number" id="ov-x" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-x', 1, 5)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-y', -1, 5)">−</button><input type="number" id="ov-y" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-y', 1, 5)">+</button></div>
+                                <div class="img-actions">
+                                    <button type="button" class="action-btn" id="btn-ov-edit-mode" onclick="toggleOvEditMode()">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg>
+                                        편집 시작
+                                    </button>
+                                    <button type="button" class="action-btn" onclick="recropSelectedImage()" title="원본에서 다시 자르기">다시 자르기</button>
+                                    <button type="button" class="action-btn" onclick="moveSelectedImage(1)" title="앞으로 (다른 이미지 위로)">앞으로</button>
+                                    <button type="button" class="action-btn" onclick="moveSelectedImage(-1)" title="뒤로 (다른 이미지 아래로)">뒤로</button>
+                                    <button type="button" class="action-btn is-danger" onclick="deleteSelectedImage()">삭제</button>
                                 </div>
+                                <div class="section-note">편집 중에는 이미지 안쪽을 끌면 위치가, 모서리를 끌면 비율을 유지한 채 크기가 바뀌어요. 휠(모바일은 두 손가락)로 확대·축소하고, 다른 이미지를 누르면 그 이미지가 선택돼요.</div>
                             </div>
-                            <div class="row">
-                                <span class="row-label">이미지 위치 (X·Y)</span>
-                                <div class="row-control">
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-x', -1, 5)">−</button><input type="number" id="ov-in-x" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-x', 1, 5)">+</button></div>
-                                    <div class="stepper"><button type="button" onclick="adjustNum('ov-in-y', -1, 5)">−</button><input type="number" id="ov-in-y" value="0" step="5" oninput="updateUI()"><button type="button" onclick="adjustNum('ov-in-y', 1, 5)">+</button></div>
+                            <div class="row-group row-span2">
+                                <div class="row">
+                                    <span class="row-label">너비 <span class="section-note" id="img-size-readout" style="margin:0;"></span></span>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('img-w', -1, 10)">−</button><input type="number" id="img-w" value="300" oninput="onImageInput()"><button type="button" onclick="adjustNum('img-w', 1, 10)">+</button></div>
                                 </div>
-                            </div>
-                            <div class="section-note">마스크를 옮기면 이미지도 함께 따라와요. 이 값은 마스크 중심과 이미지 중심 사이의 어긋난 정도를 나타내요.</div>
-                            <div class="row" style="margin-top:8px;">
-                                <span class="row-label"></span>
-                                <div class="row-control">
-                                    <button type="button" class="action-btn" onclick="resetOverlayMaskOffset()" title="마스크 위치 초기화">마스크 위치 초기화</button>
-                                    <button type="button" class="action-btn" onclick="resetOverlayImageOffset()" title="이미지 위치 초기화">이미지 초기화</button>
+                                <div class="row">
+                                    <span class="row-label">위치 (X·Y)</span>
+                                    <div class="row-control">
+                                        <div class="stepper"><button type="button" onclick="adjustNum('img-x', -1, 5)">−</button><input type="number" id="img-x" value="0" oninput="onImageInput()"><button type="button" onclick="adjustNum('img-x', 1, 5)">+</button></div>
+                                        <div class="stepper"><button type="button" onclick="adjustNum('img-y', -1, 5)">−</button><input type="number" id="img-y" value="0" oninput="onImageInput()"><button type="button" onclick="adjustNum('img-y', 1, 5)">+</button></div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <span class="row-label">모서리 둥글기</span>
+                                    <div class="stepper"><button type="button" onclick="adjustNum('img-r', -1, 5)">−</button><input type="number" id="img-r" value="0" min="0" oninput="onImageInput()"><button type="button" onclick="adjustNum('img-r', 1, 5)">+</button></div>
+                                </div>
+                                <div class="row">
+                                    <span class="row-label">필터 색상 · 투명도</span>
+                                    <div class="row-control">
+                                        <span class="swatch" style="background:#000000;"><input type="color" id="img-fcolor" value="#000000" oninput="onImageInput()"></span>
+                                        <input type="range" id="img-fopacity" min="0" max="1" step="0.05" value="0" style="width:100px;" oninput="onImageInput()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <span class="row-label">텍스트 위로 올리기</span>
+                                    <label class="row-switch">
+                                        <input type="checkbox" id="img-above" onchange="onImageInput()">
+                                        <span class="track"></span>
+                                    </label>
+                                </div>
+                                <div class="row">
+                                    <span class="row-label"></span>
+                                    <button type="button" class="action-btn" onclick="resetSelectedImagePlacement()" title="가운데로, 원래 크기로">위치·크기 초기화</button>
                                 </div>
                             </div>
                         </div>
@@ -1321,7 +1343,7 @@
                                     <span class="row-hex" id="wheel-sensitivity-readout" style="min-width: 50px; text-align:right;">0.0002</span>
                                 </div>
                             </div>
-                            <div class="section-note">배경 이미지와 오버레이 내부 이미지에 공통으로 적용됩니다. (값이 작을수록 미세 조절)</div>
+                            <div class="section-note">배경 이미지와 삽입한 이미지의 휠 확대·축소에 공통으로 적용됩니다. (값이 작을수록 미세 조절)</div>
                         </div>
 
                         <!-- 서버 캡쳐 설정 — 내용이 넓어서(주소 입력창 등) 2열로 안 쪼개고 항상 한 줄 전체를 씀 -->
@@ -1356,7 +1378,7 @@
                             <div class="row">
                                 <span class="row-label bold">템플릿 적용 항목</span>
                             </div>
-                            <div class="section-note">아카이브의 '템플릿'으로 불러올 때 가져올 설정이에요. 입력한 내용, HTML 뷰어 모드, 캐릭터 이름·제작자는 항상 그대로 유지돼요.</div>
+                            <div class="section-note">아카이브의 '템플릿'으로 불러올 때 가져올 설정이에요. 입력한 내용과 HTML 뷰어 모드는 항상 그대로 유지돼요.</div>
                             <div id="template-group-settings"></div>
                         </div>
 
@@ -1407,8 +1429,11 @@
                             </div>
                         </div>
                         <div class="toolbar-item">
-                            <label>단색 배경</label>
-                            <span class="swatch" style="background:#ffffff;"><input type="color" id="bg-color" value="#ffffff"></span>
+                            <label>단색 배경 · 투명도</label>
+                            <div style="display:flex; align-items:center; gap:8px; height: var(--ctrl-h);">
+                                <span class="swatch" style="background:#ffffff;"><input type="color" id="bg-color" value="#ffffff"></span>
+                                <input type="range" id="input-bg-transparency" min="0" max="1" step="0.05" value="0" style="width: 90px;" title="0% = 꽉 찬 색, 100% = 색 없음 (배경 이미지가 있으면 이미지가 비쳐 보임, 없으면 흰색 쪽으로 옅어짐). 저장되는 이미지는 투명해지지 않아요.">
+                            </div>
                         </div>
                     </div>
                     
@@ -1431,10 +1456,6 @@
                                 </button>
                                 <button type="button" class="action-btn icon-only" onclick="resetBgPos()" title="배경 위치/배율 초기화" aria-label="배경 위치/배율 초기화"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg></button>
                             </div>
-                        </div>
-                        <div class="toolbar-item">
-                            <label>어둡기 (Dim)</label>
-                            <div style="display:flex; align-items:center; height: var(--ctrl-h);"><input type="range" id="input-dim" min="0" max="0.9" step="0.05" value="0" style="width: 120px;"></div>
                         </div>
                     </div>
                 </div>
@@ -1488,14 +1509,9 @@
                                 
                                 <div id="card-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; z-index:1; pointer-events: none;"></div>
                                 
-                                <div id="overlay-img-wrapper" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; display: flex; justify-content: center; align-items: center;">
-                                    <div id="overlay-mask" style="position: relative; width: 300px; height: 300px; border-radius: 0px; overflow: hidden; pointer-events: none;">
-                                        <div id="overlay-filter" style="position: absolute; top:0; left:0; width:100%; height:100%; background: transparent; z-index: 2; pointer-events: none;"></div>
-                                        <div id="overlay-img-transform" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%) scale(1); z-index: 1; pointer-events: none;">
-                                            <img id="overlay-img-content" src="" style="max-width: none; pointer-events: auto; display: none;">
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- 삽입한 이미지: 텍스트 아래 층(z 2) / 텍스트 위 층(z 5) -->
+                                <div id="img-layer-below" class="img-layer" style="z-index: 2;"></div>
+                                <div id="img-layer-above" class="img-layer" style="z-index: 5;"></div>
 
                                 <div id="watermark-wrapper" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; box-sizing: border-box; display: flex; justify-content: center; align-items: flex-end;">
                                     <div id="watermark-transform" style="transform: translate(0px, 0px);">
@@ -1514,11 +1530,7 @@
                                  카드와 완전히 같은 위치/크기/배율로 겹치도록 JS에서 동일한 값을 그대로 복제함.
                                  "이미지 편집" 모드가 켜졌을 때만 보임(JS에서 토글). -->
                             <div id="ov-crop-layer" style="position:absolute; top:0; left:0; transform-origin: top left; pointer-events:none; z-index: 50; display:none;">
-                                <div id="ov-crop-frame" style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); width:300px; height:300px; box-sizing:border-box; border:2px solid #2f6fed; pointer-events:auto; cursor:move;">
-                                    <div class="ov-crop-grid-line" style="position:absolute; left:33.333%; top:0; bottom:0; width:1px; background:rgba(255,255,255,.6);"></div>
-                                    <div class="ov-crop-grid-line" style="position:absolute; left:66.666%; top:0; bottom:0; width:1px; background:rgba(255,255,255,.6);"></div>
-                                    <div class="ov-crop-grid-line" style="position:absolute; top:33.333%; left:0; right:0; height:1px; background:rgba(255,255,255,.6);"></div>
-                                    <div class="ov-crop-grid-line" style="position:absolute; top:66.666%; left:0; right:0; height:1px; background:rgba(255,255,255,.6);"></div>
+                                <div id="ov-crop-frame" style="position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); width:300px; height:300px; box-sizing:border-box; border:2px solid #2f6fed; pointer-events:auto; cursor:move; touch-action:none;">
                                     <div class="ov-crop-handle" data-corner="nw" style="position:absolute; top:0; left:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nwse-resize;"></div>
                                     <div class="ov-crop-handle" data-corner="ne" style="position:absolute; top:0; right:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nesw-resize;"></div>
                                     <div class="ov-crop-handle" data-corner="sw" style="position:absolute; bottom:0; left:0; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; border:2px solid #2f6fed; cursor:nesw-resize;"></div>
@@ -1597,6 +1609,38 @@
         </div>
     </div>
 
+    <!-- 이미지 자르기 창: 이미지를 넣을 때 / '다시 자르기' 할 때 -->
+    <div id="crop-modal" role="dialog" aria-modal="true" aria-labelledby="crop-modal-title">
+        <div class="modal-content crop-content">
+            <div class="template-modal-head">
+                <h3 id="crop-modal-title">이미지 자르기</h3>
+                <div class="segmented" id="crop-ratio-seg">
+                    <button type="button" data-ratio="free" class="active">자유</button>
+                    <button type="button" data-ratio="orig">원본</button>
+                    <button type="button" data-ratio="1">1:1</button>
+                    <button type="button" data-ratio="0.8">4:5</button>
+                    <button type="button" data-ratio="1.7778">16:9</button>
+                </div>
+            </div>
+            <div class="crop-stage-wrap">
+                <div id="crop-stage">
+                    <img id="crop-img" alt="" draggable="false">
+                    <div id="crop-box">
+                        <div class="crop-grid"></div>
+                        <div class="crop-h" data-c="nw"></div><div class="crop-h" data-c="ne"></div>
+                        <div class="crop-h" data-c="sw"></div><div class="crop-h" data-c="se"></div>
+                    </div>
+                </div>
+            </div>
+            <p class="modal-shortcut" id="crop-size-readout" style="margin-top:var(--sp-2);"></p>
+            <div class="modal-actions" style="margin-top: var(--sp-3);">
+                <button class="btn" type="button" onclick="closeCropper(null)">취소</button>
+                <button class="btn" type="button" onclick="closeCropper('full')">자르지 않고 넣기</button>
+                <button class="btn btn-primary" type="button" onclick="closeCropper('apply')">자르기 적용</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" onclick="hideToast()">알림 메시지</div>
 
     <script>
@@ -1666,7 +1710,11 @@
         function onFontWeightChange() { currentFontWeight = parseInt(document.getElementById('input-font-weight').value, 10) || 400; updateUI(); }
         
         let currentBgImageDataUrl = '';
-        let currentOvImageDataUrl = '';
+        // 삽입한 이미지들: [{ id, src(자른 결과), orig(원본), crop{x,y,w,h}(원본 기준 px), natW, natH(자른 결과 크기),
+        //                    x, y(카드 중심 기준, 오른쪽+·위쪽+), w(카드에 보이는 너비 px), radius, fColor, fOpacity, above(텍스트 위) }]
+        // 배열 순서 = 겹치는 순서 (뒤에 있을수록 위)
+        let insertedImages = [];
+        let selectedImageId = null;
         let originalBgWidth = 0;
         let originalBgHeight = 0;
         
@@ -1678,7 +1726,6 @@
         
         let bgScale = 1.0;
         let bgOffsetX = 0, bgOffsetY = 0;
-        let ovScale = 1.0;
         let wheelZoomSensitivity = parseFloat(localStorage.getItem('archive_wheel_zoom_sensitivity')) || 0.0002;
 
         const DEFAULT_FILENAME_FORMAT = '네카이브-YYYY-MM-DD_hhmmss';
@@ -1990,7 +2037,7 @@
 
         const DOM = {
             text: document.getElementById('input-text'), width: document.getElementById('card-width'), height: document.getElementById('card-height'),
-            bgImg: document.getElementById('input-bg'), bgColor: document.getElementById('bg-color'), dim: document.getElementById('input-dim'),
+            bgImg: document.getElementById('input-bg'), bgColor: document.getElementById('bg-color'), bgTrans: document.getElementById('input-bg-transparency'),
             customFont: document.getElementById('input-custom-font'), color: document.getElementById('input-color'),
             size: document.getElementById('input-size'), pad: document.getElementById('input-padding'), lh: document.getElementById('input-lineheight'), align: document.getElementById('input-align'),
             paraGap: document.getElementById('input-para-gap'), htmlToggle: document.getElementById('html-mode-toggle'),
@@ -2020,12 +2067,6 @@
             wmSize: document.getElementById('wm-size'), wmColor: document.getElementById('wm-color'),
             wmX: document.getElementById('wm-x'), wmY: document.getElementById('wm-y'),
             
-            ovUpload: document.getElementById('ov-upload'),
-            ovMaskW: document.getElementById('ov-mask-w'), ovMaskH: document.getElementById('ov-mask-h'), ovMaskR: document.getElementById('ov-mask-r'),
-            ovX: document.getElementById('ov-x'), ovY: document.getElementById('ov-y'),
-            ovInX: document.getElementById('ov-in-x'), ovInY: document.getElementById('ov-in-y'),
-            ovAboveText: document.getElementById('ov-above-text-toggle'),
-            ovFColor: document.getElementById('ov-filter-color'), ovFOpacity: document.getElementById('ov-filter-opacity'),
             
             tsColor: document.getElementById('ts-color'), tsOpacity: document.getElementById('ts-opacity'),
             tsBlur: document.getElementById('ts-blur'), tsY: document.getElementById('ts-y'),
@@ -2661,8 +2702,12 @@
             syncHighlight();
             DOM.preview.style.width = DOM.width.value + 'px';
             DOM.preview.style.height = DOM.height.value + 'px';
-            DOM.preview.style.backgroundColor = DOM.bgColor.value;
-            DOM.overlay.style.background = `rgba(0, 0, 0, ${DOM.dim.value})`;
+            // 단색 배경 = 배경 이미지 위에 덮이는 색 층. 투명도를 올리면 배경 이미지가 비쳐 보임.
+            // 카드 맨 아래에는 항상 흰 바탕이 있어서 저장되는 이미지는 투명해지지 않음
+            // (배경 이미지가 없으면 투명도를 올릴수록 색이 흰색 쪽으로 옅어짐)
+            const bgTrans = Math.min(1, Math.max(0, parseFloat(DOM.bgTrans.value) || 0));
+            DOM.preview.style.backgroundColor = '#ffffff';
+            DOM.overlay.style.background = `rgba(${hexToRgbStr(DOM.bgColor.value)}, ${1 - bgTrans})`;
 
             document.querySelectorAll('#align-segmented button').forEach(b => b.classList.toggle('active', b.dataset.align === DOM.align.value));
             document.getElementById('wrap-word-btn').classList.toggle('active', !DOM.charWrap.checked);
@@ -2688,37 +2733,7 @@
             
             DOM.contentWrapper.style.transform = `translate(${DOM.textX.value}px, ${-DOM.textY.value}px)`;
             
-            const ovWrapper = document.getElementById('overlay-img-wrapper');
-            const ovMask = document.getElementById('overlay-mask');
-            const ovTransform = document.getElementById('overlay-img-transform');
-            const ovFilter = document.getElementById('overlay-filter');
-            
-            ovMask.style.width = DOM.ovMaskW.value + 'px';
-            ovMask.style.height = DOM.ovMaskH.value + 'px';
-            ovMask.style.borderRadius = DOM.ovMaskR.value + 'px';
-            ovWrapper.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
-            // 크롭 툴 프레임: card-preview 밖의 별도 레이어에 있으므로, 마스크와 완전히 같은 위치가 되도록
-            // 위 ovWrapper와 동일한 수식으로 직접 옮겨줌 (부모가 달라서 flex 중앙정렬에 자동으로 안 묻어남)
-            const cropLayer = document.getElementById('ov-crop-layer');
-            const cropFrame = document.getElementById('ov-crop-frame');
-            if (cropFrame) {
-                cropFrame.style.width = DOM.ovMaskW.value + 'px';
-                cropFrame.style.height = DOM.ovMaskH.value + 'px';
-                cropFrame.style.borderRadius = DOM.ovMaskR.value + 'px';
-                cropFrame.style.transform = `translate(calc(-50% + ${DOM.ovX.value}px), calc(-50% + ${-DOM.ovY.value}px))`;
-            }
-            if (cropLayer) cropLayer.style.display = (ovEditMode && currentOvImageDataUrl) ? 'block' : 'none';
-            const aboveText = !!(DOM.ovAboveText && DOM.ovAboveText.checked);
-            // overlay-img-wrapper에 이미 인라인 z-index가 박혀있어서 스타일시트 클래스 규칙으로는
-            // 못 이김 (인라인 스타일이 항상 우선순위가 더 높음) → 여기서 직접 값을 바꿔줌
-            ovWrapper.style.zIndex = aboveText ? 5 : 2;
-            
-            if(parseFloat(DOM.ovFOpacity.value) > 0) {
-                ovFilter.style.background = `rgba(${hexToRgbStr(DOM.ovFColor.value)}, ${DOM.ovFOpacity.value})`;
-            } else {
-                ovFilter.style.background = 'transparent';
-            }
-            ovTransform.style.transform = `translate(calc(-50% + ${DOM.ovInX.value}px), calc(-50% + ${-DOM.ovInY.value}px)) scale(${ovScale})`;
+            renderInsertedImages();
 
             const wmTransform = document.getElementById('watermark-transform');
             const wmContent = document.getElementById('watermark-content');
@@ -2823,7 +2838,12 @@
             autoSaveTimer = setTimeout(() => {
                 const config = getCurrentConfig();
                 try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } 
-                catch(e) { delete config.bgImg; delete config.ovImg; try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } catch(e){} }
+                catch(e) {
+                    // 용량 초과: 먼저 이미지 원본(다시 자르기용)만 빼고, 그래도 안 되면 이미지들을 빼고 저장
+                    (config.images || []).forEach(im => { delete im.orig; });
+                    try { localStorage.setItem('archive_autosave', JSON.stringify(config)); }
+                    catch(e2) { delete config.bgImg; config.images = []; try { localStorage.setItem('archive_autosave', JSON.stringify(config)); } catch(e3){} }
+                }
             }, 1000);
         }
 
@@ -2893,7 +2913,7 @@
 
         function saveBgDefault() {
             let config = getCurrentConfig(); let defs = JSON.parse(localStorage.getItem('archive_default_bg')) || {};
-            ['width','height','bgColor','dim','forceCenter','wmChar','wmCreator','wmSize','wmColor','wmX','wmY','ovMaskW','ovMaskH','ovMaskR','ovScale','ovX','ovY','ovInX','ovInY','ovFColor','ovFOpacity','tsColor','tsOpacity','tsBlur','tsY'].forEach(k => defs[k] = config[k]);
+            ['width','height','bgColor','bgTransparency','forceCenter','wmChar','wmCreator','wmSize','wmColor','wmX','wmY','tsColor','tsOpacity','tsBlur','tsY'].forEach(k => defs[k] = config[k]);
             defs.previewScale = DOM.scale.value; 
             localStorage.setItem('archive_default_bg', JSON.stringify(defs)); showToast('배경 및 부가기능이 기본값으로 저장되었습니다.');
         }
@@ -2928,20 +2948,15 @@
             let defs = JSON.parse(localStorage.getItem('archive_default_bg')) || {};
             
             DOM.width.value = defs.width || 700; DOM.height.value = defs.height || 700;
-            DOM.bgColor.value = defs.bgColor || '#ffffff'; DOM.dim.value = defs.dim || 0;
+            DOM.bgColor.value = defs.bgColor || '#ffffff'; DOM.bgTrans.value = defs.bgTransparency || 0;
             
-            removeBgImage(); removeOvImg(); resetBgPos();
+            removeBgImage(); clearInsertedImages(); resetBgPos();
             DOM.forceCenter.checked = defs.forceCenter || false;
 
             DOM.wmChar.value = defs.wmChar || ''; DOM.wmCreator.value = defs.wmCreator || '';
             DOM.wmSize.value = defs.wmSize || 14; DOM.wmColor.value = defs.wmColor || '#000000';
             DOM.wmX.value = defs.wmX || 0; DOM.wmY.value = defs.wmY || 0;
 
-            DOM.ovMaskW.value = defs.ovMaskW || 300; DOM.ovMaskH.value = defs.ovMaskH || 300; DOM.ovMaskR.value = defs.ovMaskR || 0;
-            ovScale = defs.ovScale || 1.0; 
-            DOM.ovX.value = defs.ovX || 0; DOM.ovY.value = defs.ovY || 0;
-            DOM.ovInX.value = defs.ovInX || 0; DOM.ovInY.value = defs.ovInY || 0;
-            DOM.ovFColor.value = defs.ovFColor || '#000000'; DOM.ovFOpacity.value = defs.ovFOpacity || 0;
             
             DOM.tsColor.value = defs.tsColor || '#000000'; DOM.tsOpacity.value = defs.tsOpacity || 0;
             DOM.tsBlur.value = defs.tsBlur || 5; DOM.tsY.value = defs.tsY || 2;
@@ -2982,8 +2997,6 @@
         }
 
         function resetTextOffset() { document.getElementById('text-x').value = 0; document.getElementById('text-y').value = 0; updateUI(); showVisualGuide(); }
-        function resetOverlayMaskOffset() { document.getElementById('ov-x').value = 0; document.getElementById('ov-y').value = 0; updateUI(); }
-        function resetOverlayImageOffset() { document.getElementById('ov-in-x').value = 0; document.getElementById('ov-in-y').value = 0; ovScale = 1.0; updateUI(); }
         function resetWatermarkOffset() { document.getElementById('wm-x').value = 0; document.getElementById('wm-y').value = 0; updateUI(); }
 
         function adjustNum(id, delta, step = 1) {
@@ -2993,14 +3006,12 @@
         }
 
         const inputs = [
-            DOM.width, DOM.height, DOM.bgColor, DOM.dim, DOM.color, DOM.size, DOM.pad, DOM.lh, DOM.paraGap, 
+            DOM.width, DOM.height, DOM.bgColor, DOM.bgTrans, DOM.color, DOM.size, DOM.pad, DOM.lh, DOM.paraGap, 
             DOM.marginTop, DOM.marginBottom, DOM.marginLeft, DOM.marginRight, DOM.htmlScale, DOM.textX, DOM.textY,
             DOM.wmChar, DOM.wmCreator, DOM.wmSize, DOM.wmColor, DOM.wmX, DOM.wmY,
-            DOM.ovMaskW, DOM.ovMaskH, DOM.ovMaskR, DOM.ovX, DOM.ovY, DOM.ovInX, DOM.ovInY, DOM.ovFOpacity,
             DOM.tsColor, DOM.tsOpacity, DOM.tsBlur, DOM.tsY, DOM.letterSpacing, DOM.hScale2
         ];
         inputs.forEach(el => el.addEventListener('input', updateUI));
-        DOM.ovFColor.addEventListener('input', updateUI);
         
         let guideTimer;
         function showVisualGuide(persistent = false) {
@@ -3049,6 +3060,12 @@
             enhanceFileInputs();
             setupRangeReadouts();
             restoreOpenSections();
+            // 펼쳐지지 않는 메뉴 제목도 누르면 그 메뉴로 이동
+            document.querySelectorAll('.controls > .ctrl-section > .ctrl-eyebrow').forEach(t => {
+                t.setAttribute('role', 'button'); t.tabIndex = 0;
+                t.addEventListener('click', () => focusPanelSection(t.closest('.ctrl-section')));
+                t.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); focusPanelSection(t.closest('.ctrl-section')); } });
+            });
             renderTemplateGroupSettings();
             renderFontOptions();
             setupFontPicker();
@@ -3180,7 +3197,10 @@
                     const tempImg = new Image();
                     tempImg.onload = () => {
                         originalBgWidth = tempImg.width; originalBgHeight = tempImg.height;
-                        DOM.bgImage.src = currentBgImageDataUrl; resetBgPos(); updateUI();
+                        DOM.bgImage.src = currentBgImageDataUrl; resetBgPos();
+                        // 단색 배경이 꽉 차 있으면 이미지가 가려지므로 투명하게 바꿔줌
+                        if ((parseFloat(DOM.bgTrans.value) || 0) === 0) { DOM.bgTrans.value = 1; showToast('배경 이미지가 보이도록 단색 배경을 투명(100%)하게 바꿨어요.'); }
+                        updateUI();
                     };
                     tempImg.src = currentBgImageDataUrl;
                 };
@@ -3189,22 +3209,238 @@
         });
         function removeBgImage() { currentBgImageDataUrl = ''; DOM.bgImg.value = ''; syncFilePickName(DOM.bgImg); originalBgWidth = 0; originalBgHeight = 0; resetBgPos(); updateUI(); }
 
-        DOM.ovUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = ev => { 
-                    currentOvImageDataUrl = ev.target.result;
-                    document.getElementById('overlay-img-content').src = currentOvImageDataUrl;
-                    document.getElementById('overlay-img-content').style.display = 'block'; updateUI();
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        function removeOvImg() { 
-            currentOvImageDataUrl = ''; DOM.ovUpload.value = ''; syncFilePickName(DOM.ovUpload); DOM.ovInX.value = 0; DOM.ovInY.value = 0; ovScale = 1.0;
-            document.getElementById('overlay-img-content').src = ''; document.getElementById('overlay-img-content').style.display = 'none'; updateUI(); 
+        // ── 이미지 삽입 ───────────────────────────────────────────
+        function newImageId() { return 'img' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+        function loadImageEl(src) {
+            return new Promise((resolve, reject) => { const im = new Image(); im.onload = () => resolve(im); im.onerror = reject; im.src = src; });
         }
+        function getSelectedImage() { return insertedImages.find(im => im.id === selectedImageId) || null; }
+        function imageHeight(im) { return im.natW ? im.w * im.natH / im.natW : im.w; }
+        // 원본에서 crop 영역을 잘라 새 이미지(data URL)로 만듦. 영역이 원본 밖으로 나가면 그 부분은 투명.
+        async function renderCroppedImage(origSrc, crop) {
+            const im = await loadImageEl(origSrc);
+            const c = crop || { x: 0, y: 0, w: im.naturalWidth, h: im.naturalHeight };
+            const MAX_SIDE = 2400; // 너무 큰 사진은 저장 공간을 위해 줄임 (카드에 쓰기엔 충분한 크기)
+            const k = Math.min(1, MAX_SIDE / Math.max(c.w, c.h));
+            const cw = Math.max(1, Math.round(c.w * k)), ch = Math.max(1, Math.round(c.h * k));
+            const canvas = document.createElement('canvas'); canvas.width = cw; canvas.height = ch;
+            const ctx = canvas.getContext('2d'); ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(im, c.x, c.y, c.w, c.h, 0, 0, cw, ch);
+            const inside = c.x >= 0 && c.y >= 0 && c.x + c.w <= im.naturalWidth + 0.5 && c.y + c.h <= im.naturalHeight + 0.5;
+            const isJpeg = /^data:image\/jpe?g/i.test(origSrc);
+            const src = (isJpeg && inside) ? canvas.toDataURL('image/jpeg', 0.92) : canvas.toDataURL('image/png');
+            return { src, natW: cw, natH: ch };
+        }
+        // 이미지 추가: 파일 → 자르기 창 → 카드 가운데에 넣고 선택
+        document.getElementById('img-add-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+            const orig = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); });
+            let origEl; try { origEl = await loadImageEl(orig); } catch (err) { showToast('이미지를 불러올 수 없어요.'); return; }
+            const result = await openCropper(orig, null);
+            if (!result) return;
+            const crop = result.crop;
+            const out = await renderCroppedImage(orig, crop);
+            const cardW = parseFloat(DOM.width.value) || 700, cardH = parseFloat(DOM.height.value) || 700;
+            // 처음 크기: 카드의 절반 정도 (작은 사진은 원래 크기보다 키우지 않음)
+            let w = Math.min(out.natW, cardW * 0.5); const h = w * out.natH / out.natW;
+            if (h > cardH * 0.6) w = cardH * 0.6 * out.natW / out.natH;
+            const im = { id: newImageId(), src: out.src, orig, crop, natW: out.natW, natH: out.natH, x: 0, y: 0, w: Math.round(w), radius: 0, fColor: '#000000', fOpacity: 0, above: false };
+            insertedImages.push(im); selectedImageId = im.id;
+            updateUI();
+            showToast("이미지를 넣었어요. '편집 시작'으로 위치와 크기를 바꿀 수 있어요.");
+        });
+        async function recropSelectedImage() {
+            const im = getSelectedImage(); if (!im) return;
+            const result = await openCropper(im.orig || im.src, im.orig ? im.crop : null);
+            if (!result) return;
+            const out = await renderCroppedImage(im.orig || im.src, result.crop);
+            Object.assign(im, { src: out.src, natW: out.natW, natH: out.natH, crop: result.crop });
+            if (!im.orig) im.orig = im.src;
+            updateUI();
+        }
+        function deleteSelectedImage() {
+            const i = insertedImages.findIndex(im => im.id === selectedImageId); if (i < 0) return;
+            insertedImages.splice(i, 1);
+            selectedImageId = insertedImages.length ? insertedImages[Math.min(i, insertedImages.length - 1)].id : null;
+            if (!insertedImages.length && ovEditMode) setOvEditMode(false);
+            updateUI(); showToast('이미지를 삭제했어요.');
+        }
+        function moveSelectedImage(delta) {
+            const i = insertedImages.findIndex(im => im.id === selectedImageId); const j = i + delta;
+            if (i < 0 || j < 0 || j >= insertedImages.length) return;
+            [insertedImages[i], insertedImages[j]] = [insertedImages[j], insertedImages[i]];
+            updateUI();
+        }
+        function resetSelectedImagePlacement() {
+            const im = getSelectedImage(); if (!im) return;
+            const cardW = parseFloat(DOM.width.value) || 700;
+            im.x = 0; im.y = 0; im.w = Math.round(Math.min(im.natW, cardW * 0.5)); updateUI();
+        }
+        function clearInsertedImages() { insertedImages = []; selectedImageId = null; if (ovEditMode) setOvEditMode(false); updateUI(); }
+        function selectImage(id) { if (selectedImageId === id) return; selectedImageId = id; updateUI(); }
+        // 왼쪽 패널 숫자 → 선택한 이미지
+        function onImageInput() {
+            const im = getSelectedImage(); if (!im) return;
+            im.w = Math.max(10, parseFloat(document.getElementById('img-w').value) || im.w);
+            im.x = parseFloat(document.getElementById('img-x').value) || 0;
+            im.y = parseFloat(document.getElementById('img-y').value) || 0;
+            im.radius = Math.max(0, parseFloat(document.getElementById('img-r').value) || 0);
+            im.fColor = document.getElementById('img-fcolor').value;
+            im.fOpacity = parseFloat(document.getElementById('img-fopacity').value) || 0;
+            im.above = document.getElementById('img-above').checked;
+            updateUI();
+        }
+        function imageTransformCss(im) { return `translate(calc(-50% + ${im.x}px), calc(-50% + ${-im.y}px))`; }
+        // 카드에 이미지들을 그림 (요소는 다시 만들지 않고 재사용해서 깜빡임 없게)
+        function renderInsertedImages() {
+            const layers = { below: document.getElementById('img-layer-below'), above: document.getElementById('img-layer-above') };
+            const existing = new Map(); document.querySelectorAll('.ins-img').forEach(el => existing.set(el.dataset.id, el));
+            const wanted = new Set(insertedImages.map(im => im.id));
+            existing.forEach((el, id) => { if (!wanted.has(id)) el.remove(); });
+            insertedImages.forEach(im => {
+                let el = existing.get(im.id);
+                if (!el) {
+                    el = document.createElement('div'); el.className = 'ins-img'; el.dataset.id = im.id;
+                    el.innerHTML = '<img alt="" draggable="false"><div class="ins-img-filter"></div>';
+                }
+                const img = el.querySelector('img'); if (img.getAttribute('src') !== im.src) img.setAttribute('src', im.src);
+                el.style.width = im.w + 'px'; el.style.height = imageHeight(im) + 'px';
+                el.style.transform = imageTransformCss(im); el.style.borderRadius = (im.radius || 0) + 'px';
+                el.querySelector('.ins-img-filter').style.background = im.fOpacity > 0 ? `rgba(${hexToRgbStr(im.fColor || '#000000')}, ${im.fOpacity})` : 'transparent';
+                (im.above ? layers.above : layers.below).appendChild(el); // 배열 순서대로 다시 붙여서 겹침 순서 유지
+            });
+            // 편집 테두리: 선택한 이미지 위에 정확히 겹침 (카드 밖 레이어라 손잡이가 잘리지 않음)
+            const sel = getSelectedImage();
+            const cropLayer = document.getElementById('ov-crop-layer'), frame = document.getElementById('ov-crop-frame');
+            if (sel) {
+                frame.style.width = sel.w + 'px'; frame.style.height = imageHeight(sel) + 'px';
+                frame.style.transform = imageTransformCss(sel); frame.style.borderRadius = (sel.radius || 0) + 'px';
+            }
+            cropLayer.style.display = (ovEditMode && sel) ? 'block' : 'none';
+            renderImagePanel();
+        }
+        function renderImagePanel() {
+            const list = document.getElementById('img-list'); if (!list) return;
+            const sig = insertedImages.map(im => im.id + ':' + im.src.length).join('|') + '#' + selectedImageId;
+            if (list.dataset.sig !== sig) {
+                list.dataset.sig = sig; list.innerHTML = '';
+                insertedImages.forEach((im, i) => {
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'img-thumb' + (im.id === selectedImageId ? ' active' : '');
+                    b.title = `이미지 ${i + 1} 선택`; b.innerHTML = `<img alt="" src="${im.src}"><span class="img-thumb-no">${i + 1}</span>`;
+                    b.addEventListener('click', () => selectImage(im.id));
+                    list.appendChild(b);
+                });
+            }
+            const sel = getSelectedImage();
+            document.getElementById('img-detail').style.display = sel ? '' : 'none';
+            document.getElementById('img-empty-note').style.display = insertedImages.length ? 'none' : '';
+            if (!sel) return;
+            const idx = insertedImages.indexOf(sel);
+            document.getElementById('img-detail-title').textContent = `선택한 이미지 (${idx + 1}번)`;
+            const setVal = (id, v) => { const el = document.getElementById(id); if (document.activeElement !== el) el.value = v; };
+            setVal('img-w', Math.round(sel.w)); setVal('img-x', Math.round(sel.x)); setVal('img-y', Math.round(sel.y));
+            setVal('img-r', sel.radius || 0); setVal('img-fcolor', sel.fColor || '#000000'); setVal('img-fopacity', sel.fOpacity || 0);
+            document.getElementById('img-above').checked = !!sel.above;
+            document.getElementById('img-size-readout').textContent = `(높이 ${Math.round(imageHeight(sel))})`;
+        }
+        // 예전 형식(오버레이 이미지 1장: 마스크 + 안쪽 이미지 위치/배율) → 보이던 모습 그대로 잘라서 새 형식 1장으로
+        async function legacyOverlayToImages(cfg) {
+            if (!cfg.ovImg) return [];
+            try {
+                const im = await loadImageEl(cfg.ovImg); const nw = im.naturalWidth, nh = im.naturalHeight;
+                const W = parseFloat(cfg.ovMaskW) || 300, H = parseFloat(cfg.ovMaskH) || 300, sc = parseFloat(cfg.ovScale) || 1;
+                const inX = parseFloat(cfg.ovInX) || 0, inY = parseFloat(cfg.ovInY) || 0;
+                const cw = W / sc, ch = H / sc, cx = nw / 2 - inX / sc, cy = nh / 2 + inY / sc;
+                const crop = { x: cx - cw / 2, y: cy - ch / 2, w: cw, h: ch };
+                const out = await renderCroppedImage(cfg.ovImg, crop);
+                return [{ id: newImageId(), src: out.src, orig: cfg.ovImg, crop, natW: out.natW, natH: out.natH,
+                    x: parseFloat(cfg.ovX) || 0, y: parseFloat(cfg.ovY) || 0, w: W, radius: parseFloat(cfg.ovMaskR) || 0,
+                    fColor: cfg.ovFColor || '#000000', fOpacity: parseFloat(cfg.ovFOpacity) || 0, above: !!cfg.ovAboveText }];
+            } catch (e) { return []; }
+        }
+
+        // ── 자르기 창 ───────────────────────────────────────────────
+        const cropper = { resolve: null, natW: 0, natH: 0, k: 1, dispW: 0, dispH: 0, box: null, ratio: null, drag: null };
+        function isCropperOpen() { return document.getElementById('crop-modal').style.display === 'flex'; }
+        function openCropper(src, initialCrop) {
+            return new Promise(async (resolve) => {
+                const im = await loadImageEl(src).catch(() => null); if (!im) { resolve(null); return; }
+                cropper.resolve = resolve; cropper.natW = im.naturalWidth; cropper.natH = im.naturalHeight;
+                document.getElementById('crop-modal').style.display = 'flex';
+                // 창 크기에 맞춰 이미지를 보여줌
+                const maxW = Math.min(700, window.innerWidth - 80), maxH = Math.min(460, window.innerHeight - 280);
+                cropper.k = Math.min(maxW / cropper.natW, maxH / cropper.natH, 1);
+                cropper.dispW = Math.round(cropper.natW * cropper.k); cropper.dispH = Math.round(cropper.natH * cropper.k);
+                const stage = document.getElementById('crop-stage'), img = document.getElementById('crop-img');
+                img.src = src; img.style.width = cropper.dispW + 'px'; img.style.height = cropper.dispH + 'px';
+                stage.style.width = cropper.dispW + 'px'; stage.style.height = cropper.dispH + 'px';
+                const c = initialCrop || { x: 0, y: 0, w: cropper.natW, h: cropper.natH };
+                cropper.box = clampCropBox({ x: c.x * cropper.k, y: c.y * cropper.k, w: c.w * cropper.k, h: c.h * cropper.k });
+                setCropRatio('free', true);
+                drawCropBox();
+            });
+        }
+        function closeCropper(action) {
+            if (!isCropperOpen()) return;
+            document.getElementById('crop-modal').style.display = 'none';
+            const r = cropper.resolve; cropper.resolve = null; if (!r) return;
+            if (action === 'apply') { const b = cropper.box; r({ crop: { x: b.x / cropper.k, y: b.y / cropper.k, w: b.w / cropper.k, h: b.h / cropper.k } }); }
+            else if (action === 'full') r({ crop: { x: 0, y: 0, w: cropper.natW, h: cropper.natH } });
+            else r(null);
+        }
+        function clampCropBox(b) {
+            const W = cropper.dispW, H = cropper.dispH;
+            const w = Math.max(10, Math.min(b.w, W)), h = Math.max(10, Math.min(b.h, H));
+            return { x: Math.max(0, Math.min(b.x, W - w)), y: Math.max(0, Math.min(b.y, H - h)), w, h };
+        }
+        function setCropRatio(key, silent) {
+            document.querySelectorAll('#crop-ratio-seg button').forEach(b => b.classList.toggle('active', b.dataset.ratio === key));
+            cropper.ratio = key === 'free' ? null : key === 'orig' ? cropper.natW / cropper.natH : parseFloat(key);
+            if (cropper.ratio && !silent) {
+                // 지금 영역의 가운데를 유지하면서 비율에 맞춤 (이미지 안에 들어가는 최대 크기)
+                const b = cropper.box, cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+                let w = b.w, h = w / cropper.ratio;
+                if (h > b.h) { h = b.h; w = h * cropper.ratio; }
+                w = Math.min(w, cropper.dispW, cropper.dispH * cropper.ratio); h = w / cropper.ratio;
+                cropper.box = clampCropBox({ x: cx - w / 2, y: cy - h / 2, w, h });
+            }
+            drawCropBox();
+        }
+        function drawCropBox() {
+            const b = cropper.box, el = document.getElementById('crop-box');
+            el.style.left = b.x + 'px'; el.style.top = b.y + 'px'; el.style.width = b.w + 'px'; el.style.height = b.h + 'px';
+            document.getElementById('crop-size-readout').textContent = `${Math.round(b.w / cropper.k)} × ${Math.round(b.h / cropper.k)} px (원본 ${cropper.natW} × ${cropper.natH})`;
+        }
+        (function setupCropper() {
+            document.querySelectorAll('#crop-ratio-seg button').forEach(b => b.addEventListener('click', () => setCropRatio(b.dataset.ratio)));
+            const stage = document.getElementById('crop-stage');
+            stage.addEventListener('pointerdown', (e) => {
+                const handle = e.target.closest('.crop-h'), inBox = e.target.closest('#crop-box');
+                if (!handle && !inBox) return;
+                e.preventDefault(); stage.setPointerCapture(e.pointerId);
+                cropper.drag = { mode: handle ? 'resize' : 'move', corner: handle ? handle.dataset.c : null, sx: e.clientX, sy: e.clientY, box: { ...cropper.box } };
+            });
+            stage.addEventListener('pointermove', (e) => {
+                const d = cropper.drag; if (!d) return;
+                const dx = e.clientX - d.sx, dy = e.clientY - d.sy, b0 = d.box;
+                if (d.mode === 'move') { cropper.box = clampCropBox({ ...b0, x: b0.x + dx, y: b0.y + dy }); drawCropBox(); return; }
+                const hx = d.corner.includes('e') ? 1 : -1, vy = d.corner.includes('s') ? 1 : -1;
+                const ax = hx > 0 ? b0.x : b0.x + b0.w, ay = vy > 0 ? b0.y : b0.y + b0.h; // 고정되는 반대쪽 모서리
+                const maxW = hx > 0 ? cropper.dispW - ax : ax, maxH = vy > 0 ? cropper.dispH - ay : ay;
+                let w, h;
+                if (cropper.ratio) {
+                    // 비율 고정: 대각선 방향으로 끈 만큼 커지고 작아짐
+                    const s = (hx * dx * b0.w + vy * dy * b0.h) / (b0.w * b0.w + b0.h * b0.h);
+                    w = Math.max(10, b0.w * (1 + s)); w = Math.min(w, maxW, maxH * cropper.ratio); h = w / cropper.ratio;
+                } else {
+                    w = Math.max(10, Math.min(b0.w + hx * dx, maxW)); h = Math.max(10, Math.min(b0.h + vy * dy, maxH));
+                }
+                cropper.box = { x: hx > 0 ? ax : ax - w, y: vy > 0 ? ay : ay - h, w, h }; drawCropBox();
+            });
+            const end = () => { cropper.drag = null; };
+            stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+            document.getElementById('crop-modal').addEventListener('mousedown', e => { if (e.target.id === 'crop-modal') closeCropper(null); });
+        })();
 
         function toggleDragMode(mode) {
             const btns = { 'bg': document.getElementById('btn-bg-drag'), 'text': DOM.textDragBtn, 'text-html': DOM.textDragBtnHtml, 'wm': document.getElementById('btn-wm-drag') };
@@ -3346,9 +3582,9 @@
             }
         }, { passive: false });
 
-        // ── 오버레이 이미지 크롭 툴: "이미지 편집" 모드일 때만 작동 ──────────────
-        // 모서리 4점 드래그 = 마스크 크기 조절, 마스크 내부 드래그 = 마스크+이미지 함께 이동,
-        // 마스크 바깥 드래그 = 마스크는 그대로 두고 안쪽 이미지 위치만 이동.
+        // ── 삽입 이미지 편집: "편집 시작"을 눌렀을 때만 작동 ──────────────
+        // 이미지 안쪽 드래그 = 이동, 모서리 드래그 = 비율 유지한 채 크기 조절(반대쪽 모서리 고정),
+        // 휠/두 손가락 = 가운데 기준 확대·축소, 다른 이미지를 누르면 그 이미지를 선택.
         function setOvEditMode(on) {
             ovEditMode = !!on;
             const btn = document.getElementById('btn-ov-edit-mode');
@@ -3378,7 +3614,7 @@
         }
 
         function toggleOvEditMode() {
-            if (!ovEditMode && !currentOvImageDataUrl) { showToast('먼저 오버레이 이미지를 업로드하세요.'); return; }
+            if (!ovEditMode && !getSelectedImage()) { showToast('먼저 이미지를 추가하세요.'); return; }
             if (!ovEditMode) {
                 // 다른 위치이동 모드와 동시에 켜져 있으면 헷갈리니 정리
                 dragMode = null; DOM.preview.style.cursor = 'default';
@@ -3388,180 +3624,136 @@
             setOvEditMode(!ovEditMode);
         }
 
-        (function setupOvCropTool() {
+        (function setupImageEditTool() {
             const frame = document.getElementById('ov-crop-frame');
             if (!frame) return;
-            let mode = null; // 'resize' | 'move' | 'pan'
-            let corner = null;
-            let startX = 0, startY = 0;
-            let origW = 0, origH = 0, origOvX = 0, origOvY = 0, origInX = 0, origInY = 0;
-            let pinchStartDist = null, pinchStartOvScale = 1;
-
-            function startResize(clientX, clientY, cornerName) {
-                if (!ovEditMode) return;
-                mode = 'resize'; corner = cornerName;
-                startX = clientX; startY = clientY;
-                origW = parseFloat(DOM.ovMaskW.value) || 0;
-                origH = parseFloat(DOM.ovMaskH.value) || 0;
-                origOvX = parseFloat(DOM.ovX.value) || 0;
-                origOvY = parseFloat(DOM.ovY.value) || 0;
-                origInX = parseFloat(DOM.ovInX.value) || 0;
-                origInY = parseFloat(DOM.ovInY.value) || 0;
+            let drag = null; // { mode: 'move'|'resize', corner, sx, sy, x, y, w, h }
+            let pinch = null; // { dist, w }
+            const previewScale = () => parseFloat(DOM.scale.value) || 1;
+            function begin(mode, clientX, clientY, corner) {
+                const im = getSelectedImage(); if (!im || !ovEditMode) return false;
+                drag = { mode, corner, sx: clientX, sy: clientY, x: im.x, y: im.y, w: im.w, h: imageHeight(im) };
+                return true;
             }
-            function startMove(clientX, clientY) {
-                if (!ovEditMode) return;
-                mode = 'move';
-                startX = clientX; startY = clientY;
-                origOvX = parseFloat(DOM.ovX.value) || 0;
-                origOvY = parseFloat(DOM.ovY.value) || 0;
-            }
-            function startPan(clientX, clientY) {
-                if (!ovEditMode) return;
-                mode = 'pan';
-                startX = clientX; startY = clientY;
-                origInX = parseFloat(DOM.ovInX.value) || 0;
-                origInY = parseFloat(DOM.ovInY.value) || 0;
-                document.body.classList.add('ov-panning');
-            }
-            function pointerMove(clientX, clientY) {
-                if (!mode || !ovEditMode) return;
-                const previewScale = parseFloat(DOM.scale.value) || 1;
-                const dxRight = (clientX - startX) / previewScale;   // + = 오른쪽으로 이동
-                const dyDown = (clientY - startY) / previewScale;    // + = 아래로 이동
-
-                if (mode === 'resize') {
-                    const h = (corner === 'ne' || corner === 'se') ? 1 : -1; // 동쪽 모서리를 오른쪽으로 끌면 폭 증가
-                    const v = (corner === 'sw' || corner === 'se') ? 1 : -1; // 남쪽 모서리를 아래로 끌면 높이 증가
-                    const minSize = 20;
-                    const newW = Math.max(minSize, origW + h * dxRight);
-                    const newH = Math.max(minSize, origH + v * dyDown);
-                    // 반대쪽 모서리가 고정되도록 중심을 옮김: 어느 모서리를 잡았든, 움직인 그 변(edge)만
-                    // 옮겨지고 반대쪽 변은 그대로이므로 중심 이동량은 항상 "옮긴 거리의 절반"
-                    const deltaOvX = dxRight / 2;
-                    const deltaOvY = -dyDown / 2;
-                    DOM.ovMaskW.value = Math.round(newW);
-                    DOM.ovMaskH.value = Math.round(newH);
-                    DOM.ovX.value = Math.round(origOvX + deltaOvX);
-                    DOM.ovY.value = Math.round(origOvY + deltaOvY);
-                    // 크기 조절(모서리 드래그)할 땐 이미지는 카드 위에서 그대로 있어야 하므로,
-                    // 마스크 중심이 옮겨간 만큼 이미지 위치를 반대로 보정 (이동 모드와는 다른 동작)
-                    DOM.ovInX.value = Math.round(origInX - deltaOvX);
-                    DOM.ovInY.value = Math.round(origInY - deltaOvY);
-                    updateUI();
-                } else if (mode === 'move') {
-                    DOM.ovX.value = Math.round(origOvX + dxRight);
-                    DOM.ovY.value = Math.round(origOvY - dyDown);
-                    // 이미지 위치는 그대로 둠 → 마스크와 이미지가 한 덩어리처럼 같이 움직임
-                    updateUI();
-                } else if (mode === 'pan') {
-                    // 마스크는 고정, 안쪽 이미지만 이동 (이미지 위치 X·Y 값과 같은 기준: 오른쪽 +, 위쪽 +)
-                    DOM.ovInX.value = Math.round(origInX + dxRight);
-                    DOM.ovInY.value = Math.round(origInY - dyDown);
-                    updateUI();
+            function move(clientX, clientY) {
+                const im = getSelectedImage(); if (!drag || !im) return;
+                const dx = (clientX - drag.sx) / previewScale(), dy = (clientY - drag.sy) / previewScale(); // dy: 아래 +
+                if (drag.mode === 'move') {
+                    im.x = Math.round(drag.x + dx); im.y = Math.round(drag.y - dy);
+                } else {
+                    const hx = drag.corner.includes('e') ? 1 : -1, vy = drag.corner.includes('s') ? 1 : -1;
+                    // 대각선 방향으로 끈 만큼 비율을 유지한 채 커지고 작아짐 (반대쪽 모서리는 그대로)
+                    const s = (hx * dx * drag.w + vy * dy * drag.h) / (drag.w * drag.w + drag.h * drag.h);
+                    const newW = Math.max(16, drag.w * (1 + s)), newH = newW * drag.h / drag.w;
+                    im.w = Math.round(newW);
+                    im.x = Math.round(drag.x + hx * (newW - drag.w) / 2);
+                    im.y = Math.round(drag.y - vy * (newH - drag.h) / 2);
                 }
+                updateUI();
             }
-            function pointerEnd() { mode = null; corner = null; document.body.classList.remove('ov-panning'); }
-
-            // 마스크 바깥(미리보기 빈 곳 포함)을 드래그하면 이미지 위치만 옮김.
-            // 미리보기 위의 버튼들(배율, 저장, 편집 종료 등)을 누른 건 제외.
-            const previewWrapperEl = document.querySelector('.preview-canvas-wrapper');
-            const isPanExcluded = (target) => !!target.closest('#ov-crop-frame, .floating-zoom, .floating-actions, #mobile-edit-exit-btn, button, input, label, select');
-            previewWrapperEl.addEventListener('mousedown', (e) => {
-                if (!ovEditMode || e.button !== 0 || isPanExcluded(e.target)) return;
-                e.preventDefault();
-                startPan(e.clientX, e.clientY);
-            });
-            // 터치 이벤트는 처음 손가락을 댄 요소로만 계속 전달되는데, 그 요소(예: 본문 줄)는 화면을 다시 그릴 때
-            // 새로 만들어져 문서에서 떨어져 나감 → 위로 전달(버블링)이 끊기므로, 시작한 요소에 직접 연결해서 받음
-            previewWrapperEl.addEventListener('touchstart', (e) => {
-                if (!ovEditMode || isPanExcluded(e.target)) return;
-                if (e.touches.length !== 1) { if (mode === 'pan') pointerEnd(); return; } // 두 손가락은 기존 미리보기 핀치줌
-                e.preventDefault();
-                const t = e.touches[0]; startPan(t.clientX, t.clientY);
-                const target = e.target;
-                const onMove = (ev) => {
-                    if (mode !== 'pan' || ev.touches.length !== 1) return;
-                    ev.preventDefault();
-                    const tt = ev.touches[0]; pointerMove(tt.clientX, tt.clientY);
-                };
-                const onEnd = (ev) => {
-                    if (ev.type === 'touchend' && ev.touches.length > 0) return;
-                    if (mode === 'pan') pointerEnd();
-                    target.removeEventListener('touchmove', onMove); target.removeEventListener('touchend', onEnd); target.removeEventListener('touchcancel', onEnd);
-                };
-                target.addEventListener('touchmove', onMove, { passive: false });
-                target.addEventListener('touchend', onEnd); target.addEventListener('touchcancel', onEnd);
-            }, { passive: false });
+            function end() { drag = null; }
+            function zoomSelected(factor) {
+                const im = getSelectedImage(); if (!im) return;
+                im.w = Math.round(Math.max(16, Math.min(im.w * factor, 20000))); updateUI();
+            }
+            // 미리보기에서 그 지점에 있는 이미지 (위에 있는 것 우선)
+            function hitTestImage(clientX, clientY) {
+                const order = [...document.querySelectorAll('#img-layer-above .ins-img')].reverse().concat([...document.querySelectorAll('#img-layer-below .ins-img')].reverse());
+                for (const el of order) { const r = el.getBoundingClientRect(); if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) return el.dataset.id; }
+                return null;
+            }
 
             frame.querySelectorAll('.ov-crop-handle').forEach(handle => {
-                handle.addEventListener('mousedown', (e) => {
-                    if (!ovEditMode) return;
-                    e.preventDefault(); e.stopPropagation();
-                    startResize(e.clientX, e.clientY, handle.dataset.corner);
-                });
+                handle.addEventListener('mousedown', (e) => { if (!ovEditMode) return; e.preventDefault(); e.stopPropagation(); begin('resize', e.clientX, e.clientY, handle.dataset.corner); });
                 handle.addEventListener('touchstart', (e) => {
-                    if (!ovEditMode || e.touches.length !== 1) return;
-                    e.preventDefault(); e.stopPropagation();
-                    const t = e.touches[0]; startResize(t.clientX, t.clientY, handle.dataset.corner);
+                    if (!ovEditMode || e.touches.length !== 1) return; e.preventDefault(); e.stopPropagation();
+                    const t = e.touches[0]; begin('resize', t.clientX, t.clientY, handle.dataset.corner);
                 }, { passive: false });
             });
-
             frame.addEventListener('mousedown', (e) => {
-                if (!ovEditMode) return;
-                if (e.target.closest('.ov-crop-handle')) return; // 손잡이는 위에서 이미 처리됨
-                e.preventDefault(); e.stopPropagation();
-                startMove(e.clientX, e.clientY);
+                if (!ovEditMode || e.target.closest('.ov-crop-handle')) return;
+                e.preventDefault(); e.stopPropagation(); begin('move', e.clientX, e.clientY);
             });
             frame.addEventListener('touchstart', (e) => {
-                if (!ovEditMode) return;
-                if (e.target.closest('.ov-crop-handle')) return;
-                if (e.touches.length === 2) {
-                    // 두 손가락 = 마스크 안쪽 이미지 확대축소 (핀치)
-                    e.preventDefault(); e.stopPropagation();
-                    mode = null; // 이동 모드와 동시 진행 방지
-                    pinchStartDist = getTouchDistance(e.touches); pinchStartOvScale = ovScale || 1;
-                    return;
-                }
-                if (e.touches.length !== 1) return;
+                if (!ovEditMode || e.target.closest('.ov-crop-handle')) return;
                 e.preventDefault(); e.stopPropagation();
-                const t = e.touches[0]; startMove(t.clientX, t.clientY);
+                if (e.touches.length === 2) { drag = null; const im = getSelectedImage(); if (im) pinch = { dist: getTouchDistance(e.touches), w: im.w }; return; }
+                if (e.touches.length === 1) { const t = e.touches[0]; begin('move', t.clientX, t.clientY); }
             }, { passive: false });
-
-            window.addEventListener('mousemove', (e) => pointerMove(e.clientX, e.clientY));
             frame.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 2 && pinchStartDist) {
+                if (e.touches.length === 2 && pinch) {
                     e.preventDefault(); e.stopPropagation();
-                    const ratio = getTouchDistance(e.touches) / pinchStartDist;
-                    ovScale = Math.max(0.1, Math.min(10, pinchStartOvScale * ratio));
-                    updateUI();
+                    const im = getSelectedImage(); if (im) { im.w = Math.round(Math.max(16, pinch.w * getTouchDistance(e.touches) / pinch.dist)); updateUI(); }
                     return;
                 }
-                if (!mode || e.touches.length !== 1) return;
-                e.preventDefault(); e.stopPropagation();
-                const t = e.touches[0]; pointerMove(t.clientX, t.clientY);
+                if (!drag || e.touches.length !== 1) return;
+                e.preventDefault(); e.stopPropagation(); const t = e.touches[0]; move(t.clientX, t.clientY);
+            }, { passive: false });
+            frame.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinch = null; if (!e.touches.length) end(); });
+            frame.addEventListener('touchcancel', () => { pinch = null; end(); });
+            window.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
+            window.addEventListener('mouseup', end);
+            frame.addEventListener('wheel', (e) => {
+                if (!ovEditMode) return; e.preventDefault(); e.stopPropagation();
+                zoomSelected(Math.max(0.5, Math.min(2, 1 - e.deltaY * wheelZoomSensitivity * 4)));
             }, { passive: false });
 
-            window.addEventListener('mouseup', pointerEnd);
-            frame.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = null; pointerEnd(); });
-            frame.addEventListener('touchcancel', () => { pinchStartDist = null; pointerEnd(); });
-
-            frame.addEventListener('wheel', (e) => {
-                if (!ovEditMode || !currentOvImageDataUrl) return;
-                e.preventDefault(); e.stopPropagation();
-                ovScale -= e.deltaY * wheelZoomSensitivity;
-                ovScale = Math.max(0.1, Math.min(ovScale, 10));
-                updateUI();
+            // 편집 중에 테두리 밖을 누르면: 그 자리의 다른 이미지를 선택하고 바로 옮길 수 있게
+            const previewWrapperEl = document.querySelector('.preview-canvas-wrapper');
+            const isExcluded = (target) => !!target.closest('#ov-crop-frame, .floating-zoom, .floating-actions, #mobile-edit-exit-btn, button, input, label, select');
+            previewWrapperEl.addEventListener('mousedown', (e) => {
+                if (!ovEditMode || e.button !== 0 || isExcluded(e.target)) return;
+                const id = hitTestImage(e.clientX, e.clientY); if (!id) return;
+                e.preventDefault(); selectImage(id); begin('move', e.clientX, e.clientY);
+            });
+            // 터치는 처음 닿은 요소로만 이벤트가 이어지는데, 그 요소가 다시 그려지며 바뀔 수 있어서 시작한 요소에 직접 연결
+            previewWrapperEl.addEventListener('touchstart', (e) => {
+                if (!ovEditMode || e.touches.length !== 1 || isExcluded(e.target)) return;
+                const t = e.touches[0]; const id = hitTestImage(t.clientX, t.clientY); if (!id) return;
+                e.preventDefault(); selectImage(id); begin('move', t.clientX, t.clientY);
+                const target = e.target;
+                const onMove = (ev) => { if (!drag || ev.touches.length !== 1) return; ev.preventDefault(); move(ev.touches[0].clientX, ev.touches[0].clientY); };
+                const onEnd = (ev) => {
+                    if (ev.type === 'touchend' && ev.touches.length > 0) return; end();
+                    target.removeEventListener('touchmove', onMove); target.removeEventListener('touchend', onEnd); target.removeEventListener('touchcancel', onEnd);
+                };
+                target.addEventListener('touchmove', onMove, { passive: false }); target.addEventListener('touchend', onEnd); target.addEventListener('touchcancel', onEnd);
             }, { passive: false });
         })();
 
+        function isDesktopPanel() { return !window.matchMedia('(max-width: 860px)').matches; }
+        // 왼쪽 패널에서 그 메뉴가 맨 위에 오도록 스크롤 (패널 안에서만 움직임 — 화면 전체가 밀리지 않게 직접 계산)
+        function scrollPanelToSection(section) {
+            const panel = document.querySelector('.controls'); if (!panel || !section) return;
+            const top = section.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop;
+            panel.scrollTo({ top, behavior: 'smooth' });
+        }
+        // 다른 접히는 메뉴들은 모두 접음 (선택한 메뉴 내용만 보이게)
+        function collapseOtherSections(exceptSection) {
+            document.querySelectorAll('.controls > .ctrl-section > .collapsible-header').forEach(h => {
+                const sec = h.closest('.ctrl-section'); if (sec === exceptSection) return;
+                if (h.nextElementSibling && h.nextElementSibling.style.display && h.nextElementSibling.style.display !== 'none') toggleSection(h, false);
+            });
+        }
+        // 펼쳐지지 않는 메뉴(본문 입력·타이포그래피 등)의 제목을 눌렀을 때
+        function focusPanelSection(section) {
+            if (!isDesktopPanel()) return;
+            collapseOtherSections(section);
+            requestAnimationFrame(() => scrollPanelToSection(section));
+        }
         function toggleSection(headerEl, forceOpen) {
             const content = headerEl.nextElementSibling; const icon = headerEl.querySelector('.collapsible-icon');
             const openDisplay = document.body.classList.contains('screen-expand') ? 'grid' : 'block';
             const willOpen = forceOpen !== undefined ? forceOpen : content.style.display !== openDisplay;
+            // 사용자가 눌러서 여는 경우: 다른 메뉴는 접고, 이 메뉴를 맨 위로
+            if (forceOpen === undefined && willOpen && isDesktopPanel()) {
+                collapseOtherSections(headerEl.closest('.ctrl-section'));
+                requestAnimationFrame(() => scrollPanelToSection(headerEl.closest('.ctrl-section')));
+            }
             content.style.display = willOpen ? openDisplay : 'none'; icon.style.transform = willOpen ? 'rotate(180deg)' : 'rotate(0deg)';
             // 펼친 섹션을 기억해서 새로고침해도 그대로 열려 있게
             const section = headerEl.closest('.ctrl-section');
-            if (section && section.id && forceOpen === undefined) {
+            if (section && section.id && (forceOpen === undefined || forceOpen === false)) {
                 let open = []; try { open = JSON.parse(localStorage.getItem('archive_open_sections')) || []; } catch (e) { }
                 open = open.filter(id => id !== section.id); if (willOpen) open.push(section.id);
                 try { localStorage.setItem('archive_open_sections', JSON.stringify(open)); } catch (e) { }
@@ -3583,7 +3775,7 @@
             if (document.activeElement !== hy) hy.value = DOM.textY.value;
         }
         // 슬라이더 옆에 현재 값(%)을 보여줌
-        const RANGE_READOUT_IDS = ['ov-filter-opacity', 'hl-opacity', 'ts-opacity', 'input-dim'];
+        const RANGE_READOUT_IDS = ['img-fopacity', 'hl-opacity', 'ts-opacity', 'input-bg-transparency'];
         function setupRangeReadouts() {
             RANGE_READOUT_IDS.forEach(id => {
                 const input = document.getElementById(id); if (!input || input.nextElementSibling?.classList.contains('range-readout')) return;
@@ -3709,7 +3901,7 @@
                 text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
                 bgImg: currentBgImageDataUrl, bgScale: bgScale, bgOffsetX: bgOffsetX, bgOffsetY: bgOffsetY,
                 textX: DOM.textX.value, textY: DOM.textY.value, 
-                bgColor: DOM.bgColor.value, dim: DOM.dim.value, paraGap: DOM.paraGap.value,
+                bgColor: DOM.bgColor.value, bgTransparency: DOM.bgTrans.value, paraGap: DOM.paraGap.value,
                 isHtmlMode: DOM.htmlToggle.checked, 
                 marginTop: DOM.marginTop.value, marginBottom: DOM.marginBottom.value, marginLeft: DOM.marginLeft.value, marginRight: DOM.marginRight.value,
                 htmlScale: DOM.htmlScale.value,
@@ -3719,10 +3911,7 @@
                 customFontFileName: currentFontVal.startsWith('Custom_') ? (window.currentCustomFontFileName || null) : null,
                 letterSpacing: DOM.letterSpacing.value, hScale2: DOM.hScale2.value, forceCenter: DOM.forceCenter.checked, charWrap: DOM.charWrap.checked,
                 wmChar: DOM.wmChar.value, wmCreator: DOM.wmCreator.value, wmSize: DOM.wmSize.value, wmColor: DOM.wmColor.value, wmX: DOM.wmX.value, wmY: DOM.wmY.value,
-                ovImg: currentOvImageDataUrl, ovMaskW: DOM.ovMaskW.value, ovMaskH: DOM.ovMaskH.value, ovMaskR: DOM.ovMaskR.value, 
-                ovScale: ovScale, ovX: DOM.ovX.value, ovY: DOM.ovY.value, ovInX: DOM.ovInX.value, ovInY: DOM.ovInY.value,
-                ovAboveText: !!(DOM.ovAboveText && DOM.ovAboveText.checked),
-                ovFColor: DOM.ovFColor.value, ovFOpacity: DOM.ovFOpacity.value,
+                images: cloneData(insertedImages),
                 tsColor: DOM.tsColor.value, tsOpacity: DOM.tsOpacity.value, tsBlur: DOM.tsBlur.value, tsY: DOM.tsY.value
             };
         }
@@ -3732,9 +3921,22 @@
             DOM.width.value = config.width || 700; DOM.height.value = config.height || 700;
             bgScale = config.bgScale || 1.0; bgOffsetX = config.bgOffsetX || 0; bgOffsetY = config.bgOffsetY || 0;
             DOM.textX.value = config.textX || 0; DOM.textY.value = config.textY || 0;
-            DOM.ovX.value = config.ovX || 0; DOM.ovY.value = config.ovY || 0; DOM.ovInX.value = config.ovInX || 0; DOM.ovInY.value = config.ovInY || 0;
             
-            DOM.bgColor.value = config.bgColor || '#ffffff'; DOM.dim.value = config.dim || 0; DOM.paraGap.value = config.paraGap || 5; 
+            DOM.bgColor.value = config.bgColor || '#ffffff'; DOM.paraGap.value = config.paraGap || 5;
+            if (config.bgTransparency !== undefined && config.bgTransparency !== null) {
+                DOM.bgTrans.value = config.bgTransparency;
+            } else {
+                // 예전 형식("어둡기" = 검은 막): 보이던 모습 그대로 바꿈
+                const d = parseFloat(config.dim) || 0;
+                if (config.bgImg) {   // 배경 이미지 위의 검은 막 → 검은 단색을 (1-어둡기)만큼 투명하게
+                    if (d > 0) DOM.bgColor.value = '#000000';
+                    DOM.bgTrans.value = 1 - d;
+                } else {              // 단색 배경을 어둡게 한 색 그대로
+                    const [r, g, b] = hexToRgbStr(DOM.bgColor.value).split(',').map(v => parseInt(v, 10));
+                    DOM.bgColor.value = '#' + [r, g, b].map(v => Math.round(v * (1 - d)).toString(16).padStart(2, '0')).join('');
+                    DOM.bgTrans.value = 0;
+                }
+            }
             DOM.marginTop.value = config.marginTop || 0; DOM.marginBottom.value = config.marginBottom || 0; DOM.marginLeft.value = config.marginLeft || 0; DOM.marginRight.value = config.marginRight || 0;
             DOM.htmlScale.value = config.htmlScale || 1.0;
             DOM.color.value = config.color || '#222222'; DOM.size.value = config.size || 24; DOM.pad.value = config.pad || 15; DOM.lh.value = config.lh || 1.2; DOM.align.value = config.align || 'center';
@@ -3746,9 +3948,6 @@
             DOM.wmSize.value = config.wmSize || 14; DOM.wmColor.value = config.wmColor || '#000000';
             DOM.wmX.value = config.wmX || 0; DOM.wmY.value = config.wmY || 0; 
 
-            DOM.ovMaskW.value = config.ovMaskW || 300; DOM.ovMaskH.value = config.ovMaskH || 300; DOM.ovMaskR.value = config.ovMaskR || 0;
-            ovScale = config.ovScale || 1.0; DOM.ovFColor.value = config.ovFColor || '#000000'; DOM.ovFOpacity.value = config.ovFOpacity || 0;
-            if (DOM.ovAboveText) DOM.ovAboveText.checked = !!config.ovAboveText;
             DOM.tsColor.value = config.tsColor || '#000000'; DOM.tsOpacity.value = config.tsOpacity || 0;
             DOM.tsBlur.value = config.tsBlur || 5; DOM.tsY.value = config.tsY || 2;
 
@@ -3778,15 +3977,12 @@
                 } else { currentBgImageDataUrl = ''; DOM.bgImage.src = ''; originalBgWidth = 0; originalBgHeight = 0; resolve(); }
             });
 
-            const ovPromise = new Promise(resolve => {
-                if (config.ovImg) {
-                    currentOvImageDataUrl = config.ovImg; document.getElementById('overlay-img-content').src = currentOvImageDataUrl;
-                    document.getElementById('overlay-img-content').style.display = 'block'; resolve();
-                } else {
-                    currentOvImageDataUrl = ''; document.getElementById('overlay-img-content').src = '';
-                    document.getElementById('overlay-img-content').style.display = 'none'; resolve();
-                }
-            });
+            // 삽입 이미지: 새 형식(images)이면 그대로, 예전 형식(오버레이 이미지 1장)이면 보이던 모습대로 변환
+            const ovPromise = (async () => {
+                insertedImages = Array.isArray(config.images) ? cloneData(config.images) : await legacyOverlayToImages(config);
+                if (!insertedImages.some(im => im.id === selectedImageId)) selectedImageId = insertedImages.length ? insertedImages[insertedImages.length - 1].id : null;
+                if (!insertedImages.length && ovEditMode) setOvEditMode(false);
+            })();
 
             await Promise.all([bgPromise, ovPromise]);
 
@@ -3811,14 +4007,16 @@
         const TEMPLATE_GROUPS = [
             { id: 'typo', label: '타이포그래피', desc: '폰트·두께·크기·색·줄 간격·자간·장평·문단 간격·여백·정렬·줄바꿈',
               keys: ['font', 'fontWeight', 'customFontData', 'customFontFileName', 'color', 'size', 'lh', 'paraGap', 'pad', 'align', 'charWrap', 'letterSpacing', 'hScale2'] },
-            { id: 'card', label: '카드 크기 · 배경', desc: '가로·세로, 배경색, 배경 이미지와 위치·확대, 어둡기',
-              keys: ['width', 'height', 'bgColor', 'bgImg', 'bgScale', 'bgOffsetX', 'bgOffsetY', 'dim'] },
-            { id: 'overlay', label: '오버레이 이미지', desc: '이미지, 마스크 크기·둥글기·위치, 필터, 텍스트 위/아래',
-              keys: ['ovImg', 'ovMaskW', 'ovMaskH', 'ovMaskR', 'ovScale', 'ovX', 'ovY', 'ovInX', 'ovInY', 'ovAboveText', 'ovFColor', 'ovFOpacity'] },
+            { id: 'card', label: '카드 크기 · 배경', desc: '가로·세로, 단색 배경과 투명도, 배경 이미지와 위치·확대',
+              keys: ['width', 'height', 'bgColor', 'bgTransparency', 'bgImg', 'bgScale', 'bgOffsetX', 'bgOffsetY', 'dim'] },
+            { id: 'overlay', label: '이미지 삽입', desc: '넣은 이미지 전부 (위치·크기·둥글기·필터·텍스트 위/아래 포함)',
+              // 'images'가 새 형식, 나머지는 예전 카드(오버레이 이미지 1장)를 템플릿으로 쓸 때를 위한 것
+              keys: ['images', 'ovImg', 'ovMaskW', 'ovMaskH', 'ovMaskR', 'ovScale', 'ovX', 'ovY', 'ovInX', 'ovInY', 'ovAboveText', 'ovFColor', 'ovFOpacity'] },
             { id: 'effect', label: '텍스트 그림자', desc: '색상·진하기·흐림·Y 위치', keys: ['tsColor', 'tsOpacity', 'tsBlur', 'tsY'] },
             { id: 'html', label: 'HTML 레이아웃', desc: '상하좌우 여백, 콘텐츠 크기, 위치 강제 해제',
               keys: ['marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'htmlScale', 'forceCenter'] },
-            { id: 'wm', label: '출처 표시 모양', desc: '글자 크기·색·위치 (캐릭터 이름·제작자 글자는 그대로)', keys: ['wmSize', 'wmColor', 'wmX', 'wmY'] },
+            { id: 'wm', label: '출처 표시 모양', desc: '글자 크기·색·위치', keys: ['wmSize', 'wmColor', 'wmX', 'wmY'] },
+            { id: 'wmText', label: '캐릭터 이름 · 제작자', desc: '출처 표시 글자 (기본은 꺼짐: 지금 입력한 이름을 유지)', keys: ['wmChar', 'wmCreator'], defaultOff: true },
             { id: 'pos', label: '텍스트 위치', desc: '드래그로 옮긴 X·Y 값', keys: ['textX', 'textY'] },
             { id: 'layout', label: '블록 배치', desc: '배치 방향·간격·정렬, 블록별 폭 비율·위치 (블록이 여러 개일 때)', keys: [] },
         ];
@@ -3826,7 +4024,11 @@
             try { const v = JSON.parse(localStorage.getItem('archive_template_groups')); if (v && typeof v === 'object') return v; } catch (e) { }
             return {};
         }
-        function isTemplateGroupOn(id) { return getTemplateGroupPrefs()[id] !== false; } // 저장된 값이 없으면 켜짐
+        function isTemplateGroupOn(id) {
+            const v = getTemplateGroupPrefs()[id];
+            if (v === undefined) { const g = TEMPLATE_GROUPS.find(x => x.id === id); return !(g && g.defaultOff); } // 저장된 값이 없으면 항목별 기본값
+            return v !== false;
+        }
         function setTemplateGroupOn(id, on) {
             const prefs = getTemplateGroupPrefs(); prefs[id] = !!on;
             try { localStorage.setItem('archive_template_groups', JSON.stringify(prefs)); } catch (e) { }
@@ -3866,7 +4068,8 @@
             });
             if (on.has('layout') && item.config.blockLayout) merged.blockLayout = cloneData(item.config.blockLayout);
             Object.assign(merged, blockToLegacyFields(merged.blocks[0]));
-            merged.text = before.text; merged.isHtmlMode = before.isHtmlMode; merged.wmChar = before.wmChar; merged.wmCreator = before.wmCreator;
+            merged.text = before.text; merged.isHtmlMode = before.isHtmlMode;
+            if (!on.has('wmText')) { merged.wmChar = before.wmChar; merged.wmCreator = before.wmCreator; }
             // 템플릿 적용은 "수정"이 아니므로, 이후 저장하면 새 카드로 저장됨 (원본 카드가 덮어써지지 않게)
             editingArchiveItem = null;
             switchTab('extractor');
@@ -3938,6 +4141,11 @@
         // 단축키: Ctrl(⌘)+S 다운로드, Ctrl(⌘)+Shift+S 아카이브 저장, 모달에서 Ctrl+Enter 저장 / Esc 닫기
         document.addEventListener('keydown', e => {
             const mod = e.ctrlKey || e.metaKey;
+            if (isCropperOpen()) {
+                if (e.key === 'Escape') { e.preventDefault(); closeCropper(null); }
+                else if (e.key === 'Enter') { e.preventDefault(); closeCropper('apply'); }
+                return;
+            }
             if (isTemplatePickerOpen()) {
                 if (e.key === 'Escape') { e.preventDefault(); closeTemplatePicker(); }
                 return;
@@ -4200,7 +4408,8 @@
                     await new Promise(r => setTimeout(r, 120));
 
                     const targetEl = idoc.getElementById('card-preview');
-                    const options = { scale: scaleRatio, backgroundColor: DOM.bgColor.value || '#ffffff', style: { transform: 'scale(1)', transformOrigin: 'top left' } };
+                    // 저장되는 이미지는 항상 불투명 (빈 곳은 흰색)
+                    const options = { scale: scaleRatio, backgroundColor: '#ffffff', style: { transform: 'scale(1)', transformOrigin: 'top left' } };
                     if (embeddedFontCss) { options.font = { cssText: embeddedFontCss }; }
 
                     const dataUrl = isPng ? await modernScreenshot.domToPng(targetEl, options) : await modernScreenshot.domToJpeg(targetEl, options);
