@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.5)</title>
+    <title>네카이브 (v4.2.6)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -504,6 +504,19 @@
 
         #card-bg-image { position: absolute; transform-origin: center; pointer-events: none; display: none; max-width: none; max-height: none; }
         #preview-text { text-align: center; word-break: keep-all; width: 100%; pointer-events: auto; }
+        /* 블록(메시지창): 카드 안에서 각 블록이 자기 영역을 가짐 */
+        .nk-block { position: relative; min-width: 0; box-sizing: border-box; }
+        .nk-block-body { width: 100%; box-sizing: border-box; }
+
+        /* 블록 탭 (왼쪽 패널) */
+        .block-bar { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+        .block-tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
+        .block-tab { height: var(--ctrl-h); padding: 0 10px; border-radius: var(--radius-pill); border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.15s; }
+        .block-tab:hover { border-color: var(--ink-soft); color: var(--ink); }
+        .block-tab.active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+        .block-tab .block-tab-mode { font-size: var(--fs-2xs); font-weight: 700; opacity: 0.7; }
+        .block-tools { display: none; gap: 6px; margin-bottom: var(--sp-3); }
+        .block-tools.show { display: flex; }
 
         /* 아카이브 UI */
         #archive-page { flex-direction: column; overflow-y: auto; }
@@ -768,6 +781,16 @@
                             아카이브에서 불러오기
                         </button>
                     </div>
+                    <!-- 블록(메시지창) 탭: 입력창·설정 패널은 선택된 블록의 값을 보여주고 고침 -->
+                    <div class="block-bar row-span2">
+                        <div class="block-tabs" id="block-tabs" role="tablist" aria-label="블록 선택"></div>
+                        <button type="button" class="action-btn" onclick="addBlock()" title="입력창(블록)을 하나 더 만들어요">+ 블록 추가</button>
+                    </div>
+                    <div class="block-tools row-span2" id="block-tools">
+                        <button type="button" class="action-btn" id="block-move-up" onclick="moveBlock(-1)" title="이 블록을 앞으로 (위/왼쪽)">↑ 앞으로</button>
+                        <button type="button" class="action-btn" id="block-move-down" onclick="moveBlock(1)" title="이 블록을 뒤로 (아래/오른쪽)">↓ 뒤로</button>
+                        <button type="button" class="action-btn is-danger" onclick="deleteBlock()" title="이 블록 삭제" style="margin-left:auto;">블록 삭제</button>
+                    </div>
                     <div class="row row-span2">
                         <span class="row-label bold">HTML 뷰어 모드</span>
                         <label class="row-switch">
@@ -789,6 +812,53 @@
                         <div id="code-hover-overlay" aria-hidden="true"></div>
                         <div class="code-hover-indicator" id="code-hover-indicator-up" aria-hidden="true">▲ 대응 코드가 위에 있어요</div>
                         <div class="code-hover-indicator" id="code-hover-indicator-down" aria-hidden="true">▼ 대응 코드가 아래에 있어요</div>
+                    </div>
+                </div>
+
+                <!-- 1-2. 블록 배치 (블록이 2개 이상일 때만 보임) -->
+                <div class="ctrl-section" id="section-block-layout" style="display: none;">
+                    <div class="ctrl-eyebrow">블록 배치</div>
+                    <div class="row-group row-span2">
+                        <div class="row">
+                            <span class="row-label">배치 방향</span>
+                            <div class="segmented" id="block-dir-seg" style="flex: 0 1 240px;">
+                                <button type="button" data-dir="column" onclick="setBlockDir('column')">위아래</button>
+                                <button type="button" data-dir="row" onclick="setBlockDir('row')">좌우</button>
+                                <button type="button" data-dir="overlap" onclick="setBlockDir('overlap')">겹치기</button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <span class="row-label">정렬</span>
+                            <div class="segmented" id="block-align-seg" style="flex: 0 1 240px;"></div>
+                        </div>
+                        <div class="row" id="block-gap-row">
+                            <span class="row-label">블록 사이 간격</span>
+                            <div class="stepper"><button type="button" onclick="adjustNum('block-gap', -1, 4)">−</button><input type="number" id="block-gap" value="16" oninput="updateUI()"><button type="button" onclick="adjustNum('block-gap', 1, 4)">+</button></div>
+                        </div>
+                        <div class="row" id="block-width-row">
+                            <span class="row-label">좌우 폭</span>
+                            <div class="segmented" id="block-width-seg" style="flex: 0 1 240px;">
+                                <button type="button" data-width="auto" onclick="setBlockWidthMode('auto')">내용에 맞게</button>
+                                <button type="button" data-width="ratio" onclick="setBlockWidthMode('ratio')">비율로 나누기</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row-group row-span2">
+                        <div class="row">
+                            <span class="row-label bold" id="block-own-title">선택한 블록</span>
+                        </div>
+                        <div class="row" id="block-flex-row">
+                            <span class="row-label">폭 비율</span>
+                            <div class="stepper"><button type="button" onclick="adjustNum('block-flex', -1, 1)">−</button><input type="number" id="block-flex" value="1" min="1" oninput="updateUI()"><button type="button" onclick="adjustNum('block-flex', 1, 1)">+</button></div>
+                        </div>
+                        <div class="row">
+                            <span class="row-label">위치 미세 조정 (X·Y)</span>
+                            <div class="row-control">
+                                <div class="stepper"><button type="button" onclick="adjustNum('block-offx', -5, 1)">−</button><input type="number" id="block-offx" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('block-offx', 5, 1)">+</button></div>
+                                <div class="stepper"><button type="button" onclick="adjustNum('block-offy', -5, 1)">−</button><input type="number" id="block-offy" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('block-offy', 5, 1)">+</button></div>
+                            </div>
+                        </div>
+                        <div class="section-note">폰트·크기·여백 등 타이포그래피와 HTML 레이아웃은 블록마다 따로예요. 위의 블록 탭을 눌러 고칠 블록을 고르세요. 텍스트 '위치 이동(드래그)'은 블록 전체를 함께 옮겨요.</div>
                     </div>
                 </div>
 
@@ -1600,6 +1670,302 @@
         
         let userManuallyToggledHtml = false;
 
+        // ── 블록(메시지창) ─────────────────────────────────────────
+        // 카드 안의 본문을 여러 블록으로 나눠 씀 (예: 위쪽은 HTML 상태창, 아래쪽은 대화 텍스트).
+        // 왼쪽 패널의 입력창·HTML 모드·타이포그래피·HTML 레이아웃은 "선택된 블록"의 값을 보여주고 고치며,
+        // 다른 블록의 값은 blocks 배열에 보관됨. 블록이 하나뿐이면 예전과 똑같이 동작함.
+        const BLOCK_TYPO_KEYS = ['font', 'fontWeight', 'customFontData', 'customFontFileName', 'color', 'size', 'lh', 'paraGap', 'pad', 'align', 'charWrap', 'letterSpacing', 'hScale2'];
+        const BLOCK_HTML_KEYS = ['marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'htmlScale'];
+        const DEFAULT_BLOCK_LAYOUT = { dir: 'column', gap: 16, align: 'stretch', widthMode: 'auto' };
+        const BLOCK_ALIGN_OPTIONS = {
+            column: [['stretch', '채우기'], ['start', '왼쪽'], ['center', '가운데'], ['end', '오른쪽']],
+            overlap: [['stretch', '채우기'], ['start', '왼쪽'], ['center', '가운데'], ['end', '오른쪽']],
+            row: [['stretch', '늘이기'], ['start', '위'], ['center', '가운데'], ['end', '아래']],
+        };
+        let blocks = [];            // [{ id, text, isHtml, manualHtml, typo:{}, html:{}, offX, offY, flex }]
+        let activeBlockIndex = 0;
+        let blockLayout = { ...DEFAULT_BLOCK_LAYOUT };
+        let blockIdSeq = 0;
+        const registeredCustomFonts = new Set();
+        function newBlockId() { return 'b' + Date.now().toString(36) + (blockIdSeq++).toString(36); }
+        function valOr(v, d) { return (v === undefined || v === null || v === '') ? d : v; }
+        function cloneData(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+        function readTypoFromControls() {
+            const isCustom = currentFontVal.startsWith('Custom_');
+            return {
+                font: currentFontVal, fontWeight: currentFontWeight,
+                customFontData: isCustom ? (window.currentCustomFontBase64 || null) : null,
+                customFontFileName: isCustom ? (window.currentCustomFontFileName || null) : null,
+                color: DOM.color.value, size: DOM.size.value, lh: DOM.lh.value, paraGap: DOM.paraGap.value, pad: DOM.pad.value,
+                align: DOM.align.value, charWrap: DOM.charWrap.checked, letterSpacing: DOM.letterSpacing.value, hScale2: DOM.hScale2.value
+            };
+        }
+        function readHtmlLayoutFromControls() {
+            return { marginTop: DOM.marginTop.value, marginBottom: DOM.marginBottom.value, marginLeft: DOM.marginLeft.value, marginRight: DOM.marginRight.value, htmlScale: DOM.htmlScale.value };
+        }
+        // 예전 형식(블록 없음) 설정값 → 블록 하나
+        function legacyBlockFromConfig(cfg) {
+            const typo = {}, html = {};
+            BLOCK_TYPO_KEYS.forEach(k => { typo[k] = cfg[k]; });
+            BLOCK_HTML_KEYS.forEach(k => { html[k] = cfg[k]; });
+            return { id: newBlockId(), text: cfg.text || '', isHtml: !!cfg.isHtmlMode, manualHtml: false, typo, html, offX: 0, offY: 0, flex: 1 };
+        }
+        function normalizeBlock(b) {
+            return { id: b.id || newBlockId(), text: b.text || '', isHtml: !!b.isHtml, manualHtml: !!b.manualHtml, typo: b.typo || {}, html: b.html || {},
+                offX: parseFloat(b.offX) || 0, offY: parseFloat(b.offY) || 0, flex: Math.max(1, parseFloat(b.flex) || 1) };
+        }
+        // 선택된 블록 = 지금 왼쪽 패널에 보이는 값
+        function syncActiveBlockFromControls() {
+            if (!blocks.length) blocks = [normalizeBlock({})];
+            if (activeBlockIndex >= blocks.length) activeBlockIndex = blocks.length - 1;
+            const b = blocks[activeBlockIndex];
+            b.text = DOM.text.value; b.isHtml = DOM.htmlToggle.checked; b.manualHtml = userManuallyToggledHtml;
+            b.typo = readTypoFromControls(); b.html = readHtmlLayoutFromControls();
+            const offX = document.getElementById('block-offx'), offY = document.getElementById('block-offy'), flex = document.getElementById('block-flex');
+            if (offX) b.offX = parseFloat(offX.value) || 0;
+            if (offY) b.offY = parseFloat(offY.value) || 0;
+            if (flex) b.flex = Math.max(1, parseFloat(flex.value) || 1);
+            const gap = document.getElementById('block-gap'); if (gap) blockLayout.gap = parseFloat(gap.value) || 0;
+        }
+        function blockToLegacyFields(b) {
+            const out = { text: b.text, isHtmlMode: b.isHtml };
+            BLOCK_TYPO_KEYS.forEach(k => { out[k] = b.typo[k]; });
+            BLOCK_HTML_KEYS.forEach(k => { out[k] = b.html[k]; });
+            return out;
+        }
+        function syncFontTrigger() {
+            const matchedOpt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === currentFontVal);
+            fontTrigger.textContent = matchedOpt ? (matchedOpt.dataset.label || matchedOpt.textContent) : '명조체';
+            fontTrigger.style.fontFamily = currentFontVal; markSelectedFontOption();
+        }
+        // 다른 블록이 쓰는 "내 폰트"도 화면에 그려지도록 미리 등록
+        async function ensureBlockFontsRegistered() {
+            for (const b of blocks) {
+                const t = b.typo || {};
+                if (t.font && t.font.startsWith('Custom_') && t.customFontData && !registeredCustomFonts.has(t.font)) {
+                    try { await registerCustomFont(t.font, t.customFontData, t.customFontFileName); } catch (e) { }
+                }
+            }
+        }
+        // 블록의 값을 왼쪽 패널에 채움
+        async function loadBlockIntoControls(b) {
+            DOM.text.value = b.text || ''; DOM.htmlToggle.checked = !!b.isHtml; userManuallyToggledHtml = !!b.manualHtml;
+            const t = b.typo || {}, h = b.html || {};
+            DOM.color.value = valOr(t.color, '#222222'); DOM.size.value = valOr(t.size, 24); DOM.lh.value = valOr(t.lh, 1.2);
+            DOM.paraGap.value = valOr(t.paraGap, 5); DOM.pad.value = valOr(t.pad, 15); DOM.align.value = valOr(t.align, 'center');
+            DOM.charWrap.checked = !!t.charWrap; DOM.letterSpacing.value = valOr(t.letterSpacing, 0); DOM.hScale2.value = valOr(t.hScale2, 100);
+            DOM.marginTop.value = valOr(h.marginTop, 0); DOM.marginBottom.value = valOr(h.marginBottom, 0);
+            DOM.marginLeft.value = valOr(h.marginLeft, 0); DOM.marginRight.value = valOr(h.marginRight, 0); DOM.htmlScale.value = valOr(h.htmlScale, 1.0);
+            currentFontVal = t.font || "'Noto Serif KR', serif";
+            if (currentFontVal.startsWith('Custom_')) {
+                window.currentCustomFontBase64 = t.customFontData || null; window.currentCustomFontFileName = t.customFontFileName || null;
+                if (t.customFontData && !registeredCustomFonts.has(currentFontVal)) { try { await registerCustomFont(currentFontVal, t.customFontData, t.customFontFileName); } catch (e) { } }
+            } else { window.currentCustomFontBase64 = null; window.currentCustomFontFileName = null; }
+            syncFontTrigger();
+            currentFontWeight = parseInt(t.fontWeight, 10) || 400; refreshFontWeightOptions();
+            document.getElementById('block-offx').value = b.offX || 0;
+            document.getElementById('block-offy').value = b.offY || 0;
+            document.getElementById('block-flex').value = b.flex || 1;
+            if (typeof syncHighlight === 'function') syncHighlight();
+        }
+        function renderBlockTabs() {
+            const box = document.getElementById('block-tabs'); if (!box) return;
+            const multi = blocks.length > 1;
+            box.innerHTML = '';
+            if (multi) blocks.forEach((b, i) => {
+                const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'block-tab' + (i === activeBlockIndex ? ' active' : '');
+                btn.setAttribute('role', 'tab'); btn.setAttribute('aria-selected', i === activeBlockIndex ? 'true' : 'false');
+                btn.innerHTML = `블록 ${i + 1}<span class="block-tab-mode">${b.isHtml ? 'HTML' : '텍스트'}</span>`;
+                btn.addEventListener('click', () => switchBlock(i));
+                box.appendChild(btn);
+            });
+            document.getElementById('block-tools').classList.toggle('show', multi);
+            document.getElementById('block-move-up').disabled = activeBlockIndex === 0;
+            document.getElementById('block-move-down').disabled = activeBlockIndex === blocks.length - 1;
+            document.getElementById('section-block-layout').style.display = multi ? '' : 'none';
+            // 섹션 제목에 지금 고치는 블록 번호를 붙여서 헷갈리지 않게
+            const suffix = multi ? ` · 블록 ${activeBlockIndex + 1}` : '';
+            const typoTitle = document.querySelector('#section-typography > .ctrl-eyebrow'); if (typoTitle) typoTitle.textContent = '타이포그래피' + suffix;
+            const htmlTitle = document.querySelector('#section-html-layout > .ctrl-eyebrow'); if (htmlTitle) htmlTitle.textContent = 'HTML 뷰어 레이아웃' + suffix;
+            const ownTitle = document.getElementById('block-own-title'); if (ownTitle) ownTitle.textContent = `선택한 블록 (블록 ${activeBlockIndex + 1})`;
+        }
+        function renderBlockLayoutControls() {
+            const dir = blockLayout.dir;
+            document.querySelectorAll('#block-dir-seg button').forEach(b => b.classList.toggle('active', b.dataset.dir === dir));
+            const alignSeg = document.getElementById('block-align-seg');
+            const opts = BLOCK_ALIGN_OPTIONS[dir] || BLOCK_ALIGN_OPTIONS.column;
+            const sig = dir + '|' + blockLayout.align;
+            if (alignSeg.dataset.sig !== sig) {
+                alignSeg.dataset.sig = sig;
+                alignSeg.innerHTML = opts.map(([v, label]) => `<button type="button" data-align="${v}" class="${v === blockLayout.align ? 'active' : ''}">${label}</button>`).join('');
+                alignSeg.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => setBlockAlign(btn.dataset.align)));
+            }
+            document.getElementById('block-gap-row').style.display = dir === 'overlap' ? 'none' : '';
+            document.getElementById('block-width-row').style.display = dir === 'row' ? '' : 'none';
+            document.querySelectorAll('#block-width-seg button').forEach(b => b.classList.toggle('active', b.dataset.width === blockLayout.widthMode));
+            document.getElementById('block-flex-row').style.display = (dir === 'row' && blockLayout.widthMode === 'ratio') ? '' : 'none';
+            const gapInput = document.getElementById('block-gap'); if (document.activeElement !== gapInput) gapInput.value = blockLayout.gap;
+        }
+        function setBlockDir(dir) { blockLayout.dir = dir; updateUI(); }
+        function setBlockAlign(a) { blockLayout.align = a; updateUI(); }
+        function setBlockWidthMode(m) { blockLayout.widthMode = m; updateUI(); }
+        // 블록 전환 시 해당 블록 둘레에 잠깐 점선을 보여줌 (캡처에는 안 나옴)
+        function flashBlockGuide(index) {
+            const b = blocks[index]; if (!b || blocks.length < 2) return;
+            const wrap = DOM.pText.querySelector(`.nk-block[data-block-id="${b.id}"]`); if (!wrap) return;
+            const overlay = document.getElementById('guide-overlay-text');
+            const r = wrap.getBoundingClientRect(), card = DOM.preview.getBoundingClientRect(); const scale = parseFloat(DOM.scale.value) || 1;
+            overlay.style.left = ((r.left - card.left) / scale) + 'px'; overlay.style.top = ((r.top - card.top) / scale) + 'px';
+            overlay.style.width = (r.width / scale) + 'px'; overlay.style.height = (r.height / scale) + 'px';
+            overlay.style.border = '2px dashed #2f6fed'; overlay.style.backgroundColor = 'rgba(47,111,237,0.06)'; overlay.style.opacity = '1';
+            clearTimeout(guideTimer); guideTimer = setTimeout(() => { overlay.style.opacity = '0'; }, 900);
+        }
+        async function switchBlock(i) {
+            if (i === activeBlockIndex || !blocks[i]) return;
+            syncActiveBlockFromControls();
+            activeBlockIndex = i;
+            if (typeof clearTagHelperHighlight === 'function') clearTagHelperHighlight();
+            await loadBlockIntoControls(blocks[i]);
+            renderBlockTabs(); updateUI(); flashBlockGuide(i);
+        }
+        async function addBlock() {
+            syncActiveBlockFromControls();
+            const src = blocks[activeBlockIndex];
+            // 새 블록은 지금 블록의 타이포그래피를 이어받은 빈 텍스트 블록으로 시작
+            const nb = normalizeBlock({ text: '', isHtml: false, typo: cloneData(src.typo), html: cloneData(src.html) });
+            blocks.splice(activeBlockIndex + 1, 0, nb);
+            activeBlockIndex += 1;
+            await loadBlockIntoControls(nb);
+            renderBlockTabs(); updateUI(); flashBlockGuide(activeBlockIndex);
+            DOM.text.focus();
+            showToast(`블록 ${activeBlockIndex + 1}을 추가했어요.`);
+        }
+        async function deleteBlock() {
+            if (blocks.length <= 1) return;
+            syncActiveBlockFromControls();
+            const b = blocks[activeBlockIndex];
+            if (b.text.trim() && !confirm(`블록 ${activeBlockIndex + 1}을 삭제할까요? 이 블록에 입력한 내용도 함께 지워져요.`)) return;
+            blocks.splice(activeBlockIndex, 1);
+            dropLiveFrame(b.id);
+            activeBlockIndex = Math.min(activeBlockIndex, blocks.length - 1);
+            await loadBlockIntoControls(blocks[activeBlockIndex]);
+            renderBlockTabs(); updateUI();
+            showToast('블록을 삭제했어요.');
+        }
+        function moveBlock(delta) {
+            const j = activeBlockIndex + delta; if (j < 0 || j >= blocks.length) return;
+            syncActiveBlockFromControls();
+            [blocks[activeBlockIndex], blocks[j]] = [blocks[j], blocks[activeBlockIndex]];
+            activeBlockIndex = j;
+            renderBlockTabs(); updateUI(); flashBlockGuide(j);
+        }
+        // 미리보기: 블록들을 카드 안에 배치하고 각 블록 내용을 그림
+        function renderBlocks() {
+            const multi = blocks.length > 1;
+            const group = DOM.pText;
+            Object.assign(group.style, { fontSize: '', lineHeight: '', textAlign: '', wordBreak: '', letterSpacing: '', textShadow: '', transform: 'none', fontFamily: '', fontWeight: '', color: '' });
+            DOM.contentWrapper.style.fontFamily = ''; DOM.contentWrapper.style.fontWeight = ''; DOM.contentWrapper.style.color = '';
+            const dir = blockLayout.dir, align = blockLayout.align;
+            const flexAlign = { stretch: 'stretch', start: 'flex-start', center: 'center', end: 'flex-end' }[align] || 'stretch';
+            if (!multi) {
+                Object.assign(group.style, { display: 'block', flexDirection: '', gap: '', alignItems: '', justifyContent: '', gridTemplate: '', justifyItems: '' });
+            } else if (dir === 'overlap') {
+                Object.assign(group.style, { display: 'grid', flexDirection: '', gap: '0px', alignItems: 'center', justifyContent: '', gridTemplate: '1fr / 1fr', justifyItems: { stretch: 'stretch', start: 'start', center: 'center', end: 'end' }[align] || 'stretch' });
+            } else {
+                Object.assign(group.style, { display: 'flex', flexDirection: dir === 'row' ? 'row' : 'column', gap: (parseFloat(blockLayout.gap) || 0) + 'px', alignItems: flexAlign, justifyContent: 'center', gridTemplate: '', justifyItems: '' });
+            }
+            // 카드 여백: 블록이 하나면 예전처럼 카드에, 여러 개면 블록마다 각자의 여백
+            const b0 = blocks[0];
+            if (!multi) {
+                DOM.preview.style.padding = b0.isHtml
+                    ? `${valOr(b0.html.marginTop, 0)}px ${valOr(b0.html.marginRight, 0)}px ${valOr(b0.html.marginBottom, 0)}px ${valOr(b0.html.marginLeft, 0)}px`
+                    : valOr(b0.typo.pad, 15) + 'px';
+            } else {
+                DOM.preview.style.padding = '0px';
+            }
+            // 블록 요소는 다시 만들지 않고 재사용 (실행 중인 JSX 화면이 처음부터 다시 로드되지 않게)
+            const existing = new Map(Array.from(group.children).filter(el => el.classList && el.classList.contains('nk-block')).map(el => [el.dataset.blockId, el]));
+            Array.from(group.childNodes).forEach(n => { if (!(n.classList && n.classList.contains('nk-block'))) n.remove(); });
+            const wanted = new Set(blocks.map(b => b.id));
+            existing.forEach((el, id) => { if (!wanted.has(id)) { el.remove(); dropLiveFrame(id); } });
+            blocks.forEach((b, i) => {
+                let wrap = existing.get(b.id);
+                if (!wrap) {
+                    wrap = document.createElement('div'); wrap.className = 'nk-block'; wrap.dataset.blockId = b.id;
+                    const body = document.createElement('div'); body.className = 'nk-block-body'; body.dataset.blockBody = b.id;
+                    wrap.appendChild(body);
+                }
+                if (group.children[i] !== wrap) group.insertBefore(wrap, group.children[i] || null);
+                const pad = !multi ? '0px' : (b.isHtml
+                    ? `${valOr(b.html.marginTop, 0)}px ${valOr(b.html.marginRight, 0)}px ${valOr(b.html.marginBottom, 0)}px ${valOr(b.html.marginLeft, 0)}px`
+                    : valOr(b.typo.pad, 15) + 'px');
+                wrap.style.padding = pad;
+                wrap.style.translate = multi && (b.offX || b.offY) ? `${b.offX}px ${-b.offY}px` : '';
+                wrap.style.flex = (multi && dir === 'row') ? (blockLayout.widthMode === 'ratio' ? `${b.flex} 1 0px` : '0 1 auto') : '';
+                wrap.style.width = (multi && dir === 'row') ? '' : '100%';
+                if (multi && dir !== 'row' && align !== 'stretch') wrap.style.width = 'auto';
+                wrap.style.gridArea = (multi && dir === 'overlap') ? '1 / 1' : '';
+                renderBlockBody(wrap.querySelector('.nk-block-body'), b, i === activeBlockIndex);
+            });
+        }
+        function renderBlockBody(body, b, isActive) {
+            const scope = `#preview-text [data-block-body="${b.id}"]`;
+            if (b.isHtml) {
+                Object.assign(body.style, { fontFamily: '', fontWeight: '', color: '', fontSize: '', lineHeight: '', textAlign: 'left', wordBreak: 'normal', textShadow: 'none', letterSpacing: '' });
+                const hs = parseFloat(b.html.htmlScale) || 1.0;
+                body.style.transform = `scale(${hs})`; body.style.transformOrigin = 'center center';
+                if (hasExecutableScript(b.text)) {
+                    // 스크립트가 있는 코드(React/JSX 등): 실행 화면을 블록 안에 띄움 (태그 도우미는 원본과 1:1이 아니라 제외)
+                    renderScriptedHtml(b.text, body, b.id);
+                } else {
+                    dropLiveFrame(b.id);
+                    let htmlToShow = b.text;
+                    // 태그 도우미(코드↔미리보기 연결)는 지금 입력창에 보이는 블록만
+                    if (isActive && DOM.tagHelper && DOM.tagHelper.checked) {
+                        try { htmlToShow = buildAnnotatedHtml(b.text); } catch (e) { htmlToShow = b.text; } // 파싱 중 예외가 나도 원래 동작으로 안전하게 폴백
+                    }
+                    try { body.innerHTML = isolateHtml(htmlToShow, scope); }
+                    catch (e) { body.innerHTML = ''; }
+                }
+            } else {
+                dropLiveFrame(b.id);
+                const t = b.typo;
+                body.style.fontFamily = t.font || "'Noto Serif KR', serif";
+                body.style.fontWeight = parseInt(t.fontWeight, 10) || 400;
+                body.style.color = valOr(t.color, '#222222');
+                body.style.fontSize = valOr(t.size, 24) + 'px';
+                body.style.lineHeight = valOr(t.lh, 1.2);
+                const align = valOr(t.align, 'center');
+                body.style.textAlign = align;
+                body.style.wordBreak = t.charWrap ? 'break-all' : 'keep-all';
+                body.style.letterSpacing = (parseFloat(t.letterSpacing) || 0) + 'px';
+                const hScale2 = (parseFloat(t.hScale2) || 100) / 100;
+                const originMap = { left: 'left center', center: 'center center', right: 'right center' };
+                body.style.transform = hScale2 !== 1 ? `scaleX(${hScale2})` : 'none';
+                body.style.transformOrigin = originMap[align] || 'center center';
+                if (parseFloat(DOM.tsOpacity.value) > 0) {
+                    const tsRgb = hexToRgbStr(DOM.tsColor.value);
+                    body.style.textShadow = `0px ${DOM.tsY.value}px ${DOM.tsBlur.value}px rgba(${tsRgb}, ${DOM.tsOpacity.value})`;
+                } else {
+                    body.style.textShadow = 'none';
+                }
+                const gap = valOr(t.paraGap, 5);
+                const lines = (b.text || '').split('\n');
+                // 문단 간격은 줄 "사이"에만 넣음. 마지막 줄 아래에도 넣으면 그만큼 아래 공간이 생겨서
+                // 세로 가운데 정렬이 문단 간격의 절반만큼 위로 치우침
+                body.innerHTML = lines.map((line, i) => `<div style="margin-bottom: ${i === lines.length - 1 ? 0 : gap}px">${line || '<br>'}</div>`).join('');
+            }
+        }
+        function activeBlockBody() {
+            const b = blocks[activeBlockIndex];
+            return b ? DOM.pText.querySelector(`[data-block-body="${b.id}"]`) : null;
+        }
+        // 폰트 목록에 마우스를 올렸을 때 미리 보여주기 (선택된 텍스트 블록에만)
+        function previewActiveBlockFont(fontVal) {
+            const b = blocks[activeBlockIndex], body = activeBlockBody();
+            if (b && body && !b.isHtml) body.style.fontFamily = fontVal;
+        }
+
         const DOM = {
             text: document.getElementById('input-text'), width: document.getElementById('card-width'), height: document.getElementById('card-height'),
             bgImg: document.getElementById('input-bg'), bgColor: document.getElementById('bg-color'), dim: document.getElementById('input-dim'),
@@ -1861,11 +2227,12 @@
             if (scopedCssCache.size > 50) scopedCssCache.clear();
             scopedCssCache.set(cacheKey, result); return result;
         }
-        function loadExternalCss(href) {
-            if (href in externalCssCache) return externalCssCache[href];
-            externalCssCache[href] = null;
-            fetch(href).then(r => r.ok ? r.text() : '').then(css => { externalCssCache[href] = scopeCss(css); updateUI(); })
-                .catch(() => { externalCssCache[href] = ''; });
+        function loadExternalCss(href, scope = HTML_SCOPE) {
+            const key = scope + '\u0000' + href;
+            if (key in externalCssCache) return externalCssCache[key];
+            externalCssCache[key] = null;
+            fetch(href).then(r => r.ok ? r.text() : '').then(css => { externalCssCache[key] = scopeCss(css, scope); updateUI(); })
+                .catch(() => { externalCssCache[key] = ''; });
             return null;
         }
         // 붙여넣은 HTML을 카드에 넣기 좋게 정리: 스크립트·문서용 태그 제거, 스타일은 카드 안쪽으로 한정
@@ -1879,7 +2246,7 @@
                 const rel = (el.getAttribute('rel') || '').toLowerCase(); const href = el.getAttribute('href') || '';
                 if (rel.includes('stylesheet') && href) {
                     if (/fonts\.googleapis\.com/.test(href)) { registerFontImports(href); styleBlocks.push(`@import url("${href}");`); }
-                    else { const css = loadExternalCss(href); if (css) styleBlocks.push(css); }
+                    else { const css = loadExternalCss(href, scope); if (css) styleBlocks.push(css); }
                 }
                 el.remove();
             });
@@ -1986,17 +2353,29 @@
             if (document.readyState === 'complete') boot(); else window.addEventListener('load', boot);
         })();` + SCRIPT_TAG_CLOSE;
 
-        let liveFrame = null;   // { raw, el(감싸는 div), view(보이는 정지본), frame(iframe), height, hasStatic, ready(Promise), resolveReady }
-        let liveFrameTimer = null;
+        // 블록마다 하나씩: blockId -> { blockId, uid, host(블록 본문), raw, el(감싸는 div), view(보이는 정지본), frame(iframe), height, hasStatic, ready, resolveReady }
+        const liveFrames = new Map();
+        const liveFrameTimers = new Map();
         const liveSnapshotWaiters = new Map();
+        let liveFrameUidSeq = 0;
+        function liveFrameAlive(lf) { return !!(lf && lf.host && lf.host.isConnected && lf.host.contains(lf.el)); }
+        function aliveLiveFrames() { return Array.from(liveFrames.values()).filter(liveFrameAlive); }
+        function dropLiveFrame(blockId) {
+            const t = liveFrameTimers.get(blockId); if (t) { clearTimeout(t); liveFrameTimers.delete(blockId); }
+            const lf = liveFrames.get(blockId); if (!lf) return;
+            (lf.staticTimers || []).forEach(clearTimeout);
+            liveFrames.delete(blockId);
+        }
         window.addEventListener('message', (e) => {
-            if (!liveFrame || e.source !== liveFrame.frame.contentWindow || !e.data) return;
+            if (!e.data) return;
+            let lf = null; for (const f of liveFrames.values()) { if (f.frame.contentWindow === e.source) { lf = f; break; } }
+            if (!lf) return;
             if (e.data.nekaiveHeight !== undefined) {
-                liveFrame.height = Math.max(20, Math.min(20000, e.data.nekaiveHeight | 0));
-                layoutLiveFrame();
+                lf.height = Math.max(20, Math.min(20000, e.data.nekaiveHeight | 0));
+                layoutLiveFrame(lf);
             }
-            if (e.data.nekaiveReady) liveFrame.resolveReady();
-            if (e.data.nekaiveChanged && liveFrame.hasStatic) scheduleLiveStaticRefresh();
+            if (e.data.nekaiveReady) lf.resolveReady();
+            if (e.data.nekaiveChanged && lf.hasStatic) scheduleLiveStaticRefresh(lf);
             if (e.data.nekaiveSnapshot && liveSnapshotWaiters.has(e.data.requestId)) {
                 liveSnapshotWaiters.get(e.data.requestId)(e.data.nekaiveSnapshot); liveSnapshotWaiters.delete(e.data.requestId);
             }
@@ -2005,36 +2384,36 @@
         // 실제로 실행 중인 iframe은 그 위에 투명하게(opacity 0) 정확히 겹쳐 두어서 클릭·스크롤·입력은 iframe이 받고,
         // iframe이 "바뀌었다"고 알려오면 정지본을 새로 고침. (iframe을 축소된 카드 안에 그대로 보여주면 흐려지고,
         //  배율을 따로 맞추면 글자 줄바꿈이 미세하게 달라져서 이렇게 함)
-        function layoutLiveFrame() {
-            if (!liveFrame) return;
-            const { el, frame } = liveFrame;
-            if (!DOM.pText.contains(el)) { liveFrame = null; return; } // 다른 내용으로 바뀌었으면 정리
-            const h = liveFrame.height || 40;
+        function layoutLiveFrame(lf) {
+            if (!lf) return;
+            if (!liveFrameAlive(lf)) { if (liveFrames.get(lf.blockId) === lf) dropLiveFrame(lf.blockId); return; } // 다른 내용으로 바뀌었으면 정리
+            const { el, frame } = lf;
+            const h = lf.height || 40;
             frame.style.height = h + 'px';
             // 정지본이 아직 없으면(처음 실행 중) iframe을 그대로 보여주고, 정지본이 생기면 투명하게 겹침
-            frame.style.opacity = liveFrame.hasStatic ? '0' : '1';
-            if (!liveFrame.hasStatic) el.style.minHeight = h + 'px';
+            frame.style.opacity = lf.hasStatic ? '0' : '1';
+            if (!lf.hasStatic) el.style.minHeight = h + 'px';
         }
-        let liveStaticTimers = [];
-        function scheduleLiveStaticRefresh() {
+        function scheduleLiveStaticRefresh(lf) {
             // 바로 한 번 + 전환 효과(팝업이 서서히 열리는 등)가 끝날 즈음 한 번 더
-            liveStaticTimers.forEach(clearTimeout);
-            liveStaticTimers = [80, 450].map(ms => setTimeout(refreshLiveStatic, ms));
+            (lf.staticTimers || []).forEach(clearTimeout);
+            lf.staticTimers = [80, 450].map(ms => setTimeout(() => refreshLiveStatic(lf), ms));
         }
-        async function refreshLiveStatic() {
-            const lf = liveFrame; if (!lf || !DOM.pText.contains(lf.el)) return;
+        function liveSnapshotScope(lf) { return `#preview-text [data-live-id="${lf.uid}"] [data-script-root]`; }
+        async function refreshLiveStatic(lf) {
+            if (!liveFrameAlive(lf)) return;
             if (lf.refreshing) { lf.refreshAgain = true; return; }
             lf.refreshing = true;
             try {
-                const snap = await requestLiveSnapshot();
-                if (liveFrame !== lf) return;
-                lf.view.innerHTML = LIVE_SNAPSHOT_RESET + isolateHtml(liveSnapshotToHtml(snap), LIVE_SNAPSHOT_SCOPE);
+                const snap = await requestLiveSnapshot(lf);
+                if (liveFrames.get(lf.blockId) !== lf) return;
+                lf.view.innerHTML = LIVE_SNAPSHOT_RESET + isolateHtml(liveSnapshotToHtml(snap), liveSnapshotScope(lf));
                 lf.hasStatic = true; lf.el.style.minHeight = '';
-                layoutLiveFrame();
+                layoutLiveFrame(lf);
             } catch (e) { /* 실행 화면이 응답하지 않으면 iframe을 그대로 보여줌 */ }
             finally {
                 lf.refreshing = false;
-                if (lf.refreshAgain) { lf.refreshAgain = false; refreshLiveStatic(); }
+                if (lf.refreshAgain) { lf.refreshAgain = false; refreshLiveStatic(lf); }
             }
         }
         // 붙여넣은 코드가 네카이브에 있는 폰트(Pretendard 등)를 이름만 쓰고 직접 불러오지 않는 경우, 실행 화면에서는
@@ -2049,12 +2428,14 @@
             if (/<!doctype[^>]*>/i.test(doc)) return doc.replace(/<!doctype[^>]*>/i, m => m + links);
             return links + doc;
         }
-        function createLiveFrame(raw) {
+        function createLiveFrame(raw, host, blockId) {
+            dropLiveFrame(blockId);
+            const uid = 'lf' + (++liveFrameUidSeq);
             const wrap = document.createElement('div');
             wrap.className = 'live-script-wrap';
             wrap.style.cssText = 'position:relative; width:100%;';
             const view = document.createElement('div');   // 보이는 정지본 (캡처와 같은 방식)
-            view.className = 'live-script-view';
+            view.className = 'live-script-view'; view.dataset.liveId = uid;
             // 정지본 안의 z-index가 iframe 위로 올라오지 않게 정지본을 하나의 층으로 묶고, iframe을 그 위에 둠
             view.style.cssText = 'position:relative; z-index:0;';
             const frame = document.createElement('iframe');  // 실제 실행 화면 (조작 전용)
@@ -2066,31 +2447,36 @@
             doc = injectAppFontLinks(doc);
             let resolveReady; const ready = new Promise(r => { resolveReady = r; });
             setTimeout(() => resolveReady(), 12000); // 신호가 안 와도 무한정 기다리지는 않음
-            liveFrame = { raw, el: wrap, view, frame, height: 40, hasStatic: false, ready, resolveReady };
-            ready.then(() => { if (liveFrame && liveFrame.frame === frame) refreshLiveStatic(); });
+            const lf = { blockId, uid, host, raw, el: wrap, view, frame, height: 40, hasStatic: false, ready, resolveReady };
+            liveFrames.set(blockId, lf);
+            ready.then(() => { if (liveFrames.get(blockId) === lf) refreshLiveStatic(lf); });
             frame.srcdoc = doc;
-            DOM.pText.innerHTML = ''; DOM.pText.appendChild(wrap);
-            layoutLiveFrame();
+            host.innerHTML = ''; host.appendChild(wrap);
+            layoutLiveFrame(lf);
             syncLiveFramePointer();
         }
         // 위치 이동(드래그)·오버레이 편집 중에는 iframe이 마우스를 가로채지 않게 함
         function syncLiveFramePointer() {
-            if (liveFrame && liveFrame.frame) liveFrame.frame.style.pointerEvents = (dragMode || ovEditMode) ? 'none' : 'auto';
+            liveFrames.forEach(lf => { if (lf.frame) lf.frame.style.pointerEvents = (dragMode || ovEditMode) ? 'none' : 'auto'; });
         }
-        // HTML 뷰어 렌더링: 스크립트가 있으면 살아 있는 iframe을 (코드가 바뀔 때만 새로) 띄우고, 없으면 기존 방식
-        function renderScriptedHtml(raw) {
-            if (liveFrame && liveFrame.raw === raw && DOM.pText.contains(liveFrame.el)) { layoutLiveFrame(); syncLiveFramePointer(); return; }
-            clearTimeout(liveFrameTimer);
-            if (!(liveFrame && DOM.pText.contains(liveFrame.el))) {
-                DOM.pText.innerHTML = '<div style="padding:16px; color:#6b6d76; font:14px sans-serif;">스크립트를 실행하는 중이에요…</div>';
+        // HTML 뷰어 렌더링: 스크립트가 있으면 살아 있는 iframe을 (코드가 바뀔 때만 새로) 띄움
+        function renderScriptedHtml(raw, host, blockId) {
+            const lf = liveFrames.get(blockId);
+            if (lf && lf.raw === raw && lf.host === host && liveFrameAlive(lf)) { layoutLiveFrame(lf); syncLiveFramePointer(); return; }
+            const pending = liveFrameTimers.get(blockId); if (pending) clearTimeout(pending);
+            if (!liveFrameAlive(lf)) {
+                host.innerHTML = '<div style="padding:16px; color:#6b6d76; font:14px sans-serif;">스크립트를 실행하는 중이에요…</div>';
             }
             // 타이핑하는 동안 매 글자마다 다시 실행하지 않도록 잠깐 기다렸다 실행
-            liveFrameTimer = setTimeout(() => { if (DOM.htmlToggle.checked && DOM.text.value === raw) createLiveFrame(raw); }, 400);
+            liveFrameTimers.set(blockId, setTimeout(() => {
+                liveFrameTimers.delete(blockId);
+                const b = blocks.find(x => x.id === blockId);
+                if (b && b.isHtml && b.text === raw && host.isConnected) createLiveFrame(raw, host, blockId);
+            }, 400));
         }
         // 캡처용 정지본은 네카이브 화면 안에 잠깐 끼워 넣어지므로, 네카이브 자신의 전역 스타일(예: * { box-sizing },
         // 스크롤바 모양, Tailwind 기본 초기화)이 섞여 들어가 실행 화면과 달라질 수 있음 → 정지본 안에서는 그런 스타일을
         // 모두 브라우저 기본값으로 되돌리고, 붙여넣은 코드의 스타일만 적용되게 함 (붙여넣은 스타일이 항상 우선)
-        const LIVE_SNAPSHOT_SCOPE = '#preview-text [data-script-root]';
         const LIVE_SNAPSHOT_RESET = '<style data-live-snapshot-reset>'
             + '#preview-text [data-script-root] { all: initial; display: block; }'
             // svg 안쪽은 제외: fill="..." 같은 그림 속성까지 초기화돼서 색이 사라짐
@@ -2103,8 +2489,7 @@
             const bodyAttrs = `${snap.bodyClass ? ` class="${escapeHtml(snap.bodyClass)}"` : ''}${snap.bodyStyle ? ` style="${escapeHtml(snap.bodyStyle)}"` : ''}`;
             return styleHtml + `<div data-script-root${bodyAttrs}>${snap.html}</div>`;
         }
-        function requestLiveSnapshot() {
-            const lf = liveFrame;
+        function requestLiveSnapshot(lf) {
             return lf.ready.then(() => new Promise((resolve, reject) => {
                 const id = 'snap-' + Date.now() + '-' + Math.random().toString(36).slice(2);
                 liveSnapshotWaiters.set(id, resolve);
@@ -2114,9 +2499,10 @@
         }
         // 캡처 직전에 보이는 정지본을 "지금 이 순간" 상태로 한 번 더 새로 고친 뒤 찍음 (iframe 자체는 캡처본에서 빠짐)
         async function withLiveFrameSnapshot(fn) {
-            if (!liveFrame || !DOM.htmlToggle.checked || !DOM.pText.contains(liveFrame.el)) return fn();
-            liveStaticTimers.forEach(clearTimeout);
-            await refreshLiveStatic();
+            const frames = aliveLiveFrames();
+            if (!frames.length) return fn();
+            frames.forEach(lf => (lf.staticTimers || []).forEach(clearTimeout));
+            await Promise.all(frames.map(lf => refreshLiveStatic(lf)));
             // 정지본의 웹폰트가 준비될 때까지 잠깐 기다림
             try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
             return fn();
@@ -2267,75 +2653,14 @@
             });
             
             const isHtmlMode = DOM.htmlToggle.checked;
-            
-            if (isHtmlMode) {
-                DOM.sectionTypography.style.display = 'none';
-                DOM.sectionHtmlLayout.style.display = 'block';
-
-                const pt = DOM.marginTop.value || 0;
-                const pb = DOM.marginBottom.value || 0;
-                const pl = DOM.marginLeft.value || 0;
-                const pr = DOM.marginRight.value || 0;
-                DOM.preview.style.padding = `${pt}px ${pr}px ${pb}px ${pl}px`;
-
-                DOM.contentWrapper.style.fontFamily = ''; DOM.contentWrapper.style.fontWeight = '';
-                DOM.contentWrapper.style.color = '';
-                DOM.pText.style.fontSize = '';
-                DOM.pText.style.lineHeight = ''; 
-                DOM.pText.style.textAlign = 'left';
-                DOM.pText.style.wordBreak = 'normal';
-                DOM.pText.style.textShadow = 'none';
-                DOM.pText.style.letterSpacing = '';
-                
-                const hScale = parseFloat(DOM.htmlScale.value) || 1.0;
-                DOM.pText.style.transform = `scale(${hScale})`;
-                DOM.pText.style.transformOrigin = 'center center';
-                
-                if (hasExecutableScript(DOM.text.value)) {
-                    // 스크립트가 있는 코드(React/JSX 등): 실행 화면을 카드 안에 그대로 띄움 (태그 도우미는 원본과 1:1이 아니라 제외)
-                    renderScriptedHtml(DOM.text.value);
-                } else {
-                    let htmlToShow = DOM.text.value;
-                    if (DOM.tagHelper && DOM.tagHelper.checked) {
-                        try { htmlToShow = buildAnnotatedHtml(DOM.text.value); } catch (e) { htmlToShow = DOM.text.value; } // 파싱 중 예외가 나도 원래 동작으로 안전하게 폴백
-                    }
-                    try { DOM.pText.innerHTML = isolateHtml(htmlToShow); }
-                    catch (e) { DOM.pText.innerHTML = ''; }
-                }
-                handleForcedPosition();
-            } else {
-                DOM.sectionTypography.style.display = 'block';
-                DOM.sectionHtmlLayout.style.display = 'none';
-
-                DOM.preview.style.padding = DOM.pad.value + 'px';
-                
-                DOM.contentWrapper.style.fontFamily = currentFontVal;
-                DOM.contentWrapper.style.fontWeight = currentFontWeight;
-                DOM.contentWrapper.style.color = DOM.color.value;
-                DOM.pText.style.fontSize = DOM.size.value + 'px';
-                DOM.pText.style.lineHeight = DOM.lh.value;
-                DOM.pText.style.textAlign = DOM.align.value;
-                DOM.pText.style.wordBreak = DOM.charWrap.checked ? 'break-all' : 'keep-all';
-                DOM.pText.style.letterSpacing = (parseFloat(DOM.letterSpacing.value) || 0) + 'px';
-
-                const hScale2 = (parseFloat(DOM.hScale2.value) || 100) / 100;
-                const originMap = { left: 'left center', center: 'center center', right: 'right center' };
-                DOM.pText.style.transform = hScale2 !== 1 ? `scaleX(${hScale2})` : 'none';
-                DOM.pText.style.transformOrigin = originMap[DOM.align.value] || 'center center';
-                
-                if (parseFloat(DOM.tsOpacity.value) > 0) {
-                    const tsRgb = hexToRgbStr(DOM.tsColor.value);
-                    DOM.pText.style.textShadow = `0px ${DOM.tsY.value}px ${DOM.tsBlur.value}px rgba(${tsRgb}, ${DOM.tsOpacity.value})`;
-                } else {
-                    DOM.pText.style.textShadow = 'none';
-                }
-
-                const gap = DOM.paraGap.value;
-                const lines = DOM.text.value.split('\n');
-                // 문단 간격은 줄 "사이"에만 넣음. 마지막 줄 아래에도 넣으면 그만큼 아래 공간이 생겨서
-                // 세로 가운데 정렬이 문단 간격의 절반만큼 위로 치우침
-                DOM.pText.innerHTML = lines.map((line, i) => `<div style="margin-bottom: ${i === lines.length - 1 ? 0 : gap}px">${line || '<br>'}</div>`).join('');
-            }
+            // 선택된 블록 = 왼쪽 패널 값 → 블록 목록에 반영한 뒤 모든 블록을 그림
+            syncActiveBlockFromControls();
+            DOM.sectionTypography.style.display = isHtmlMode ? 'none' : 'block';
+            DOM.sectionHtmlLayout.style.display = isHtmlMode ? 'block' : 'none';
+            renderBlockTabs();
+            renderBlockLayoutControls();
+            renderBlocks();
+            handleForcedPosition();
             
             DOM.contentWrapper.style.transform = `translate(${DOM.textX.value}px, ${-DOM.textY.value}px)`;
             
@@ -2384,7 +2709,7 @@
             wmContent.textContent = wmText;
             wmContent.style.fontSize = DOM.wmSize.value + 'px';
             wmContent.style.color = DOM.wmColor.value;
-            wmContent.style.fontFamily = currentFontVal;
+            wmContent.style.fontFamily = (blocks[0] && blocks[0].typo && blocks[0].typo.font) || currentFontVal;
             wmTransform.style.transform = `translate(${DOM.wmX.value}px, ${-DOM.wmY.value}px)`;
 
             updateBgLayer();
@@ -2395,16 +2720,14 @@
           }
         }
 
-        function handleForcedPosition() {
-            const detailEl = document.getElementById('position-warning-detail');
-            if (!DOM.htmlToggle.checked) { detailEl.textContent = ''; return; }
-
-            // 맨 앞의 <style> 등은 건너뛰고 실제 화면에 보이는 첫 태그를 검사 (스크립트 실행 결과면 그 안쪽 첫 태그)
+        // HTML 블록의 최상위 태그에 걸린 위치 고정(position/margin 등)을 찾아서 알려주고,
+        // "컨테이너 위치 강제 해제"가 켜져 있으면 무력화함. 안내 문구는 지금 선택된 블록 기준.
+        function findForcedPosition(body) {
             const NON_VISUAL = /^(STYLE|LINK|META|TITLE|SCRIPT|BASE|NOSCRIPT|TEMPLATE)$/;
-            let outer = Array.from(DOM.pText.children).find(el => !NON_VISUAL.test(el.tagName));
+            // 맨 앞의 <style> 등은 건너뛰고 실제 화면에 보이는 첫 태그를 검사 (스크립트 실행 결과면 그 안쪽 첫 태그)
+            let outer = Array.from(body.children).find(el => !NON_VISUAL.test(el.tagName));
             if (outer && outer.hasAttribute('data-script-root')) outer = Array.from(outer.children).find(el => !NON_VISUAL.test(el.tagName)) || outer;
-            if (!outer) { detailEl.textContent = ''; return; }
-
+            if (!outer) return { outer: null, found: [] };
             const style = outer.getAttribute('style') || '';
             const found = [];
             const posMatch = style.match(/position\s*:\s*(absolute|fixed|relative)/i);
@@ -2412,13 +2735,25 @@
             if (/margin(?:-\w+)?\s*:\s*-\s*[0-9]/i.test(style)) found.push('margin(음수)');
             if (/float\s*:\s*(left|right)/i.test(style)) found.push('float');
             if (/transform\s*:\s*[^;]*translate/i.test(style)) found.push('transform(translate)');
-
-            if (found.length === 0) { detailEl.style.color = 'var(--ink-soft)'; detailEl.textContent = '위치를 강제하는 코드가 감지되지 않았습니다.'; return; }
-            detailEl.style.color = 'var(--danger)'; detailEl.textContent = `⚠️ <${outer.tagName.toLowerCase()}> 태그에서 감지됨: ${found.join(', ')}`;
-            if (DOM.forceCenter.checked) {
-                outer.style.position = 'static'; outer.style.top = ''; outer.style.left = ''; outer.style.right = ''; outer.style.bottom = '';
-                outer.style.float = 'none'; outer.style.margin = '0 auto'; outer.style.transform = 'none';
-            }
+            return { outer, found };
+        }
+        function handleForcedPosition() {
+            const detailEl = document.getElementById('position-warning-detail');
+            let activeResult = null;
+            blocks.forEach((b, i) => {
+                if (!b.isHtml) return;
+                const body = DOM.pText.querySelector(`[data-block-body="${b.id}"]`); if (!body) return;
+                const r = findForcedPosition(body);
+                if (i === activeBlockIndex) activeResult = r;
+                if (r.outer && r.found.length && DOM.forceCenter.checked) {
+                    const o = r.outer;
+                    o.style.position = 'static'; o.style.top = ''; o.style.left = ''; o.style.right = ''; o.style.bottom = '';
+                    o.style.float = 'none'; o.style.margin = '0 auto'; o.style.transform = 'none';
+                }
+            });
+            if (!DOM.htmlToggle.checked || !activeResult || !activeResult.outer) { detailEl.textContent = ''; return; }
+            if (!activeResult.found.length) { detailEl.style.color = 'var(--ink-soft)'; detailEl.textContent = '위치를 강제하는 코드가 감지되지 않았습니다.'; return; }
+            detailEl.style.color = 'var(--danger)'; detailEl.textContent = `⚠️ <${activeResult.outer.tagName.toLowerCase()}> 태그에서 감지됨: ${activeResult.found.join(', ')}`;
         }
 
         DOM.htmlToggle.addEventListener('change', () => { userManuallyToggledHtml = true; updateUI(); });
@@ -2470,7 +2805,7 @@
 
         // ── 모바일 탭 (좁은 화면 전용, 데스크톱에서는 CSS가 이 클래스를 무시함) ──
         const MOBILE_TAB_MAP = {
-            input: ['section-text-input', 'section-watermark'],
+            input: ['section-text-input', 'section-block-layout', 'section-watermark'],
             style: ['section-typography', 'section-html-layout', 'section-misc'],
             bg: ['section-overlay'],
             system: ['section-system'],
@@ -2527,7 +2862,7 @@
         }
 
         function saveTypoDefault() {
-            let config = getCurrentConfig(); let defs = JSON.parse(localStorage.getItem('archive_default_typo')) || {};
+            let config = getCurrentConfigFromControls(); // 지금 선택된 블록의 타이포그래피 let defs = JSON.parse(localStorage.getItem('archive_default_typo')) || {};
             ['font','fontWeight','color','size','lh','paraGap','pad','align','charWrap','letterSpacing','hScale2','marginTop','marginBottom','marginLeft','marginRight','htmlScale','textX','textY'].forEach(k => defs[k] = config[k]);
             localStorage.setItem('archive_default_typo', JSON.stringify(defs)); showToast('타이포그래피 설정이 기본값으로 저장되었습니다.');
         }
@@ -3228,9 +3563,9 @@
             const opts = Array.from(fontOptions.querySelectorAll('.picker-opt')); const idx = opts.indexOf(document.activeElement);
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault(); const next = opts[Math.min(opts.length - 1, Math.max(0, idx + (e.key === 'ArrowDown' ? 1 : -1)))];
-                if (next) { next.focus(); DOM.pText.style.fontFamily = next.dataset.val; }
+                if (next) { next.focus(); previewActiveBlockFont(next.dataset.val); }
             } else if ((e.key === 'Enter' || e.key === ' ') && idx >= 0) { e.preventDefault(); opts[idx].click(); fontTrigger.focus(); }
-            else if (e.key === 'Escape') { e.preventDefault(); fontOptions.classList.remove('open'); DOM.pText.style.fontFamily = currentFontVal; fontTrigger.focus(); }
+            else if (e.key === 'Escape') { e.preventDefault(); fontOptions.classList.remove('open'); previewActiveBlockFont(currentFontVal); fontTrigger.focus(); }
         });
         function markSelectedFontOption() {
             document.querySelectorAll('.picker-opt').forEach(o => o.classList.toggle('selected', o.dataset.val === currentFontVal));
@@ -3240,8 +3575,8 @@
         function setupFontPicker() {
             document.querySelectorAll('.picker-opt').forEach(opt => {
                 const newOpt = opt.cloneNode(true); opt.parentNode.replaceChild(newOpt, opt);
-                newOpt.addEventListener('mouseenter', () => { DOM.pText.style.fontFamily = newOpt.dataset.val; });
-                newOpt.addEventListener('mouseleave', () => { DOM.pText.style.fontFamily = currentFontVal; });
+                newOpt.addEventListener('mouseenter', () => { previewActiveBlockFont(newOpt.dataset.val); });
+                newOpt.addEventListener('mouseleave', () => { previewActiveBlockFont(currentFontVal); });
                 newOpt.addEventListener('click', () => {
                     currentFontVal = newOpt.dataset.val; fontTrigger.textContent = newOpt.dataset.label || newOpt.textContent;
                     fontTrigger.style.fontFamily = currentFontVal; fontOptions.classList.remove('open');
@@ -3255,7 +3590,7 @@
         // 업로드 직후 / 아카이브에서 복원할 때 양쪽에서 공통으로 사용 (등록 로직이 두 곳에서 어긋나지 않게)
         async function registerCustomFont(fontName, dataUrl, displayFileName) {
             const font = new FontFace(fontName, `url(${dataUrl})`);
-            await font.load(); document.fonts.add(font);
+            await font.load(); document.fonts.add(font); registeredCustomFonts.add(fontName);
             const label = `내 폰트 (${displayFileName || '업로드된 폰트'})`;
             let opt = Array.from(document.querySelectorAll('.picker-opt')).find(o => o.dataset.val === fontName);
             if (!opt) {
@@ -3286,6 +3621,13 @@
         });
 
         function getCurrentConfig() {
+            syncActiveBlockFromControls();
+            return { ...getCurrentConfigFromControls(), ...blockToLegacyFields(blocks[0]),
+                blocks: cloneData(blocks), activeBlock: activeBlockIndex, blockLayout: cloneData(blockLayout) };
+        }
+        // 왼쪽 패널 값 그대로 (블록 정보 제외). 위의 getCurrentConfig가 1번 블록 값으로 덮어써서
+        // 예전 형식으로만 읽는 곳(예: 예전 버전)에서도 1번 블록이 본문으로 보이게 함
+        function getCurrentConfigFromControls() {
             return {
                 text: DOM.text.value, width: DOM.width.value, height: DOM.height.value,
                 bgImg: currentBgImageDataUrl, bgScale: bgScale, bgOffsetX: bgOffsetX, bgOffsetY: bgOffsetY,
@@ -3369,7 +3711,21 @@
                 }
             });
 
-            await Promise.all([bgPromise, ovPromise]); updateUI(); 
+            await Promise.all([bgPromise, ovPromise]);
+
+            // 블록 복원: 새 형식이면 저장된 블록들을, 예전 형식이면 지금 패널 값으로 블록 하나를 만듦
+            if (Array.isArray(config.blocks) && config.blocks.length) {
+                blocks = config.blocks.map(b => normalizeBlock(cloneData(b)));
+                activeBlockIndex = Math.min(Math.max(0, parseInt(config.activeBlock, 10) || 0), blocks.length - 1);
+            } else {
+                blocks = [normalizeBlock({ text: DOM.text.value, isHtml: DOM.htmlToggle.checked, typo: readTypoFromControls(), html: readHtmlLayoutFromControls() })];
+                activeBlockIndex = 0;
+            }
+            blockLayout = { ...DEFAULT_BLOCK_LAYOUT, ...(config.blockLayout || {}) };
+            await ensureBlockFontsRegistered();
+            await loadBlockIntoControls(blocks[activeBlockIndex]);
+            renderBlockTabs();
+            updateUI(); 
         }
 
         // ── 템플릿: 아카이브 카드의 "꾸밈 설정만" 가져오기 ─────────────────
@@ -3387,6 +3743,7 @@
               keys: ['marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'htmlScale', 'forceCenter'] },
             { id: 'wm', label: '출처 표시 모양', desc: '글자 크기·색·위치 (캐릭터 이름·제작자 글자는 그대로)', keys: ['wmSize', 'wmColor', 'wmX', 'wmY'] },
             { id: 'pos', label: '텍스트 위치', desc: '드래그로 옮긴 X·Y 값', keys: ['textX', 'textY'] },
+            { id: 'layout', label: '블록 배치', desc: '배치 방향·간격·정렬, 블록별 폭 비율·위치 (블록이 여러 개일 때)', keys: [] },
         ];
         function getTemplateGroupPrefs() {
             try { const v = JSON.parse(localStorage.getItem('archive_template_groups')); if (v && typeof v === 'object') return v; } catch (e) { }
@@ -3418,7 +3775,20 @@
             // 지금 설정을 바탕으로, 켜진 항목의 값만 템플릿 값으로 바꿔서 한 번에 적용
             // (템플릿에 없는 값은 "수정"으로 불러올 때와 같은 기본값이 쓰임)
             const merged = { ...before };
-            groups.forEach(g => g.keys.forEach(k => { merged[k] = item.config[k]; }));
+            const on = new Set(groups.map(g => g.id));
+            // 블록마다 따로인 값(타이포그래피·HTML 레이아웃)은 같은 순서의 블록끼리 적용 — 내용은 그대로
+            groups.forEach(g => g.keys.forEach(k => { if (!BLOCK_TYPO_KEYS.includes(k) && !BLOCK_HTML_KEYS.includes(k)) merged[k] = item.config[k]; }));
+            const tplBlocks = (Array.isArray(item.config.blocks) && item.config.blocks.length) ? item.config.blocks : [legacyBlockFromConfig(item.config)];
+            merged.blocks = before.blocks.map((b, i) => {
+                const tb = tplBlocks[i]; if (!tb) return b;
+                const nb = cloneData(b);
+                if (on.has('typo')) nb.typo = cloneData(tb.typo || {});
+                if (on.has('html')) nb.html = cloneData(tb.html || {});
+                if (on.has('layout')) { nb.offX = tb.offX || 0; nb.offY = tb.offY || 0; nb.flex = tb.flex || 1; }
+                return nb;
+            });
+            if (on.has('layout') && item.config.blockLayout) merged.blockLayout = cloneData(item.config.blockLayout);
+            Object.assign(merged, blockToLegacyFields(merged.blocks[0]));
             merged.text = before.text; merged.isHtmlMode = before.isHtmlMode; merged.wmChar = before.wmChar; merged.wmCreator = before.wmCreator;
             // 템플릿 적용은 "수정"이 아니므로, 이후 저장하면 새 카드로 저장됨 (원본 카드가 덮어써지지 않게)
             editingArchiveItem = null;
@@ -3684,7 +4054,9 @@
             function getLineCount(el) {
                 const cs = getComputedStyle(el); let lh = parseFloat(cs.lineHeight);
                 if (isNaN(lh)) lh = parseFloat(cs.fontSize) * 1.2; if (!lh || lh <= 0) return 1;
-                const h = el.getBoundingClientRect().height; return Math.max(1, Math.round(h / lh));
+                // offsetHeight = 확대/축소(transform) 전의 실제 레이아웃 높이. getBoundingClientRect는 미리보기 배율·콘텐츠 크기만큼
+                // 줄어든 값이라, 두 줄짜리 글자를 한 줄로 잘못 판단해서 줄바꿈을 막아버리는 문제가 있었음
+                const h = el.offsetHeight || el.getBoundingClientRect().height; return Math.max(1, Math.round(h / lh));
             }
             function walk(srcNode, cloneNode) {
                 if (srcNode.nodeType !== 1) return;
