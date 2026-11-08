@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.22)</title>
+    <title>네카이브 (v4.2.23)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -538,7 +538,7 @@
         .controls .picker-options { left: auto; right: 0; min-width: 260px; }
         /* 메뉴 안쪽: 양옆 여백을 넉넉히, 항목들은 가운데의 일정한 폭 안에 (넓은 패널·모바일 제외) */
         @media (min-width: 861px) {
-            body:not(.screen-expand) .controls > .ctrl-section { padding-left: 24px; padding-right: 24px; }
+            .controls > .ctrl-section { padding-left: 24px; padding-right: 24px; }
         }
         /* 글자 크기 단계 (대 > 중 > 소) + 위아래 간격 — 데스크톱 패널 */
         @media (min-width: 861px) {
@@ -547,7 +547,13 @@
             .controls > .ctrl-section { padding-top: 20px; padding-bottom: 32px; }
             /* 큰 메뉴는 항상 펼친 상태 (접기 없음) + 스크롤바 숨김 */
             .controls .collapsible-content { display: block !important; }
-            body.screen-expand .controls .collapsible-content { display: grid !important; }
+            body.screen-expand .controls .collapsible-content { display: block !important; }
+            /* 화면 확장: 넓어진 패널에 메뉴들을 여러 줄(열)로 나란히 — 각 메뉴 모양은 일반 모드와 똑같고,
+               빈 곳 없이 위로 채워지게 JS(layoutExpandedPanel)가 메뉴 높이만큼 칸을 잡아줌 */
+            body.screen-expand .controls { flex: 0 0 clamp(380px, 56vw, 1080px); display: grid; grid-template-columns: repeat(auto-fill, minmax(344px, 1fr)); grid-auto-rows: 4px; grid-auto-flow: row dense; align-items: start; scroll-snap-type: none; }
+            body.screen-expand .controls::after { display: none; }
+            body.screen-expand .controls > .ctrl-section:not([style*="display: none"]):not([style*="display:none"]) { display: block; scroll-snap-align: none; }
+            body.screen-expand .controls > .ctrl-section { border-bottom: none; box-shadow: inset -1px 0 0 var(--line-soft), inset 0 -1px 0 var(--line-soft); }
             .controls .collapsible-header { cursor: pointer; padding-top: 0; padding-bottom: 0; }
             .controls .collapsible-header .collapsible-icon { display: none; }
             .controls { scrollbar-width: none; }
@@ -576,16 +582,17 @@
         }
         /* 모바일도 같은 방식, 폭만 조금 넓게 */
         @media (max-width: 860px) { .controls { --content-w: 320px; } }
-        @media (min-width: 861px) { body:not(.screen-expand) .controls { --content-w: 296px; } }  /* 메뉴 제목보다 양옆 17px씩 안쪽 → 하위 항목이라는 게 보이게 */
+        @media (min-width: 861px) { .controls { --content-w: 296px; } }  /* 메뉴 제목보다 양옆 17px씩 안쪽 → 하위 항목이라는 게 보이게 */
+        /* 입력창만은 예외: 메뉴 제목 아이콘(T)과 같은 선까지 양옆으로 넓게 */
         @media (max-width: 860px), (min-width: 861px) {
-            body:not(.screen-expand) .ctrl-section > :not(.ctrl-eyebrow):not(.collapsible-header):not(.collapsible-content),
-            body:not(.screen-expand) .collapsible-content > * { max-width: var(--content-w); margin-left: auto; margin-right: auto; }
-            body:not(.screen-expand) .controls .field-grid { grid-template-columns: auto auto; justify-content: space-between; }
-            body:not(.screen-expand) .controls .field input[type="text"] { width: 124px; }
-            body:not(.screen-expand) .controls .field.span2 input[type="text"] { width: 100%; }
+            .ctrl-section > :not(.ctrl-eyebrow):not(.collapsible-header):not(.collapsible-content):not(.code-editor-wrap),
+            .collapsible-content > * { max-width: var(--content-w); margin-left: auto; margin-right: auto; }
+            .controls .field-grid { grid-template-columns: auto auto; justify-content: space-between; }
+            .controls .field input[type="text"] { width: 124px; }
+            .controls .field.span2 input[type="text"] { width: 100%; }
             /* 버튼이 3~4개인 선택줄(블록 배치)은 이름을 위에, 버튼은 한 줄 전체로 */
-            body:not(.screen-expand) #section-block-layout .row:has(> .segmented) { flex-direction: column; align-items: stretch; gap: 6px; }
-            body:not(.screen-expand) #section-block-layout .row > .segmented { flex: 0 0 auto !important; width: 100%; }
+            #section-block-layout .row:has(> .segmented) { flex-direction: column; align-items: stretch; gap: 6px; }
+            #section-block-layout .row > .segmented { flex: 0 0 auto !important; width: 100%; }
         }
         /* 왼쪽 패널은 조금 더 둥글게 */
         .controls { --radius-sm: 10px; }
@@ -814,7 +821,11 @@
         #mobile-edit-exit-btn { display: none; }
         @media (max-width: 860px) {
             .app-container { max-width: none; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; margin: 0; }
-            header { padding: 0 var(--sp-4); height: 46px; }
+            header { padding: 0 var(--sp-4); height: 28px; }
+            .brand { font-size: 1rem; gap: 6px; }
+            .brand-mark { width: 16px; height: 16px; }
+            .brand-text { top: 2px; }
+            .tab-btn { font-size: var(--fs-sm); }
 
             /* 화면 확장은 데스크톱 전용 개념(넓은 화면에서 여백 없애기) — 모바일은 이미 항상 꽉 차 있어서
                의미가 없고, 2열 그리드가 오히려 좁은 화면에서 답답해지므로 관련 UI 자체를 숨김 */
@@ -1412,8 +1423,8 @@
                     </div>
                     <div class="collapsible-content">
                         <div class="row-group row-span2">
-                            <div class="row" id="screen-expand-row" title="켜면 화면 양옆 여백을 없애고, 입력창과 미리보기를 더 넓게 써요 (편집 패널이 2열로 배치돼요)">
-                                <span class="row-label">화면 확장 <span class="row-sub">양옆 여백 없이 넓게, 메뉴 2열</span></span>
+                            <div class="row" id="screen-expand-row" title="켜면 화면 양옆 여백을 없애고, 입력창과 미리보기를 더 넓게 써요 (메뉴들이 여러 열로 나란히 놓여요)">
+                                <span class="row-label">화면 확장 <span class="row-sub">양옆 여백 없이 넓게, 메뉴를 여러 열로</span></span>
                                 <label class="row-switch">
                                     <input type="checkbox" id="screen-expand-toggle" onchange="toggleScreenExpand()" aria-label="화면 확장">
                                     <span class="track"></span>
@@ -2954,6 +2965,7 @@
             // 사이드바 폭이 바뀌면 코드 입력창 폭도 바뀌어서, 문법 강조 레이어 위치를 다시 맞춰야 함
             if (typeof syncHighlightScroll === 'function') requestAnimationFrame(syncHighlightScroll);
             requestAnimationFrame(syncPanelNav);
+            scheduleExpandedLayout();
         }
 
         function toggleToolbarAlways() {
@@ -3820,6 +3832,23 @@
             if (!active) active = [...nav.children].find(b => !b.hidden);
             [...nav.children].forEach(b => { b.classList.toggle('active', b === active); b.setAttribute('aria-current', b === active ? 'true' : 'false'); });
         }
+        // ── 화면 확장: 메뉴마다 자기 높이만큼 칸(4px 단위)을 잡아서 여러 열에 빈틈없이 쌓음 ──
+        function layoutExpandedPanel() {
+            const panel = document.querySelector('.controls'); if (!panel) return;
+            const on = document.body.classList.contains('screen-expand') && isDesktopPanel();
+            panel.querySelectorAll(':scope > .ctrl-section').forEach(sec => {
+                if (!on) { sec.style.gridRowEnd = ''; return; }
+                const h = sec.offsetParent ? sec.scrollHeight : 0;
+                sec.style.gridRowEnd = h ? 'span ' + Math.ceil(h / 4) : '';
+            });
+        }
+        let expandLayoutRaf = 0;
+        function scheduleExpandedLayout() { cancelAnimationFrame(expandLayoutRaf); expandLayoutRaf = requestAnimationFrame(layoutExpandedPanel); }
+        if (window.ResizeObserver) {
+            const ro = new ResizeObserver(scheduleExpandedLayout);
+            window.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.controls > .ctrl-section').forEach(sec => ro.observe(sec)));
+        }
+        window.addEventListener('resize', scheduleExpandedLayout);
         function isDesktopPanel() { return !window.matchMedia('(max-width: 860px)').matches; }
         // 왼쪽 패널에서 그 메뉴가 맨 위에 오도록 스크롤 (패널 안에서만 움직임 — 화면 전체가 밀리지 않게 직접 계산)
         function scrollPanelToSection(section) {
