@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.24)</title>
+    <title>네카이브 (v4.2.25)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -164,6 +164,13 @@
             background: var(--ink); transform: scaleX(0); transition: transform 0.2s ease;
         }
         .tab-btn:hover { color: var(--ink); }
+        .fs-toggle { align-self: center; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper); color: var(--ink-soft); font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; transition: all .15s; }
+        .fs-toggle:hover { color: var(--ink); border-color: var(--ink-soft); }
+        .fs-toggle[hidden] { display: none; }
+        .fs-toggle .fs-ic-off { display: none; }
+        .fs-toggle.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+        .fs-toggle.on .fs-ic-on { display: none; }
+        .fs-toggle.on .fs-ic-off { display: block; }
         .tab-btn.active { color: var(--ink); font-weight: 700; }
         .tab-btn.active::after { transform: scaleX(1); }
 
@@ -821,11 +828,16 @@
         #mobile-edit-exit-btn { display: none; }
         @media (max-width: 860px) {
             .app-container { max-width: none; width: 100%; height: 100vh; height: 100dvh; border-radius: 0; margin: 0; }
-            header { padding: 0 var(--sp-4); height: 28px; }
-            .brand { font-size: 1rem; gap: 6px; }
-            .brand-mark { width: 16px; height: 16px; }
+            header { padding: 0 var(--sp-4); height: 36px; }
+            .brand { font-size: 1.2rem; gap: 6px; }
+            .brand-mark { width: 20px; height: 20px; }
             .brand-text { top: 2px; }
             .tab-btn { font-size: var(--fs-sm); }
+            .nav-tabs { gap: var(--sp-5); }
+            .fs-toggle .fs-label { display: none; }
+            .fs-toggle { width: 28px; height: 28px; padding: 0; justify-content: center; }
+            /* 미리보기를 누르면 나오는 버튼들 (배율·저장 등) 30% 작게 */
+            .floating-zoom, .floating-actions { zoom: 0.7; }
 
             /* 화면 확장은 데스크톱 전용 개념(넓은 화면에서 여백 없애기) — 모바일은 이미 항상 꽉 차 있어서
                의미가 없고, 2열 그리드가 오히려 좁은 화면에서 답답해지므로 관련 UI 자체를 숨김 */
@@ -951,6 +963,12 @@
             <span class="brand-text">네카이브</span>
         </div>
         <div class="nav-tabs">
+            <!-- 브라우저 전체화면 (주소창·탭 숨김) — 미리보기의 '크게 보기'와는 다른 기능 -->
+            <button type="button" class="fs-toggle" id="page-fs-toggle" onclick="togglePageFullscreen()" title="전체화면 (주소창 숨기기)" aria-label="전체화면" aria-pressed="false">
+                <svg class="fs-ic-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                <svg class="fs-ic-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                <span class="fs-label">전체화면</span>
+            </button>
             <button class="tab-btn active" onclick="switchTab('extractor')">발췌기</button>
             <button class="tab-btn" onclick="switchTab('archive')">아카이브</button>
         </div>
@@ -1528,7 +1546,7 @@
 
                     <div class="hover-zone-tr"></div>
                     <div class="floating-zoom">
-                        <button class="btn" onclick="openFullscreen()" style="padding: 6px; width:34px; height:34px;" title="전체화면 모드" aria-label="전체화면 모드">
+                        <button class="btn" onclick="openFullscreen()" style="padding: 6px; width:34px; height:34px;" title="크게 보기 (카드만 화면 가득)" aria-label="크게 보기">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                         </button>
                         <label>
@@ -2896,7 +2914,7 @@
         function openFullscreen() {
             document.body.classList.add('fullscreen-mode');
             setTimeout(() => { document.addEventListener('click', closeFullscreen); }, 10);
-            showToast('전체화면 모드입니다. 아무 곳이나 클릭하면 종료됩니다.');
+            showToast('크게 보기 중이에요. 아무 곳이나 누르면 돌아가요.');
         }
         function closeFullscreen(e) { document.body.classList.remove('fullscreen-mode'); document.removeEventListener('click', closeFullscreen); }
 
@@ -2967,6 +2985,31 @@
             requestAnimationFrame(syncPanelNav);
             scheduleExpandedLayout();
         }
+
+        // ── 헤더의 '전체화면': 브라우저 자체를 전체화면으로 (모바일에서 주소창이 사라져 편집 공간이 넓어짐) ──
+        function isPageFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+        function togglePageFullscreen() {
+            const el = document.documentElement;
+            if (isPageFullscreen()) { const exit = document.exitFullscreen || document.webkitExitFullscreen; if (exit) exit.call(document); return; }
+            const req = el.requestFullscreen || el.webkitRequestFullscreen;
+            if (!req) { showToast('이 브라우저는 전체화면을 지원하지 않아요.'); return; }
+            try { Promise.resolve(req.call(el)).catch(() => showToast('전체화면으로 바꿀 수 없어요.')); } catch (e) { showToast('전체화면으로 바꿀 수 없어요.'); }
+        }
+        function syncPageFullscreenButton() {
+            const btn = document.getElementById('page-fs-toggle'); if (!btn) return;
+            const on = isPageFullscreen();
+            btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            btn.title = on ? '전체화면 끝내기' : '전체화면 (주소창 숨기기)';
+            const label = btn.querySelector('.fs-label'); if (label) label.textContent = on ? '전체화면 끝' : '전체화면';
+            requestAnimationFrame(syncPanelNav);
+        }
+        document.addEventListener('fullscreenchange', syncPageFullscreenButton);
+        document.addEventListener('webkitfullscreenchange', syncPageFullscreenButton);
+        window.addEventListener('DOMContentLoaded', () => {
+            // 지원하지 않는 브라우저(아이폰 사파리 등)에서는 버튼 자체를 숨김
+            const btn = document.getElementById('page-fs-toggle');
+            if (btn && !(document.fullscreenEnabled || document.webkitFullscreenEnabled)) btn.hidden = true;
+        });
 
         function toggleToolbarAlways() {
             const isChecked = document.getElementById('toolbar-always-toggle').checked;
@@ -3817,7 +3860,7 @@
             const nav = document.getElementById('panel-nav'); const panel = document.querySelector('.controls');
             if (!nav || !panel || !nav.children.length) return;
             const page = document.getElementById('extractor-page');
-            const off = !isDesktopPanel() || !page.classList.contains('active') || document.body.classList.contains('fullscreen-mode');
+            const off = !isDesktopPanel() || !page.classList.contains('active') || document.body.classList.contains('fullscreen-mode') || document.body.classList.contains('screen-expand');
             nav.classList.toggle('off', off); if (off) return;
             // 네카이브 카드 왼쪽 바깥에 여백이 있으면 거기에, 없으면(좁은 화면·화면 확장) 패널 왼쪽 여백 안에
             const app = document.querySelector('.app-container').getBoundingClientRect(); const pr = panel.getBoundingClientRect();
