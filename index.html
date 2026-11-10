@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.26)</title>
+    <title>네카이브 (v4.2.28)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -988,6 +988,44 @@
                 font-size: var(--fs-base); color: var(--ink); font-weight: 500; letter-spacing: normal;
             }
         }
+
+        /* ══════════════════════════════════════════════════════════════
+           시각 정리: 알약 모양·떠오르는 효과·장식 배경을 걷어내고, 각진 모서리와 얇은 선으로 통일.
+           (값만 바꾸는 덮어쓰기라 위쪽 규칙의 구조는 그대로)
+           ══════════════════════════════════════════════════════════════ */
+        :root {
+            --radius-sm: 5px; --radius-md: 7px; --radius-lg: 9px; --radius-pill: 5px;
+            --shadow-soft: 0 1px 2px rgba(20,20,20,0.05);
+            --shadow-float: 0 4px 14px rgba(20,20,20,0.12);
+        }
+        .controls { --radius-sm: 5px; }
+        .app-container { box-shadow: 0 1px 3px rgba(20,20,20,0.07); }
+        @media (min-width: 1440px) { .app-container { border-radius: 10px; } }
+        /* 동그란 게 맞는 것만 동그랗게: 스위치, 바로가기 점 */
+        .row-switch .track, .panel-nav button, .panel-nav button span { border-radius: 999px; }
+        .row-switch input:checked + .track { background: var(--ink); }
+        /* 미리보기 바탕: 점무늬 없이 단색 */
+        .preview-area { background-image: none; }
+        /* 마우스를 올려도 떠오르지 않게 (테두리 색만 바뀜) */
+        .gallery-item:hover, .template-item:hover:not(:disabled), .template-item:focus-visible, .quick-tpl-item:hover, .quick-tpl-item:focus-visible, .fav-btn:hover { transform: none; }
+        .gallery-item { box-shadow: none; }
+        .gallery-item:hover { box-shadow: none; border-color: var(--ink-soft); }
+        .template-item:hover:not(:disabled), .quick-tpl-item:hover { box-shadow: none; }
+        .floating-zoom { backdrop-filter: none; background: var(--paper); padding: 6px var(--sp-3); }
+        .zoom-value { border-radius: 4px; }
+        .quick-tpl-item { border-radius: 5px; }
+        .fav-btn { border-radius: 5px; }
+        .tpl-chip::before { border-radius: 3px; }
+        .tag-chip, .eyebrow-badge { border-radius: 4px; }
+        .swatch { border-radius: 5px; }
+        #toast { border-radius: 6px; }
+        #toast.show { transform: translateX(-50%); }
+        .crop-h { border-radius: 50%; }
+        /* 복사 버튼: 글자가 붙은 주 버튼 */
+        .floating-actions { gap: var(--sp-2); }
+        .floating-actions .btn.copy-btn { width: auto; padding: 0 14px; font-size: var(--fs-sm); font-weight: 700; }
+        /* 끌어다 놓기 표시 */
+        .preview-container.drop-target .preview-area { outline: 2px dashed var(--ink-soft); outline-offset: -8px; }
     </style>
 </head>
 <body>
@@ -1035,7 +1073,7 @@
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                             템플릿 불러오기
                         </button>
-                        <button type="button" class="action-btn" onclick="addBlock()" title="입력창(블록)을 하나 더 만들어요">
+                        <button type="button" class="action-btn" onclick="addBlock()" title="입력창(블록)을 하나 더 만듭니다">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
                             블록 추가
                         </button>
@@ -1043,7 +1081,7 @@
                             <span class="row-label">HTML 뷰어 모드</span>
                             <span class="row-switch"><input type="checkbox" id="html-mode-toggle"><span class="track"></span></span>
                         </label>
-                        <label class="switch-item" title="켜면 입력창 위에 굵게, 기울임, 형광펜, 엠대시, 구분선 버튼이 나타나요">
+                        <label class="switch-item" title="켜면 입력창 위에 굵게, 기울임, 형광펜, 엠대시, 구분선 버튼이 나타납니다">
                             <span class="row-label">편집 도구</span>
                             <span class="row-switch"><input type="checkbox" id="text-toolbar-toggle" onchange="toggleTextToolbar()"><span class="track"></span></span>
                         </label>
@@ -1072,14 +1110,14 @@
                     </div>
                     <div class="code-editor-wrap" id="code-editor-wrap">
                         <pre class="code-highlight-layer" id="code-highlight-layer" aria-hidden="true"><code id="code-highlight-code"></code></pre>
-                        <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..." spellcheck="false"></textarea>
+                        <textarea id="input-text" placeholder="글 또는 HTML 코드를 입력하거나 붙여넣으세요" spellcheck="false"></textarea>
                         <div id="code-hover-overlay" aria-hidden="true"></div>
                         <button type="button" class="text-clear-btn" id="text-clear-btn" onclick="clearAllText()" title="입력한 내용 비우기 (꾸밈 설정은 그대로)" aria-label="입력한 내용 비우기" hidden>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                             비우기
                         </button>
-                        <div class="code-hover-indicator" id="code-hover-indicator-up" aria-hidden="true">▲ 대응 코드가 위에 있어요</div>
-                        <div class="code-hover-indicator" id="code-hover-indicator-down" aria-hidden="true">▼ 대응 코드가 아래에 있어요</div>
+                        <div class="code-hover-indicator" id="code-hover-indicator-up" aria-hidden="true">▲ 대응 코드가 위에 있음</div>
+                        <div class="code-hover-indicator" id="code-hover-indicator-down" aria-hidden="true">▼ 대응 코드가 아래에 있음</div>
                     </div>
                 </div>
 
@@ -1126,7 +1164,7 @@
                                 <div class="field"><span class="field-label">Y (세로)</span><div class="stepper"><button type="button" onclick="adjustNum('block-offy', -5, 1)">−</button><input type="number" id="block-offy" value="0" oninput="updateUI()"><button type="button" onclick="adjustNum('block-offy', 5, 1)">+</button></div></div>
                             </div>
                         </div>
-                        <div class="section-note" style="margin-top:var(--sp-3);">글자·HTML 레이아웃 설정은 블록마다 따로예요. 위의 블록 탭을 눌러 고칠 블록을 고르세요. 텍스트 '위치' 드래그는 블록 전체를 함께 옮겨요.</div>
+                        <div class="section-note" style="margin-top:var(--sp-3);">글자·HTML 레이아웃은 블록마다 따로 설정합니다. 텍스트 '위치' 드래그는 모든 블록을 함께 옮깁니다.</div>
                     </div>
                 </div>
 
@@ -1236,7 +1274,7 @@
                             <div class="row" style="margin-bottom:var(--sp-1);">
                                 <span class="row-label bold">형광펜</span>
                             </div>
-                            <div class="section-note" style="margin-bottom:var(--sp-2);">텍스트 모드에서 글자를 드래그해 고른 뒤 '칠하기'를 누르세요.</div>
+                            <div class="section-note" style="margin-bottom:var(--sp-2);">입력창에서 글자를 선택한 뒤 '칠하기'를 누르세요.</div>
                             <div class="row" style="margin-bottom:0; justify-content:center; gap:var(--sp-2);">
                                 <span class="swatch" style="background:#a3e635;"><input type="color" id="hl-color" value="#a3e635" aria-label="형광펜 색상"></span>
                                 <input type="range" id="hl-opacity" min="0.1" max="1.0" step="0.1" value="0.5" style="width:110px;" aria-label="형광펜 진하기">
@@ -1338,7 +1376,7 @@
                                 </label>
                             </div>
                             <div class="img-list" id="img-list"></div>
-                            <div class="section-note" id="img-empty-note">사진을 고르면 먼저 자르기 화면이 나와요. 넣은 뒤에는 '편집 시작'으로 카드 위에서 옮기고 크기를 바꿀 수 있어요.</div>
+                            <div class="section-note" id="img-empty-note">이미지 파일을 고르거나, 미리보기에 끌어다 놓거나, 붙여넣기(Ctrl+V)로 넣을 수 있습니다.</div>
                         </div>
 
                         <!-- 선택한 이미지 설정 (이미지가 있을 때만 보임) -->
@@ -1357,7 +1395,7 @@
                                     <button type="button" class="action-btn" onclick="moveSelectedImage(-1)" title="뒤로 (다른 이미지 아래로)">뒤로</button>
                                     <button type="button" class="action-btn is-danger" onclick="deleteSelectedImage()">삭제</button>
                                 </div>
-                                <div class="section-note" style="margin-bottom:0;">편집 중에는 안쪽을 끌면 이동, 모서리를 끌면 비율을 유지한 채 크기 조절, 휠(모바일은 두 손가락)로 확대·축소돼요.</div>
+                                <div class="section-note" style="margin-bottom:0;">편집 중: 안쪽을 끌면 이동, 모서리를 끌면 크기 조절(비율 유지), 휠·두 손가락으로 확대·축소.</div>
                             </div>
                             <div class="row-group">
                                 <div class="field-grid">
@@ -1446,11 +1484,11 @@
                             <div class="row" style="margin-bottom:var(--sp-1);">
                                 <span class="row-label bold">다운로드 파일명</span>
                             </div>
-                            <div class="section-note" style="margin-bottom:var(--sp-2);">YYYY·YY·MM·DD·hh·mm·ss는 날짜·시간으로 바뀌고, 나머지 글자는 그대로 쓰여요.</div>
+                            <div class="section-note" style="margin-bottom:var(--sp-2);">YYYY·YY·MM·DD·hh·mm·ss는 날짜·시간으로 바뀝니다.</div>
                             <input type="text" id="filename-format" placeholder="네카이브-YYYY-MM-DD_hhmmss" oninput="onFilenameFormatChanged()" style="font-family: var(--mono);" aria-label="다운로드 파일명 형식">
                             <p id="filename-format-preview" class="section-note" style="margin-top:6px; margin-bottom:0;"></p>
                             <p id="filename-format-error" class="section-note" style="margin-top:4px; margin-bottom:0; font-weight:600; color:var(--danger); display:none;"></p>
-                            <div class="row" style="margin: var(--sp-3) 0 0;" title="켜면 형식 맨 앞의 글자(기본값 기준 '네카이브')가 출처 표시에 입력한 캐릭터 이름으로 바뀌어요. 이름이 비어있으면 원래 글자를 그대로 써요.">
+                            <div class="row" style="margin: var(--sp-3) 0 0;" title="켜면 형식 맨 앞의 글자(기본값 기준 '네카이브')가 출처 표시에 입력한 캐릭터 이름으로 바뀝니다. 이름이 비어 있으면 원래 글자를 그대로 씁니다.">
                                 <span class="row-label">맨 앞 글자를 캐릭터 이름으로</span>
                                 <label class="row-switch">
                                     <input type="checkbox" id="filename-use-charname" onchange="onFilenameFormatChanged()" aria-label="맨 앞 글자를 캐릭터 이름으로">
@@ -1464,7 +1502,7 @@
                             <div class="row" style="margin-bottom:var(--sp-1);">
                                 <span class="row-label bold">서버 캡처</span>
                             </div>
-                            <div class="section-note" style="margin-bottom:var(--sp-2);">미리보기 아래 '서버'를 체크하면 이 서버로 캡처해요. 체크를 꺼도 주소·토큰은 저장돼 있어요.</div>
+                            <div class="section-note" style="margin-bottom:var(--sp-2);">미리보기 아래 '서버 캡쳐'를 체크하면 이 서버로 캡처합니다. 체크를 꺼도 주소·토큰은 유지됩니다.</div>
                             <div class="field-grid">
                                 <label class="field span2"><span class="field-label">Worker 주소</span><input type="text" id="capture-server-url" placeholder="https://xxxx.workers.dev" style="font-family: var(--mono);"></label>
                                 <label class="field span2"><span class="field-label">보안 토큰 (선택)</span><input type="password" id="capture-server-secret" placeholder="워커 코드에 넣은 값과 동일하게" autocomplete="off" style="font-family: var(--mono);"></label>
@@ -1489,21 +1527,21 @@
                     <div class="collapsible-content">
                         <div class="row-group row-span2">
                             <div class="row" id="screen-expand-row" title="켜면 화면 양옆 여백을 없애고, 입력창과 미리보기를 더 넓게 써요 (메뉴들이 여러 열로 나란히 놓여요)">
-                                <span class="row-label">화면 확장 <span class="row-sub">양옆 여백 없이 넓게, 메뉴를 여러 열로</span></span>
+                                <span class="row-label">화면 확장 <span class="row-sub">양옆 여백 없이, 메뉴를 여러 열로</span></span>
                                 <label class="row-switch">
                                     <input type="checkbox" id="screen-expand-toggle" onchange="toggleScreenExpand()" aria-label="화면 확장">
                                     <span class="track"></span>
                                 </label>
                             </div>
-                            <div class="row" title="켜면 미리보기 우측 아이콘들이 투명해지지 않고 항상 켜져 있어요">
-                                <span class="row-label">미리보기 버튼 항상 표시 <span class="row-sub">확대·저장 아이콘을 늘 보이게</span></span>
+                            <div class="row" title="켜면 미리보기 우측 아이콘들이 투명해지지 않고 항상 표시됩니다">
+                                <span class="row-label">미리보기 버튼 항상 표시 <span class="row-sub">배율·저장 버튼을 항상 표시</span></span>
                                 <label class="row-switch">
                                     <input type="checkbox" id="toolbar-always-toggle" onchange="toggleToolbarAlways()" aria-label="미리보기 버튼 항상 표시">
                                     <span class="track"></span>
                                 </label>
                             </div>
-                            <div class="row" style="margin-bottom:0;" title="배경 이미지와 삽입한 이미지의 휠 확대·축소에 공통으로 적용돼요 (값이 작을수록 미세 조절)">
-                                <span class="row-label">휠 확대·축소 민감도 <span class="row-sub">작을수록 미세하게</span></span>
+                            <div class="row" style="margin-bottom:0;" title="배경 이미지와 삽입한 이미지의 휠 확대·축소에 공통으로 적용됩니다 (값이 작을수록 미세 조절)">
+                                <span class="row-label">휠 확대·축소 민감도 <span class="row-sub">값이 작을수록 미세하게</span></span>
                                 <div class="row-control">
                                     <input type="range" id="wheel-sensitivity-slider" min="0.00005" max="0.001" step="0.00005" value="0.0002" oninput="updateWheelSensitivity()" style="width: 70px;" aria-label="휠 확대·축소 민감도">
                                     <span class="row-hex" id="wheel-sensitivity-readout" style="min-width: 44px;">0.0002</span>
@@ -1516,7 +1554,7 @@
                             <div class="row" style="margin-bottom:var(--sp-1);">
                                 <span class="row-label bold">기본값 · 초기화</span>
                             </div>
-                            <div class="section-note" style="margin-bottom:var(--sp-3);">지금 설정을 기본값으로 저장하거나, 기본값으로 되돌려요. 작성한 대화 내용과 코드는 지워지지 않아요.</div>
+                            <div class="section-note" style="margin-bottom:var(--sp-3);">현재 설정을 기본값으로 저장하거나 기본값으로 되돌립니다. 입력한 내용은 지워지지 않습니다.</div>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                 <div class="btn-row">
                                     <button class="action-btn" onclick="saveTypoDefault()" title="현재의 폰트, 여백, 정렬 상태를 기본값으로 저장">글자 기본값 저장</button>
@@ -1561,7 +1599,7 @@
                             <label>단색 배경 · 투명도</label>
                             <div style="display:flex; align-items:center; gap:8px; height: var(--ctrl-h);">
                                 <span class="swatch" style="background:#ffffff;"><input type="color" id="bg-color" value="#ffffff"></span>
-                                <input type="range" id="input-bg-transparency" min="0" max="1" step="0.05" value="0" style="width: 90px;" title="0% = 꽉 찬 색, 100% = 색 없음 (배경 이미지가 있으면 이미지가 비쳐 보임, 없으면 흰색 쪽으로 옅어짐). 저장되는 이미지는 투명해지지 않아요.">
+                                <input type="range" id="input-bg-transparency" min="0" max="1" step="0.05" value="0" style="width: 90px;" title="0% = 꽉 찬 색, 100% = 색 없음 (배경 이미지가 있으면 이미지가 비쳐 보임, 없으면 흰색 쪽으로 옅어짐). 저장되는 이미지는 투명해지지 않습니다.">
                             </div>
                         </div>
                     </div>
@@ -1617,15 +1655,16 @@
                             <input type="checkbox" id="capture-server-enabled-toggle" onchange="toggleCaptureServerEnabled()">
                             서버 캡쳐
                         </label>
-                        
-                        <button class="btn" onclick="copyToClipboard()" title="클립보드 복사" aria-label="클립보드 복사">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <button class="btn" onclick="openModal()" title="아카이브에 저장 (Ctrl+Shift+S)" aria-label="아카이브에 저장">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
                         </button>
                         <button class="btn" onclick="downloadCard()" title="PNG 다운로드 (Ctrl+S)" aria-label="PNG 다운로드">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </button>
-                        <button class="btn btn-accent" onclick="openModal()" title="아카이브에 저장 (Ctrl+Shift+S)" aria-label="아카이브에 저장">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                        <!-- 가장 자주 쓰는 동작: 이미지로 복사 -->
+                        <button class="btn btn-primary copy-btn" onclick="copyToClipboard()" title="이미지를 클립보드에 복사 (선택한 글자가 없을 때 Ctrl+C)" aria-label="이미지 복사">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            복사
                         </button>
                     </div>
 
@@ -1731,7 +1770,7 @@
                 <h3 id="template-modal-title">템플릿 불러오기</h3>
                 <button type="button" class="btn" onclick="closeTemplatePicker()">닫기</button>
             </div>
-            <p class="modal-hint" style="margin: var(--sp-2) 0 0;">입력한 내용과 HTML 뷰어 모드는 그대로 두고, 고른 카드의 꾸밈 설정만 가져와요.</p>
+            <p class="modal-hint" style="margin: var(--sp-2) 0 0;">입력한 내용은 그대로 두고, 고른 카드의 설정만 가져옵니다.</p>
             <div class="tpl-groups-wrap">
                 <span class="tpl-groups-label">가져올 항목</span>
                 <div class="tpl-groups" id="template-group-settings"></div>
@@ -2041,7 +2080,7 @@
             await loadBlockIntoControls(nb);
             renderBlockTabs(); updateUI(); flashBlockGuide(activeBlockIndex);
             DOM.text.focus();
-            showToast(`블록 ${activeBlockIndex + 1}을 추가했어요.`);
+            showToast(`블록 ${activeBlockIndex + 1}을 추가했습니다.`);
         }
         async function deleteBlock() {
             if (blocks.length <= 1) return;
@@ -2053,7 +2092,7 @@
             activeBlockIndex = Math.min(activeBlockIndex, blocks.length - 1);
             await loadBlockIntoControls(blocks[activeBlockIndex]);
             renderBlockTabs(); updateUI();
-            showToast('블록을 삭제했어요.');
+            showToast('블록을 삭제했습니다.');
         }
         function moveBlock(delta) {
             const j = activeBlockIndex + delta; if (j < 0 || j >= blocks.length) return;
@@ -2943,7 +2982,23 @@
             // 별도로 크기 변화를 감시해서 하이라이트 레이어 높이를 실시간으로 맞춰줌
             new ResizeObserver(() => { syncHighlightHeight(); syncHighlightScroll(); }).observe(DOM.text);
         }
+        // 바깥(네카이브 전송기 같은 유저스크립트)에서 입력창 값을 바꾸고 input 이벤트를 보낸 경우를 구분:
+        // 사람이 직접 친 입력은 isTrusted가 true, 스크립트가 보낸 건 false. (사이트 자체가 보내는 건 internalTextInput으로 표시)
+        let startupRestoreDone = false, pendingExternalText = null, internalTextInput = false;
+        function finishStartupRestore() {
+            startupRestoreDone = true;
+            if (pendingExternalText === null) return;
+            // 저장돼 있던 작업을 되살리는 도중에 도착한 글 → 복구가 끝난 지금 다시 넣어서 덮어써지지 않게
+            const text = pendingExternalText; pendingExternalText = null;
+            internalTextInput = true; try { DOM.text.value = text; DOM.text.dispatchEvent(new Event('input', { bubbles: true })); } finally { internalTextInput = false; }
+            editingArchiveItem = null;
+        }
         DOM.text.addEventListener('input', (e) => {
+            if (!e.isTrusted && !internalTextInput) {
+                if (!startupRestoreDone) pendingExternalText = e.target.value;
+                // 새로 받아온 글은 새 발췌 → 방금 저장·수정하던 카드를 덮어쓰지 않도록 연결을 끊음
+                else editingArchiveItem = null;
+            }
             const val = e.target.value;
             if (!DOM.htmlToggle.checked && !userManuallyToggledHtml && /<(?!\/?(?:mark|br)\b)[a-z][\s\S]*>/i.test(val)) {
                 DOM.htmlToggle.checked = true; showToast('HTML 뷰어 모드로 자동 전환되었습니다.');
@@ -2964,7 +3019,7 @@
         function openFullscreen() {
             document.body.classList.add('fullscreen-mode');
             setTimeout(() => { document.addEventListener('click', closeFullscreen); }, 10);
-            showToast('크게 보기 중이에요. 아무 곳이나 누르면 돌아가요.');
+            showToast('크게 보기. 아무 곳이나 누르면 돌아갑니다.');
         }
         function closeFullscreen(e) { document.body.classList.remove('fullscreen-mode'); document.removeEventListener('click', closeFullscreen); }
 
@@ -3042,8 +3097,8 @@
             const el = document.documentElement;
             if (isPageFullscreen()) { const exit = document.exitFullscreen || document.webkitExitFullscreen; if (exit) exit.call(document); return; }
             const req = el.requestFullscreen || el.webkitRequestFullscreen;
-            if (!req) { showToast('이 브라우저는 전체화면을 지원하지 않아요.'); return; }
-            try { Promise.resolve(req.call(el)).catch(() => showToast('전체화면으로 바꿀 수 없어요.')); } catch (e) { showToast('전체화면으로 바꿀 수 없어요.'); }
+            if (!req) { showToast('이 브라우저는 전체화면을 지원하지 않습니다.'); return; }
+            try { Promise.resolve(req.call(el)).catch(() => showToast('전체화면으로 바꿀 수 없습니다.')); } catch (e) { showToast('전체화면으로 바꿀 수 없습니다.'); }
         }
         function syncPageFullscreenButton() {
             const btn = document.getElementById('page-fs-toggle'); if (!btn) return;
@@ -3268,7 +3323,7 @@
             if (savedServerUrl) refreshCaptureUsage();
 
             const saved = localStorage.getItem('archive_autosave');
-            if(saved) { applyConfig(JSON.parse(saved), true); } else { updateUI(); }
+            if(saved) { Promise.resolve(applyConfig(JSON.parse(saved), true)).catch(() => {}).then(finishStartupRestore); } else { updateUI(); finishStartupRestore(); }
         };
 
         function toggleCaptureServerEnabled() {
@@ -3368,7 +3423,7 @@
                         originalBgWidth = tempImg.width; originalBgHeight = tempImg.height;
                         DOM.bgImage.src = currentBgImageDataUrl; resetBgPos();
                         // 단색 배경이 꽉 차 있으면 이미지가 가려지므로 투명하게 바꿔줌
-                        if ((parseFloat(DOM.bgTrans.value) || 0) === 0) { DOM.bgTrans.value = 1; showToast('배경 이미지가 보이도록 단색 배경을 투명(100%)하게 바꿨어요.'); }
+                        if ((parseFloat(DOM.bgTrans.value) || 0) === 0) { DOM.bgTrans.value = 1; showToast('배경 이미지가 보이도록 단색 배경 투명도를 100%로 바꿨습니다.'); }
                         updateUI();
                     };
                     tempImg.src = currentBgImageDataUrl;
@@ -3401,10 +3456,12 @@
             return { src, natW: cw, natH: ch };
         }
         // 이미지 추가: 파일 → 자르기 창 → 카드 가운데에 넣고 선택
-        document.getElementById('img-add-input').addEventListener('change', async (e) => {
-            const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+        document.getElementById('img-add-input').addEventListener('change', (e) => { const file = e.target.files[0]; e.target.value = ''; insertImageFromFile(file); });
+        // 파일 선택·붙여넣기·끌어다 놓기 모두 이 함수로 이미지를 넣음 (자르기 창 → 카드에 삽입)
+        async function insertImageFromFile(file) {
+            if (!file) return;
             const orig = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); });
-            let origEl; try { origEl = await loadImageEl(orig); } catch (err) { showToast('이미지를 불러올 수 없어요.'); return; }
+            let origEl; try { origEl = await loadImageEl(orig); } catch (err) { showToast('이미지를 불러올 수 없습니다.'); return; }
             const result = await openCropper(orig, null);
             if (!result) return;
             const crop = result.crop;
@@ -3416,8 +3473,8 @@
             const im = { id: newImageId(), src: out.src, orig, crop, natW: out.natW, natH: out.natH, x: 0, y: 0, w: Math.round(w), radius: 0, fColor: '#000000', fOpacity: 0, above: false };
             insertedImages.push(im); selectedImageId = im.id;
             updateUI();
-            showToast("이미지를 넣었어요. '편집 시작'으로 위치와 크기를 바꿀 수 있어요.");
-        });
+            showToast("이미지를 넣었습니다. '편집 시작'으로 위치와 크기를 조절하세요.");
+        }
         async function recropSelectedImage() {
             const im = getSelectedImage(); if (!im) return;
             const result = await openCropper(im.orig || im.src, im.orig ? im.crop : null);
@@ -3432,7 +3489,7 @@
             insertedImages.splice(i, 1);
             selectedImageId = insertedImages.length ? insertedImages[Math.min(i, insertedImages.length - 1)].id : null;
             if (!insertedImages.length && ovEditMode) setOvEditMode(false);
-            updateUI(); showToast('이미지를 삭제했어요.');
+            updateUI(); showToast('이미지를 삭제했습니다.');
         }
         function moveSelectedImage(delta) {
             const i = insertedImages.findIndex(im => im.id === selectedImageId); const j = i + delta;
@@ -4280,9 +4337,9 @@
             });
         }
         async function applyTemplateFromItem(item) {
-            if (!item || !item.config) { showToast('설정값이 없는 예전 카드라 템플릿으로 쓸 수 없어요.'); return; }
+            if (!item || !item.config) { showToast('설정값이 없는 예전 카드는 템플릿으로 쓸 수 없습니다.'); return; }
             const groups = TEMPLATE_GROUPS.filter(g => isTemplateGroupOn(g.id));
-            if (!groups.length) { showToast('템플릿 창 위쪽 \'가져올 항목\'에서 하나 이상 켜 주세요.'); return; }
+            if (!groups.length) { showToast('\'가져올 항목\'을 하나 이상 켜세요.'); return; }
             const before = getCurrentConfig(); const editingBefore = editingArchiveItem;
             // 지금 설정을 바탕으로, 켜진 항목의 값만 템플릿 값으로 바꿔서 한 번에 적용
             // (템플릿에 없는 값은 "수정"으로 불러올 때와 같은 기본값이 쓰임)
@@ -4308,9 +4365,9 @@
             switchTab('extractor');
             await applyConfig(merged, false);
             rememberRecentTemplate(item.id);
-            showActionToast('템플릿을 적용했어요.', '되돌리기', async () => {
+            showActionToast('템플릿을 적용했습니다.', '되돌리기', async () => {
                 await applyConfig(before, false); editingArchiveItem = editingBefore;
-                showToast('템플릿 적용 전으로 되돌렸어요.');
+                showToast('되돌렸습니다.');
             });
         }
         function templateFromArchive(id) { applyTemplateFromItem(loadedItems.find(i => i.id === id)); }
@@ -4355,7 +4412,7 @@
             req.onsuccess = () => {
                 const item = req.result; if (!item) return;
                 item.fav = !item.fav; store.put(item).onsuccess = () => {
-                    showToast(item.fav ? '즐겨찾는 템플릿에 넣었어요. 발췌기의 빠른 템플릿에 나와요.' : '즐겨찾기에서 뺐어요.');
+                    showToast(item.fav ? '즐겨찾기에 추가했습니다.' : '즐겨찾기에서 뺐습니다.');
                     refreshQuickTemplates(); if (done) done(item.fav);
                 };
             };
@@ -4376,10 +4433,10 @@
             blocks.forEach(b => { b.text = ''; });
             DOM.text.value = ''; editingArchiveItem = null; // 새 발췌이므로 다음 저장은 새 카드로
             updateUI(); DOM.text.focus();
-            showActionToast('내용을 비웠어요. 꾸밈 설정은 그대로예요.', '되돌리기', () => {
+            showActionToast('내용을 비웠습니다.', '되돌리기', () => {
                 blocks.forEach((b, i) => { b.text = beforeTexts[i] || ''; });
                 DOM.text.value = blocks[activeBlockIndex] ? blocks[activeBlockIndex].text : ''; editingArchiveItem = editingBefore;
-                updateUI(); showToast('비우기 전으로 되돌렸어요.');
+                updateUI(); showToast('되돌렸습니다.');
             });
         }
         function syncTextClearButton() { const b = document.getElementById('text-clear-btn'); if (b) b.hidden = !DOM.text.value; }
@@ -4426,13 +4483,13 @@
         let templatePickerItems = [];
         function isTemplatePickerOpen() { return document.getElementById('template-modal').style.display === 'flex'; }
         function openTemplatePicker() {
-            if (!db) { showToast('아카이브를 아직 불러오는 중이에요. 잠시 후 다시 눌러 주세요.'); return; }
+            if (!db) { showToast('아카이브를 불러오는 중입니다. 잠시 후 다시 시도하세요.'); return; }
             document.getElementById('template-modal').style.display = 'flex';
             document.getElementById('template-search-input').value = '';
             const grid = document.getElementById('template-grid'); grid.innerHTML = '<div class="template-empty">불러오는 중…</div>';
             const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
             req.onsuccess = (e) => { templatePickerItems = e.target.result.sort((a, b) => (!!b.fav - !!a.fav) || (b.id - a.id)); renderTemplateGrid(); }; // ★ 먼저, 그다음 최신순
-            req.onerror = () => { grid.innerHTML = '<div class="template-empty">아카이브를 불러오지 못했어요.</div>'; };
+            req.onerror = () => { grid.innerHTML = '<div class="template-empty">아카이브를 불러오지 못했습니다.</div>'; };
             setTimeout(() => document.getElementById('template-search-input').focus(), 0);
         }
         function closeTemplatePicker() { document.getElementById('template-modal').style.display = 'none'; }
@@ -4443,13 +4500,13 @@
             const keyword = document.getElementById('template-search-input').value.trim().toLowerCase();
             const list = keyword ? templatePickerItems.filter(it => (it.tags || '').toLowerCase().includes(keyword) || (it.memo || '').toLowerCase().includes(keyword)) : templatePickerItems;
             grid.innerHTML = '';
-            if (!list.length) { grid.innerHTML = `<div class="template-empty">${templatePickerItems.length ? '검색 결과가 없어요.' : '아카이브에 저장된 카드가 없어요.'}</div>`; return; }
+            if (!list.length) { grid.innerHTML = `<div class="template-empty">${templatePickerItems.length ? '검색 결과가 없습니다.' : '아카이브에 저장된 카드가 없습니다.'}</div>`; return; }
             list.forEach(it => {
                 const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'template-item';
                 const tags = (it.tags || '').split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
                 const meta = [it.date, tags.length ? tags.map(t => '#' + t).join(' ') : '', it.memo || ''].filter(Boolean).join(' · ');
                 btn.innerHTML = `<img src="${escapeHtml(it.image || '')}" alt="" loading="lazy"><div class="template-item-meta">${escapeHtml(meta || '태그·메모 없음')}</div>`;
-                if (!it.config) { btn.disabled = true; btn.title = '설정값이 없는 예전 카드라 템플릿으로 쓸 수 없어요'; }
+                if (!it.config) { btn.disabled = true; btn.title = '설정값이 없는 예전 카드는 템플릿으로 쓸 수 없습니다'; }
                 else btn.addEventListener('click', () => { closeTemplatePicker(); applyTemplateFromItem(it); });
                 const cell = document.createElement('div'); cell.className = 'template-cell'; cell.appendChild(btn);
                 if (it.config) cell.appendChild(makeFavButton(it));
@@ -4483,7 +4540,7 @@
         function closeModal() { document.getElementById('save-modal').style.display = 'none'; }
         document.getElementById('save-modal').addEventListener('mousedown', e => { if (e.target.id === 'save-modal') closeModal(); });
 
-        // 단축키: Ctrl(⌘)+S 다운로드, Ctrl(⌘)+Shift+S 아카이브 저장, 모달에서 Ctrl+Enter 저장 / Esc 닫기
+        // 단축키: Ctrl(⌘)+C 이미지 복사(선택한 글자 없을 때), Ctrl(⌘)+S 다운로드, Ctrl(⌘)+Shift+S 아카이브 저장, 모달에서 Ctrl+Enter 저장 / Esc 닫기
         document.addEventListener('keydown', e => {
             const mod = e.ctrlKey || e.metaKey;
             if (isCropperOpen()) {
@@ -4506,6 +4563,57 @@
                 e.preventDefault();
                 if (e.shiftKey) openModal(); else downloadCard();
             }
+            // Ctrl(⌘)+C: 선택한 글자가 없으면 카드를 이미지로 복사 (글자를 선택했을 때는 평소처럼 글자 복사)
+            if (mod && !e.altKey && !e.shiftKey && (e.key === 'c' || e.key === 'C') && !hasTextSelection()) { e.preventDefault(); copyToClipboard(); }
+        });
+        function isEditableTarget(el) { return !!el && (el.tagName === 'TEXTAREA' || el.isContentEditable || (el.tagName === 'INPUT' && !/^(checkbox|radio|range|color|file|button)$/.test(el.type))); }
+        function hasTextSelection() {
+            const el = document.activeElement;
+            if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) { try { return el.selectionStart !== el.selectionEnd; } catch (err) { return false; } }
+            return !!String(window.getSelection ? window.getSelection() : '').length;
+        }
+        function isAnyModalOpen() { return isModalOpen() || isTemplatePickerOpen() || isCropperOpen(); }
+        function isExtractorActive() { return document.getElementById('extractor-page').classList.contains('active'); }
+        // 글을 입력창에 넣기 (커서 위치에, 선택한 부분이 있으면 바꿔 넣음)
+        function insertTextIntoInput(text) {
+            const ta = DOM.text; ta.focus();
+            ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, 'end');
+            internalTextInput = true; try { ta.dispatchEvent(new Event('input', { bubbles: true })); } finally { internalTextInput = false; }
+        }
+        function firstImageFile(list) { return [...(list || [])].find(f => f && f.type && f.type.startsWith('image/')); }
+        // 붙여넣기: 어디에 초점이 있든 이미지는 카드에 삽입, 글은 (입력칸 밖에서 붙여넣었을 때) 본문 입력창으로
+        document.addEventListener('paste', (e) => {
+            if (!isExtractorActive() || isAnyModalOpen()) return;
+            const cd = e.clipboardData; if (!cd) return;
+            const text = cd.getData('text/plain');
+            const img = firstImageFile(cd.files);
+            if (img && !text) { e.preventDefault(); insertImageFromFile(img); return; }
+            if (text && !isEditableTarget(e.target)) { e.preventDefault(); insertTextIntoInput(text); }
+        });
+        // 끌어다 놓기: 미리보기에 이미지 파일을 놓으면 삽입, 글을 놓으면 본문으로
+        (function setupPreviewDrop() {
+            const zone = document.querySelector('.preview-container'); if (!zone) return;
+            let depth = 0; const clear = () => { depth = 0; zone.classList.remove('drop-target'); };
+            const accepts = (e) => { const t = e.dataTransfer && e.dataTransfer.types; return !!t && ([...t].includes('Files') || [...t].includes('text/plain')); };
+            zone.addEventListener('dragenter', (e) => { if (!accepts(e)) return; e.preventDefault(); depth++; zone.classList.add('drop-target'); });
+            zone.addEventListener('dragover', (e) => { if (accepts(e)) e.preventDefault(); });
+            zone.addEventListener('dragleave', () => { if (--depth <= 0) clear(); });
+            zone.addEventListener('drop', (e) => {
+                if (!accepts(e)) return; e.preventDefault(); clear();
+                const img = firstImageFile(e.dataTransfer.files);
+                if (img) { insertImageFromFile(img); return; }
+                const text = e.dataTransfer.getData('text/plain'); if (text) insertTextIntoInput(text);
+            });
+        })();
+        // 숫자 칸: Shift+↑/↓ 는 10배씩 (세밀한 조절은 그냥 ↑/↓)
+        document.addEventListener('keydown', (e) => {
+            const el = e.target;
+            if (!e.shiftKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || !el || el.tagName !== 'INPUT' || el.type !== 'number') return;
+            e.preventDefault();
+            const step = parseFloat(el.step) || 1; const dir = e.key === 'ArrowUp' ? 1 : -1;
+            let v = (parseFloat(el.value) || 0) + dir * step * 10; if (step < 1) v = parseFloat(v.toFixed(2));
+            if (el.min !== '' && v < parseFloat(el.min)) v = parseFloat(el.min);
+            el.value = v; el.dispatchEvent(new Event('input', { bubbles: true }));
         });
         
         let toastTimeout;
@@ -4832,7 +4940,7 @@
                     const result = await captureViaServer(scaleRatio, isPng);
                     refreshCaptureUsage(); return result;
                 } catch (err) {
-                    showToast('⚠️ 서버 캡쳐 실패 — 자체 캡쳐로 진행합니다.', true);
+                    showToast('서버 캡처 실패. 브라우저 캡처로 진행합니다.', true);
                     return await captureInSandbox(scaleRatio, isPng);
                 }
             }
@@ -4844,7 +4952,7 @@
         // 반환값의 valid가 false면 error에 이유가 담긴다 (팝업이 아니라 인라인 표시용).
         function parseFilenameFormatTemplate(format) {
             if (FILENAME_FORBIDDEN_CHARS.test(format)) {
-                return { valid: false, error: '파일명에 사용할 수 없는 문자가 포함되어 있어요: \\ / : * ? " < > |', segments: null };
+                return { valid: false, error: '파일명에 사용할 수 없는 문자가 포함되어 있습니다: \\ / : * ? " < > |', segments: null };
             }
             const segments = [];
             const runRegex = /[YMDhms]+|[^YMDhms]+/g;
@@ -4861,7 +4969,7 @@
                 while (rest.length > 0) {
                     const found = FILENAME_TOKEN_ORDER.find(t => rest.startsWith(t));
                     if (!found) {
-                        return { valid: false, error: `형식을 인식할 수 없어요: "${run}" — 기본 이름으로 저장돼요.`, segments: null };
+                        return { valid: false, error: `형식을 인식할 수 없습니다: "${run}" — 기본 이름으로 저장됩니다.`, segments: null };
                     }
                     tokensInRun.push(found);
                     rest = rest.slice(found.length);
@@ -4945,21 +5053,21 @@
 
         async function downloadCard() {
             if (isCapturing) return;
-            isCapturing = true; showToast('📸 캡쳐중입니다... 잠시만 기다려주세요.', true);
+            isCapturing = true; showToast('캡처하는 중…', true);
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
             try {
                 const dataUrl = await captureImage(1, true); 
                 const link = document.createElement('a'); link.download = buildExportFilename(DOM.wmChar ? DOM.wmChar.value : ''); link.href = dataUrl; link.click();
-                hideToast(); showToast('다운로드가 완료되었습니다!');
+                hideToast(); showToast('PNG로 저장했습니다.');
             } catch (err) { hideToast(); showToast('캡처 중 오류가 발생했습니다.'); console.error(err);
             } finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
         }
 
         async function copyToClipboard() {
             if (isCapturing) return;
-            isCapturing = true; showToast('📸 캡쳐중입니다... 잠시만 기다려주세요.', true);
+            isCapturing = true; showToast('캡처하는 중…', true);
             const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
             
@@ -4968,7 +5076,7 @@
                 const res = await fetch(dataUrl); const blob = await res.blob();
                 if (navigator.clipboard && navigator.clipboard.write) {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                    hideToast(); showToast('클립보드에 이미지가 복사되었습니다!');
+                    hideToast(); showToast('이미지를 복사했습니다.');
                 } else { hideToast(); showToast('이 브라우저에서는 복사를 지원하지 않습니다.'); }
             } catch (err) { hideToast(); showToast('클립보드 복사 중 오류가 발생했습니다.'); console.error(err);
             } finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
@@ -4981,7 +5089,7 @@
 
         async function saveToIndexedDB() {
             if (isCapturing) return;
-            isCapturing = true; showToast('📸 캡쳐중입니다... 잠시만 기다려주세요.', true);
+            isCapturing = true; showToast('캡처하는 중…', true);
             const tags = document.getElementById('modal-tags').value; const memo = document.getElementById('modal-memo').value;
             const configData = getCurrentConfig(); const currentScale = DOM.scale.value;
             DOM.preview.style.transform = 'scale(1)'; DOM.previewWrapper.style.width = DOM.width.value + 'px'; DOM.previewWrapper.style.height = DOM.height.value + 'px';
@@ -4996,9 +5104,9 @@
                     editingArchiveItem = { id: newItem.id, tags: newItem.tags, memo: newItem.memo, fav: !!newItem.fav };
                     closeModal(); hideToast(); loadGallery();
                     // 같은 모양으로 바로 다음 발췌를 이어갈 수 있게
-                    showActionToast(overwrite ? '기존 카드를 덮어썼습니다!' : '아카이브에 저장되었습니다!', '내용 비우고 새로 쓰기', clearAllText);
+                    showActionToast(overwrite ? '기존 카드를 덮어썼습니다.' : '아카이브에 저장했습니다.', '내용 비우고 새로 쓰기', clearAllText);
                 };
-                tx.onerror = () => { hideToast(); showToast('아카이브 저장에 실패했습니다. (저장 공간이 부족할 수 있어요)'); };
+                tx.onerror = () => { hideToast(); showToast('아카이브 저장에 실패했습니다. (저장 공간이 부족할 수 있습니다)'); };
             } catch (err) { hideToast(); showToast('이미지 저장 중 오류가 발생했습니다.');
             } finally { DOM.preview.style.transform = `scale(${currentScale})`; updateScale(); isCapturing = false; }
         }
@@ -5048,7 +5156,7 @@
                             <div class="overlay-tags">${tagsHtml}</div>
                             <div class="overlay-memo">${item.memo ? escapeHtml(item.memo) : '메모 없음'}</div>
                             <div class="overlay-actions">
-                                <button class="btn-overlay-template" onclick="templateFromArchive(${item.id})" ${item.config ? 'title="입력한 내용은 그대로 두고 이 카드의 꾸밈 설정만 가져와요"' : 'disabled title="설정값이 없는 예전 카드라 템플릿으로 쓸 수 없어요"'}>템플릿</button>
+                                <button class="btn-overlay-template" onclick="templateFromArchive(${item.id})" ${item.config ? 'title="입력한 내용은 그대로 두고 이 카드의 꾸밈 설정만 가져와요"' : 'disabled title="설정값이 없는 예전 카드는 템플릿으로 쓸 수 없습니다"'}>템플릿</button>
                                 <button class="btn-overlay-edit" onclick="editFromArchive(${item.id})">수정</button>
                                 <button class="btn-overlay-delete" onclick="deleteFromIndexedDB(${item.id})">삭제</button>
                             </div>
@@ -5066,12 +5174,12 @@
             if(item && item.config) {
                 if (DOM.text.value.trim() && !confirm('지금 작업 중인 내용이 이 카드의 내용과 설정으로 바뀝니다. 불러올까요?')) return;
                 editingArchiveItem = { id: item.id, tags: item.tags, memo: item.memo, fav: !!item.fav };
-                switchTab('extractor'); await applyConfig(item.config, true); showToast('저장된 카드를 불러왔습니다. 저장하면 덮어쓸 수 있어요.');
+                switchTab('extractor'); await applyConfig(item.config, true); showToast('카드를 불러왔습니다. 저장할 때 덮어쓸 수 있습니다.');
             } 
             else { showToast('구버전 데이터라 수정할 수 없습니다.'); } 
         }
         function deleteFromIndexedDB(id) {
-            if(!confirm('이 기록을 삭제하시겠습니까? 삭제한 카드는 되돌릴 수 없어요.')) return;
+            if(!confirm('이 기록을 삭제하시겠습니까? 삭제한 카드는 되돌릴 수 없습니다.')) return;
             const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').delete(id);
             tx.oncomplete = () => { if (editingArchiveItem && editingArchiveItem.id === id) editingArchiveItem = null; loadGallery(); showToast('삭제되었습니다.'); };
         }
@@ -5101,8 +5209,8 @@
                     if (data.archive && Array.isArray(data.archive)) {
                         const tx = db.transaction(['cards'], 'readwrite'); const store = tx.objectStore('cards');
                         data.archive.forEach(item => { store.put(item); });
-                        tx.oncomplete = () => { loadGallery(); showToast(`카드 ${data.archive.length}개를 복구했습니다!`); };
-                        tx.onerror = () => showToast('복구 중 오류가 발생했습니다. (저장 공간이 부족할 수 있어요)');
+                        tx.oncomplete = () => { loadGallery(); showToast(`카드 ${data.archive.length}개를 복구했습니다.`); };
+                        tx.onerror = () => showToast('복구 중 오류가 발생했습니다. (저장 공간이 부족할 수 있습니다)');
                     } else { showToast('유효하지 않은 백업 파일 포맷입니다.'); }
                 } catch (err) { showToast('파일을 읽는 중 오류가 발생했습니다.'); }
                 event.target.value = '';
