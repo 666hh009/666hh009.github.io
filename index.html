@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>네카이브 (v4.2.25)</title>
+    <title>네카이브 (v4.2.26)</title>
     <link rel="icon" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;600;700;900&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=JetBrains+Mono:wght@400;500;600&family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Nanum+Gothic:wght@400;700;800&family=Gothic+A1:wght@300;400;500;700;900&family=Do+Hyeon&family=Song+Myung&display=swap" rel="stylesheet">
@@ -817,6 +817,44 @@
         .template-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: contain; background: var(--paper-muted); display: block; }
         .template-item-meta { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs); color: var(--ink-soft); line-height: 1.4; min-height: 2.8em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         .template-empty { grid-column: 1 / -1; text-align: center; color: var(--ink-soft); padding: 48px 0; }
+        /* 템플릿 창: 카드마다 ★(즐겨찾기) 버튼을 얹기 위한 감싸는 칸 */
+        .template-cell { position: relative; display: flex; }
+        .template-cell > .template-item { width: 100%; }
+        .fav-btn { position: absolute; top: 6px; right: 6px; z-index: 12; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,0.92); color: #b9b9b4; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: all .15s; }
+        .fav-btn:hover { color: #d9a514; border-color: #d9a514; transform: scale(1.08); }
+        .fav-btn.on { color: #e0a800; border-color: #e6c14d; background: #fff8dc; }
+        .fav-btn svg { width: 15px; height: 15px; }
+        .fav-btn.on svg { fill: currentColor; }
+        .fav-btn:focus-visible { outline: 2px solid var(--tag-hover); outline-offset: 2px; }
+        /* 아카이브 카드: 즐겨찾기가 아닌 카드의 ★는 마우스를 올렸을 때만 (터치 기기는 항상) */
+        .gallery-item > .fav-btn:not(.on) { opacity: 0; }
+        .gallery-item:hover > .fav-btn, .gallery-item:focus-within > .fav-btn { opacity: 1; }
+        @media (hover: none) { .gallery-item > .fav-btn:not(.on) { opacity: 1; } }
+        /* 빠른 템플릿 줄 (발췌기) */
+        .quick-tpl { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+        .quick-tpl[hidden] { display: none; }
+        .quick-tpl-label { flex-shrink: 0; font-size: var(--fs-xs); font-weight: 700; color: var(--ink-soft); }
+        .quick-tpl-list { display: flex; gap: 6px; overflow-x: auto; padding: 2px; scrollbar-width: none; flex: 1; min-width: 0; }
+        .quick-tpl-list::-webkit-scrollbar { display: none; }
+        .quick-tpl-item { position: relative; flex: 0 0 auto; width: 40px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-muted); overflow: hidden; cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .15s; }
+        .quick-tpl-item:hover, .quick-tpl-item:focus-visible { border-color: var(--ink); transform: translateY(-1px); box-shadow: var(--shadow-soft); outline: none; }
+        .quick-tpl-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .quick-tpl-item.is-fav::after { content: '★'; position: absolute; right: 1px; bottom: 0; font-size: 10px; line-height: 1.2; color: #e0a800; text-shadow: 0 0 2px #fff, 0 0 2px #fff; }
+        /* 입력창 '비우기' 버튼: 내용이 있을 때만, 입력창 오른쪽 위에 작게 */
+        .code-editor-wrap > .text-clear-btn { position: absolute; top: 6px; right: 14px; width: auto; grid-area: auto; z-index: 4; display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: rgba(255,255,255,0.92); color: var(--ink-soft); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; opacity: 0; transition: opacity .15s, color .15s, border-color .15s; }
+        .code-editor-wrap > .text-clear-btn[hidden] { display: none; }
+        .code-editor-wrap:hover > .text-clear-btn, .code-editor-wrap:focus-within > .text-clear-btn { opacity: 1; }
+        .code-editor-wrap > .text-clear-btn:hover { color: var(--danger); border-color: var(--danger); }
+        @media (hover: none) { .code-editor-wrap > .text-clear-btn { opacity: 1; } }
+        /* 미리보기 '맞춤' 버튼 */
+        .fit-btn { height: 34px; padding: 0 10px; font-size: var(--fs-sm); }
+        .fit-btn.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+        /* 저장 창: 자주 쓴 태그 */
+        .tag-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--sp-2); }
+        .tag-suggest:empty { display: none; }
+        .tag-suggest button { height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper); color: var(--ink-soft); font: inherit; font-size: var(--fs-xs); font-weight: 600; cursor: pointer; transition: all .15s; }
+        .tag-suggest button:hover { border-color: var(--ink-soft); color: var(--ink); }
+        .tag-suggest button.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
         .btn-overlay-template { background: rgba(255,255,255,0.2); color: var(--paper); }
         .btn-overlay-template:hover { background: rgba(255,255,255,0.3); }
         .overlay-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -1010,6 +1048,11 @@
                             <span class="row-switch"><input type="checkbox" id="text-toolbar-toggle" onchange="toggleTextToolbar()"><span class="track"></span></span>
                         </label>
                     </div>
+                    <!-- 빠른 템플릿: 즐겨찾기(★)와 최근에 쓴 템플릿을 한 번 눌러 바로 적용 (있을 때만 보임) -->
+                    <div class="quick-tpl row-span2" id="quick-tpl" hidden>
+                        <span class="quick-tpl-label">빠른 템플릿</span>
+                        <div class="quick-tpl-list" id="quick-tpl-list"></div>
+                    </div>
                     <!-- 블록(메시지창) 탭: 입력창·설정 패널은 선택된 블록의 값을 보여주고 고침 (블록이 2개 이상일 때만 보임) -->
                     <div class="block-bar row-span2" id="block-bar">
                         <div class="block-tabs" id="block-tabs" role="tablist" aria-label="블록 선택"></div>
@@ -1031,6 +1074,10 @@
                         <pre class="code-highlight-layer" id="code-highlight-layer" aria-hidden="true"><code id="code-highlight-code"></code></pre>
                         <textarea id="input-text" placeholder="대화 내용 또는 HTML 코드를 입력하세요..." spellcheck="false"></textarea>
                         <div id="code-hover-overlay" aria-hidden="true"></div>
+                        <button type="button" class="text-clear-btn" id="text-clear-btn" onclick="clearAllText()" title="입력한 내용 비우기 (꾸밈 설정은 그대로)" aria-label="입력한 내용 비우기" hidden>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            비우기
+                        </button>
                         <div class="code-hover-indicator" id="code-hover-indicator-up" aria-hidden="true">▲ 대응 코드가 위에 있어요</div>
                         <div class="code-hover-indicator" id="code-hover-indicator-down" aria-hidden="true">▼ 대응 코드가 아래에 있어요</div>
                     </div>
@@ -1549,6 +1596,7 @@
                         <button class="btn" onclick="openFullscreen()" style="padding: 6px; width:34px; height:34px;" title="크게 보기 (카드만 화면 가득)" aria-label="크게 보기">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                         </button>
+                        <button type="button" class="btn fit-btn" id="preview-fit-btn" onclick="togglePreviewFit()" title="화면에 맞춤 (카드가 미리보기 영역에 꽉 차게 자동으로 배율 조절)" aria-pressed="false">맞춤</button>
                         <label>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                             배율
@@ -1663,6 +1711,7 @@
             <div class="control-group">
                 <label>태그 (쉼표로 구분)</label>
                 <input type="text" id="modal-tags" placeholder="#태그입력">
+                <div class="tag-suggest" id="modal-tag-suggest"></div>
             </div>
             <div class="control-group">
                 <label>메모</label>
@@ -2783,6 +2832,7 @@
 
         function updateUI() {
           try {
+            syncTextClearButton();
             updateFilenameFormatPreview();
             syncHighlight();
             DOM.preview.style.width = DOM.width.value + 'px';
@@ -3074,7 +3124,7 @@
             DOM.tsColor.value = defs.tsColor || '#000000'; DOM.tsOpacity.value = defs.tsOpacity || 0;
             DOM.tsBlur.value = defs.tsBlur || 5; DOM.tsY.value = defs.tsY || 2;
 
-            if(defs.previewScale) { DOM.scale.value = defs.previewScale; updateScale(); }
+            if(defs.previewScale && !previewFitOn) { DOM.scale.value = defs.previewScale; updateScale(); }
             
             updateUI(); if (!skipConfirm) showToast('배경 및 부가 설정이 초기화되었습니다.');
         }
@@ -3186,6 +3236,10 @@
             setMobileTab('input');
             relocateBgToolbar();
             buildPanelNav();
+            // 미리보기 '맞춤': 버튼 상태를 맞추고, 미리보기 영역 크기가 바뀌면(창 크기·화면 확장 등) 다시 맞춤
+            setPreviewFit(previewFitOn, false);
+            if (window.ResizeObserver) new ResizeObserver(() => { if (previewFitOn) updateScale(); }).observe(DOM.scrollArea);
+            DOM.text.addEventListener('input', syncTextClearButton);
             
             if(localStorage.getItem('archive_toolbar_always') === 'true') {
                 document.getElementById('toolbar-always-toggle').checked = true; document.body.classList.add('toolbar-always');
@@ -3282,8 +3336,9 @@
             } catch (err) { statusEl.style.color = 'var(--danger)'; statusEl.textContent = '조회 실패: ' + (err && err.message ? err.message : String(err)); }
         }
 
-        DOM.scale.addEventListener('input', updateScale);
+        DOM.scale.addEventListener('input', () => { setPreviewFit(false, false); updateScale(); });
         function updateScale() {
+            if (previewFitOn && !isCapturing) { const fit = computeFitScale(); if (fit) DOM.scale.value = fit; }
             const ratio = parseFloat(DOM.scale.value);
             DOM.scaleVal.textContent = Math.round(ratio * 100) + '%';
             DOM.preview.style.transform = `scale(${ratio})`;
@@ -3663,7 +3718,7 @@
                         updateBgLayer();
                     } else {
                         const newScale = Math.max(0.1, Math.min(2.0, pinchStartScale * ratio));
-                        DOM.scale.value = newScale.toFixed(2); updateScale();
+                        setPreviewFit(false, false); DOM.scale.value = newScale.toFixed(2); updateScale();
                     }
                 }
             }, { passive: false });
@@ -3692,7 +3747,7 @@
                 e.preventDefault(); const step = 0.05; let currentScale = parseFloat(DOM.scale.value);
                 if (e.deltaY < 0) currentScale = Math.min(2.0, currentScale + step);
                 else currentScale = Math.max(0.1, currentScale - step);
-                DOM.scale.value = currentScale.toFixed(2); updateScale();
+                setPreviewFit(false, false); DOM.scale.value = currentScale.toFixed(2); updateScale();
             }
         }, { passive: false });
 
@@ -4252,12 +4307,120 @@
             editingArchiveItem = null;
             switchTab('extractor');
             await applyConfig(merged, false);
+            rememberRecentTemplate(item.id);
             showActionToast('템플릿을 적용했어요.', '되돌리기', async () => {
                 await applyConfig(before, false); editingArchiveItem = editingBefore;
                 showToast('템플릿 적용 전으로 되돌렸어요.');
             });
         }
         function templateFromArchive(id) { applyTemplateFromItem(loadedItems.find(i => i.id === id)); }
+
+        // ── 빠른 템플릿: 즐겨찾기(★) + 최근에 쓴 템플릿을 발췌기에서 한 번에 적용 ──
+        const FAV_STAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3"/></svg>';
+        const QUICK_TEMPLATE_MAX = 8;
+        function getRecentTemplateIds() { try { const v = JSON.parse(localStorage.getItem('archive_recent_templates')); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+        function rememberRecentTemplate(id) {
+            const ids = [id, ...getRecentTemplateIds().filter(x => x !== id)].slice(0, QUICK_TEMPLATE_MAX);
+            try { localStorage.setItem('archive_recent_templates', JSON.stringify(ids)); } catch (e) { }
+            refreshQuickTemplates();
+        }
+        function describeCard(it) {
+            const tags = (it.tags || '').split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
+            return [tags.length ? tags.map(t => '#' + t).join(' ') : '', it.memo || '', it.date || ''].filter(Boolean).join(' · ') || '태그·메모 없음';
+        }
+        function refreshQuickTemplates() {
+            const box = document.getElementById('quick-tpl'), list = document.getElementById('quick-tpl-list'); if (!db || !box || !list) return;
+            const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
+            req.onsuccess = (e) => {
+                const all = e.target.result.filter(it => it.config); const byId = new Map(all.map(it => [it.id, it]));
+                const favs = all.filter(it => it.fav).sort((a, b) => b.id - a.id);
+                const recents = getRecentTemplateIds().map(id => byId.get(id)).filter(it => it && !it.fav);
+                const items = [...favs, ...recents].slice(0, QUICK_TEMPLATE_MAX);
+                list.innerHTML = ''; box.hidden = !items.length;
+                items.forEach(it => {
+                    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'quick-tpl-item' + (it.fav ? ' is-fav' : '');
+                    const label = (it.fav ? '즐겨찾기' : '최근 사용') + ' 템플릿 적용: ' + describeCard(it);
+                    btn.title = label; btn.setAttribute('aria-label', label);
+                    const img = document.createElement('img'); img.src = it.image || ''; img.alt = ''; btn.appendChild(img);
+                    btn.addEventListener('click', () => applyTemplateFromItem(it));
+                    list.appendChild(btn);
+                });
+            };
+        }
+        // 즐겨찾기 켜고 끄기 (아카이브 카드·템플릿 창의 ★)
+        function toggleFavorite(id, done) {
+            if (!db) return;
+            const store = db.transaction(['cards'], 'readwrite').objectStore('cards');
+            const req = store.get(id);
+            req.onsuccess = () => {
+                const item = req.result; if (!item) return;
+                item.fav = !item.fav; store.put(item).onsuccess = () => {
+                    showToast(item.fav ? '즐겨찾는 템플릿에 넣었어요. 발췌기의 빠른 템플릿에 나와요.' : '즐겨찾기에서 뺐어요.');
+                    refreshQuickTemplates(); if (done) done(item.fav);
+                };
+            };
+        }
+        function makeFavButton(item, onChange) {
+            const b = document.createElement('button'); b.type = 'button'; b.className = 'fav-btn' + (item.fav ? ' on' : ''); b.innerHTML = FAV_STAR_SVG;
+            const sync = (on) => { b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.title = on ? '즐겨찾기 해제' : '즐겨찾는 템플릿으로 (빠른 템플릿에 표시)'; b.setAttribute('aria-label', b.title); };
+            sync(!!item.fav);
+            b.addEventListener('click', (e) => { e.stopPropagation(); toggleFavorite(item.id, (on) => { item.fav = on; sync(on); if (onChange) onChange(on); }); });
+            return b;
+        }
+
+        // ── 입력한 내용 비우기: 꾸밈 설정은 그대로 두고 글만 지움 (같은 모양으로 다음 발췌를 바로 시작) ──
+        function clearAllText() {
+            syncActiveBlockFromControls();
+            const beforeTexts = blocks.map(b => b.text); const editingBefore = editingArchiveItem;
+            if (!beforeTexts.some(t => (t || '').trim())) { DOM.text.focus(); return; }
+            blocks.forEach(b => { b.text = ''; });
+            DOM.text.value = ''; editingArchiveItem = null; // 새 발췌이므로 다음 저장은 새 카드로
+            updateUI(); DOM.text.focus();
+            showActionToast('내용을 비웠어요. 꾸밈 설정은 그대로예요.', '되돌리기', () => {
+                blocks.forEach((b, i) => { b.text = beforeTexts[i] || ''; });
+                DOM.text.value = blocks[activeBlockIndex] ? blocks[activeBlockIndex].text : ''; editingArchiveItem = editingBefore;
+                updateUI(); showToast('비우기 전으로 되돌렸어요.');
+            });
+        }
+        function syncTextClearButton() { const b = document.getElementById('text-clear-btn'); if (b) b.hidden = !DOM.text.value; }
+
+        // ── 미리보기 '맞춤': 카드가 미리보기 영역에 다 보이는 가장 큰 배율로 자동 조절 (슬라이더·휠로 직접 바꾸면 꺼짐) ──
+        let previewFitOn = localStorage.getItem('archive_preview_fit') !== 'false';
+        function computeFitScale() {
+            const area = DOM.scrollArea; if (!area || !area.clientWidth || !area.clientHeight) return null;
+            const w = parseFloat(DOM.width.value) || 0, h = parseFloat(DOM.height.value) || 0; if (!w || !h) return null;
+            const r = Math.min((area.clientWidth - 48) / w, (area.clientHeight - 48) / h, 1);
+            return Math.max(0.1, Math.floor(r * 20) / 20);
+        }
+        function setPreviewFit(on, apply) {
+            previewFitOn = on; try { localStorage.setItem('archive_preview_fit', on); } catch (e) { }
+            const btn = document.getElementById('preview-fit-btn'); if (btn) { btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+            if (on && apply !== false) updateScale();
+        }
+        function togglePreviewFit() { setPreviewFit(!previewFitOn); }
+
+        // ── 저장 창: 자주 쓴 태그를 눌러서 바로 넣기 ──
+        function renderTagSuggestions() {
+            const box = document.getElementById('modal-tag-suggest'), input = document.getElementById('modal-tags'); if (!box || !db) return;
+            box.innerHTML = '';
+            const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
+            req.onsuccess = (e) => {
+                const count = new Map();
+                e.target.result.forEach(it => (it.tags || '').split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean).forEach(t => count.set(t, (count.get(t) || 0) + 1)));
+                const top = [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(x => x[0]);
+                const current = () => input.value.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
+                top.forEach(tag => {
+                    const b = document.createElement('button'); b.type = 'button'; b.textContent = '#' + tag;
+                    const sync = () => b.classList.toggle('on', current().includes(tag));
+                    b.addEventListener('click', () => {
+                        const cur = current(); const next = cur.includes(tag) ? cur.filter(t => t !== tag) : [...cur, tag];
+                        input.value = next.map(t => '#' + t).join(', '); box.querySelectorAll('button').forEach(x => x._sync()); input.focus();
+                    });
+                    b._sync = sync; sync(); box.appendChild(b);
+                });
+                input.oninput = () => box.querySelectorAll('button').forEach(x => x._sync());
+            };
+        }
 
         // 발췌기 안에서 바로 고르는 템플릿 창
         let templatePickerItems = [];
@@ -4268,7 +4431,7 @@
             document.getElementById('template-search-input').value = '';
             const grid = document.getElementById('template-grid'); grid.innerHTML = '<div class="template-empty">불러오는 중…</div>';
             const req = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
-            req.onsuccess = (e) => { templatePickerItems = e.target.result.sort((a, b) => b.id - a.id); renderTemplateGrid(); };
+            req.onsuccess = (e) => { templatePickerItems = e.target.result.sort((a, b) => (!!b.fav - !!a.fav) || (b.id - a.id)); renderTemplateGrid(); }; // ★ 먼저, 그다음 최신순
             req.onerror = () => { grid.innerHTML = '<div class="template-empty">아카이브를 불러오지 못했어요.</div>'; };
             setTimeout(() => document.getElementById('template-search-input').focus(), 0);
         }
@@ -4288,7 +4451,9 @@
                 btn.innerHTML = `<img src="${escapeHtml(it.image || '')}" alt="" loading="lazy"><div class="template-item-meta">${escapeHtml(meta || '태그·메모 없음')}</div>`;
                 if (!it.config) { btn.disabled = true; btn.title = '설정값이 없는 예전 카드라 템플릿으로 쓸 수 없어요'; }
                 else btn.addEventListener('click', () => { closeTemplatePicker(); applyTemplateFromItem(it); });
-                grid.appendChild(btn);
+                const cell = document.createElement('div'); cell.className = 'template-cell'; cell.appendChild(btn);
+                if (it.config) cell.appendChild(makeFavButton(it));
+                grid.appendChild(cell);
             });
         }
         document.getElementById('template-modal').addEventListener('mousedown', e => { if (e.target.id === 'template-modal') closeTemplatePicker(); });
@@ -4312,6 +4477,7 @@
                 document.getElementById('modal-overwrite').checked = true; overwriteRow.classList.add('show');
             } else { tagsEl.value = ''; memoEl.value = ''; overwriteRow.classList.remove('show'); }
             document.getElementById('save-modal').style.display = 'flex';
+            renderTagSuggestions();
             setTimeout(() => tagsEl.focus(), 0);
         }
         function closeModal() { document.getElementById('save-modal').style.display = 'none'; }
@@ -4811,7 +4977,7 @@
         let db;
         const request = indexedDB.open("AIArchiveDB", 2); 
         request.onupgradeneeded = e => { db = e.target.result; if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' }); };
-        request.onsuccess = e => { db = e.target.result; if (document.getElementById('archive-page').classList.contains('active')) loadGallery(); };
+        request.onsuccess = e => { db = e.target.result; refreshQuickTemplates(); if (document.getElementById('archive-page').classList.contains('active')) loadGallery(); };
 
         async function saveToIndexedDB() {
             if (isCapturing) return;
@@ -4824,10 +4990,13 @@
                 const imgData = await captureImage(1, false); 
                 const overwrite = !!editingArchiveItem && document.getElementById('modal-overwrite').checked;
                 const newItem = { id: overwrite ? editingArchiveItem.id : Date.now(), date: new Date().toLocaleDateString(), config: configData, image: imgData, tags: tags, memo: memo };
+                if (overwrite && editingArchiveItem.fav) newItem.fav = true;
                 const tx = db.transaction(['cards'], 'readwrite'); tx.objectStore('cards').put(newItem);
                 tx.oncomplete = () => {
-                    editingArchiveItem = { id: newItem.id, tags: newItem.tags, memo: newItem.memo };
-                    closeModal(); hideToast(); showToast(overwrite ? '기존 카드를 덮어썼습니다!' : '아카이브에 저장되었습니다!'); loadGallery();
+                    editingArchiveItem = { id: newItem.id, tags: newItem.tags, memo: newItem.memo, fav: !!newItem.fav };
+                    closeModal(); hideToast(); loadGallery();
+                    // 같은 모양으로 바로 다음 발췌를 이어갈 수 있게
+                    showActionToast(overwrite ? '기존 카드를 덮어썼습니다!' : '아카이브에 저장되었습니다!', '내용 비우고 새로 쓰기', clearAllText);
                 };
                 tx.onerror = () => { hideToast(); showToast('아카이브 저장에 실패했습니다. (저장 공간이 부족할 수 있어요)'); };
             } catch (err) { hideToast(); showToast('이미지 저장 중 오류가 발생했습니다.');
@@ -4843,6 +5012,7 @@
         function searchByTag(tag) { document.getElementById('search-input').value = tag; loadGallery(); }
         function loadGallery() {
             if(!db) return;
+            refreshQuickTemplates();
             const grid = document.getElementById('gallery-grid');
             const keyword = document.getElementById('search-input').value.toLowerCase();
             const sortOrder = document.getElementById('sort-select').value;
@@ -4884,6 +5054,7 @@
                             </div>
                         </div>`;
                     div.querySelectorAll('button.tag-chip').forEach(chip => chip.addEventListener('click', () => searchByTag(chip.dataset.tag)));
+                    if (item.config) div.appendChild(makeFavButton(item));
                     grid.appendChild(div);
                 });
             };
@@ -4894,7 +5065,7 @@
             const item = loadedItems.find(i => i.id === id); 
             if(item && item.config) {
                 if (DOM.text.value.trim() && !confirm('지금 작업 중인 내용이 이 카드의 내용과 설정으로 바뀝니다. 불러올까요?')) return;
-                editingArchiveItem = { id: item.id, tags: item.tags, memo: item.memo };
+                editingArchiveItem = { id: item.id, tags: item.tags, memo: item.memo, fav: !!item.fav };
                 switchTab('extractor'); await applyConfig(item.config, true); showToast('저장된 카드를 불러왔습니다. 저장하면 덮어쓸 수 있어요.');
             } 
             else { showToast('구버전 데이터라 수정할 수 없습니다.'); } 
